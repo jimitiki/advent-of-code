@@ -22,16 +22,16 @@ pub fn main(init: std.process.Init) !void {
     var inputs = try std.ArrayList([]const u8).initCapacity(arena, 128);
     defer inputs.deinit(arena);
 
-    var dial: i32 = 50;
+    var dial: u8 = 50;
     var pwd: u32 = 0;
     while (try reader.interface.takeDelimiter('\n')) |line| {
         const dir = line[0];
         if (std.fmt.parseInt(u16, line[1..line.len], 10)) |mag| {
             const pos_prev = dial;
             if (dir == 'L') {
-                dial = @mod(dial - mag, 100);
+                dial = @intCast(@mod(@as(i32, dial) - mag, 100));
             } else if (dir == 'R') {
-                dial = @mod(dial + mag, 100);
+                dial = @intCast(@mod(@as(i32, dial) + mag, 100));
             } else {
                 unreachable;
             }

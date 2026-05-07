@@ -28,8 +28,8 @@ pub fn main(init: std.process.Init) !void {
         const dir = line[0];
         if (std.fmt.parseInt(u16, line[1..line.len], 10)) |mag| {
             const change: i32 = if (dir == 'L') -@as(i32, mag) else if (dir == 'R') mag else unreachable;
-            dial = @intCast(@mod(@as(i32, dial) + change, 100));
             pwd += test_line_p1(dial, change);
+            dial = @intCast(@mod(dial + change, 100));
         } else |_| {
             try stdout.print("Error in line: {s}\n", .{line});
             try stdout.flush();
@@ -41,6 +41,6 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn test_line_p1(pos: u8, _: i32) u8 {
-    return if (pos == 0) 1 else 0;
+fn test_line_p1(pos: u8, change: i32) u8 {
+    return if (@mod(pos + change, 100) == 0) 1 else 0;
 }

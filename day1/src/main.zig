@@ -23,14 +23,11 @@ pub fn main(init: std.process.Init) !void {
     var reader = input_file.reader(io, &read_buffer);
     var inputs = try std.ArrayList([]const u8).initCapacity(arena, 128);
     defer inputs.deinit(arena);
-    while (try reader.interface.takeDelimiter('\n')) |line| {
-        try inputs.append(arena, line);
-    }
 
     var zeroes: u32 = 0;
-    for (inputs.items) |input| {
-        const dir = input[0];
-        const mag = try std.fmt.parseInt(u16, input[1..input.len], 10);
+    while (try reader.interface.takeDelimiter('\n')) |line| {
+        const dir = line[0];
+        const mag = try std.fmt.parseInt(u16, line[1..line.len], 10);
         if (dir == 'L') {
             dial = @mod(dial - mag, 100);
         } else if (dir == 'R') {

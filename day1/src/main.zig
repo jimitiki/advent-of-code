@@ -27,15 +27,9 @@ pub fn main(init: std.process.Init) !void {
     while (try reader.interface.takeDelimiter('\n')) |line| {
         const dir = line[0];
         if (std.fmt.parseInt(u16, line[1..line.len], 10)) |mag| {
-            const pos_prev = dial;
-            if (dir == 'L') {
-                dial = @intCast(@mod(@as(i32, dial) - mag, 100));
-            } else if (dir == 'R') {
-                dial = @intCast(@mod(@as(i32, dial) + mag, 100));
-            } else {
-                unreachable;
-            }
-            if (test_line_p1(pos_prev, dial)) {
+            const change: i32 = if (dir == 'L') -@as(i32, mag) else if (dir == 'R') mag else unreachable;
+            dial = @intCast(@mod(@as(i32, dial) + change, 100));
+            if (test_line_p1(dial, change)) {
                 pwd += 1;
             }
         } else |_| {
@@ -49,6 +43,6 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn test_line_p1(_: i32, pos: i32) bool {
+fn test_line_p1(pos: u8, _: i32) bool {
     return pos == 0;
 }

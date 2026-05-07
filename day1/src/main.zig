@@ -27,16 +27,21 @@ pub fn main(init: std.process.Init) !void {
     var zeroes: u32 = 0;
     while (try reader.interface.takeDelimiter('\n')) |line| {
         const dir = line[0];
-        const mag = try std.fmt.parseInt(u16, line[1..line.len], 10);
-        if (dir == 'L') {
-            dial = @mod(dial - mag, 100);
-        } else if (dir == 'R') {
-            dial = @mod(dial + mag, 100);
-        } else {
-            unreachable;
-        }
-        if (dial == 0) {
-            zeroes += 1;
+        if (std.fmt.parseInt(u16, line[1..line.len], 10)) |mag| {
+            if (dir == 'L') {
+                dial = @mod(dial - mag, 100);
+            } else if (dir == 'R') {
+                dial = @mod(dial + mag, 100);
+            } else {
+                unreachable;
+            }
+            if (dial == 0) {
+                zeroes += 1;
+            }
+        } else |_| {
+            try stdout.print("Error in line: {s}\n", .{line});
+            try stdout.flush();
+            return error.ProgramError;
         }
     }
 

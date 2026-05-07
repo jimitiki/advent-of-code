@@ -7,12 +7,16 @@ var dial: i32 = 50;
 pub fn main(init: std.process.Init) !void {
     const arena: std.mem.Allocator = init.arena.allocator();
 
+    const args = try init.minimal.args.toSlice(arena);
+    assert(args.len > 1);
+
     const io = init.io;
     var stdout_buffer: [256]u8 = undefined;
     var stdout_file_writer: Io.File.Writer = .init(.stdout(), io, &stdout_buffer);
     const stdout = &stdout_file_writer.interface;
 
-    const input_file = try std.Io.Dir.cwd().openFile(io, "data/test.txt", .{});
+    const file_path = try std.fmt.allocPrint(arena, "data/{s}.txt", .{args[1]});
+    const input_file = try std.Io.Dir.cwd().openFile(io, file_path, .{});
     defer input_file.close(io);
 
     var read_buffer: [256]u8 = undefined;

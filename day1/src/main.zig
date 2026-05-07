@@ -17,7 +17,12 @@ const inputs = [_][]const u8{
 
 var dial: i32 = 50;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io = init.io;
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_file_writer: Io.File.Writer = .init(.stdout(), io, &stdout_buffer);
+    const stdout = &stdout_file_writer.interface;
+
     var zeroes: u32 = 0;
     for (inputs) |input| {
         const dir = input[0];
@@ -33,5 +38,7 @@ pub fn main() !void {
             zeroes += 1;
         }
     }
-    std.debug.print("{}\n", .{zeroes});
+
+    try stdout.print("{}\n", .{zeroes});
+    try stdout.flush();
 }

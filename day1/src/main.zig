@@ -2,8 +2,6 @@ const std = @import("std");
 const Io = std.Io;
 const assert = std.debug.assert;
 
-var dial: i32 = 50;
-
 pub fn main(init: std.process.Init) !void {
     const arena: std.mem.Allocator = init.arena.allocator();
 
@@ -24,10 +22,12 @@ pub fn main(init: std.process.Init) !void {
     var inputs = try std.ArrayList([]const u8).initCapacity(arena, 128);
     defer inputs.deinit(arena);
 
-    var zeroes: u32 = 0;
+    var dial: i32 = 50;
+    var pwd: u32 = 0;
     while (try reader.interface.takeDelimiter('\n')) |line| {
         const dir = line[0];
         if (std.fmt.parseInt(u16, line[1..line.len], 10)) |mag| {
+            const pos_prev = dial;
             if (dir == 'L') {
                 dial = @mod(dial - mag, 100);
             } else if (dir == 'R') {
@@ -35,8 +35,8 @@ pub fn main(init: std.process.Init) !void {
             } else {
                 unreachable;
             }
-            if (dial == 0) {
-                zeroes += 1;
+            if (test_line_p1(pos_prev, dial)) {
+                pwd += 1;
             }
         } else |_| {
             try stdout.print("Error in line: {s}\n", .{line});
@@ -45,6 +45,10 @@ pub fn main(init: std.process.Init) !void {
         }
     }
 
-    try stdout.print("{}\n", .{zeroes});
+    try stdout.print("{}\n", .{pwd});
     try stdout.flush();
+}
+
+fn test_line_p1(_: i32, pos: i32) bool {
+    return pos == 0;
 }

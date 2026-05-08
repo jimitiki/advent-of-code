@@ -1,30 +1,22 @@
 const std = @import("std");
 const Io = std.Io;
 const assert = std.debug.assert;
+const lib = @import("lib");
 
 pub fn main(init: std.process.Init) !void {
-    const arena: std.mem.Allocator = init.arena.allocator();
-
-    const args = try init.minimal.args.toSlice(arena);
-    assert(args.len > 2);
-    assert(args[1].len == 2);
-    assert(args[1][0] == 'p');
-
-    const io = init.io;
     var stdout_buffer: [256]u8 = undefined;
-    var stdout_file_writer: Io.File.Writer = .init(.stdout(), io, &stdout_buffer);
-    const stdout = &stdout_file_writer.interface;
-
-    const file_path = try std.fmt.allocPrint(arena, "data/{s}.txt", .{args[2]});
-    const input_file = try std.Io.Dir.cwd().openFile(io, file_path, .{});
-    defer input_file.close(io);
-
     var read_buffer: [256]u8 = undefined;
-    var reader = input_file.reader(io, &read_buffer);
-    var inputs = try std.ArrayList([]const u8).initCapacity(arena, 128);
-    defer inputs.deinit(arena);
+    var ini = try lib.Init.init(init, &stdout_buffer, &read_buffer);
+    defer ini.deinit();
 
-    const algo: *const fn (u8, i32) u8 = switch (args[1][1]) {
+    assert(ini.args.len > 2);
+    assert(ini.args[1].len == 2);
+    assert(ini.args[1][0] == 'p');
+
+    var stdout = &ini.stdout_writer.interface;
+    var input = &ini.input_reader.interface;
+
+    const algo: *const fn (u8, i32) u8 = switch (ini.args[1][1]) {
         '1' => test_line_p1,
         '2' => test_line_p2,
         else => unreachable,
@@ -32,7 +24,7 @@ pub fn main(init: std.process.Init) !void {
 
     var dial: u8 = 50;
     var pwd: u32 = 0;
-    while (try reader.interface.takeDelimiter('\n')) |line| {
+    while (try input.takeDelimiter('\n')) |line| {
         const dir = line[0];
         if (std.fmt.parseInt(u16, line[1..line.len], 10)) |mag| {
             const change: i32 = if (dir == 'L') -@as(i32, mag) else if (dir == 'R') mag else unreachable;

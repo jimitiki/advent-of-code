@@ -37,31 +37,31 @@ fn find(str: []const u8, char: u8) !usize {
 fn sumInvalidIds(first: []const u8, last: []const u8) !u128 {
     const min = try std.fmt.parseInt(u64, first, 10);
     const max = try std.fmt.parseInt(u64, last, 10);
-    var pbuf: [16:0]u8 = .{0} ** 16;
+    var sbuf: [16:0]u8 = .{0} ** 16;
     var cbuf: [32:0]u8 = .{0} ** 32;
-    var prefix: []u8 = "";
+    var seq: []u8 = "";
     if (first.len % 2 == 0) {
         const len = @divExact(first.len, 2);
-        @memcpy(pbuf[0..len], first[0..len]);
-        prefix = pbuf[0..len];
+        @memcpy(sbuf[0..len], first[0..len]);
+        seq = sbuf[0..len];
     } else {
-        pbuf[0] = '1';
+        sbuf[0] = '1';
         if (first.len > 1) {
-            @memset(pbuf[1 .. first.len - 1], '0');
-            prefix = pbuf[0 .. first.len - 1];
+            @memset(sbuf[1 .. first.len - 1], '0');
+            seq = sbuf[0 .. first.len - 1];
         } else {
-            prefix = pbuf[0..1];
+            seq = sbuf[0..1];
         }
     }
     var sum: u128 = 0;
     while (true) {
-        const candidate = try std.fmt.bufPrint(&cbuf, "{s}{s}", .{ prefix, prefix });
+        const candidate = try std.fmt.bufPrint(&cbuf, "{s}{s}", .{ seq, seq });
         const id_num = try std.fmt.parseInt(u64, candidate, 10);
         if (id_num > max) {
             return sum;
         } else if (id_num >= min) {
             sum += id_num;
         }
-        prefix = try std.fmt.bufPrint(&pbuf, "{}", .{(try std.fmt.parseInt(u64, prefix, 10)) + 1});
+        seq = try std.fmt.bufPrint(&sbuf, "{}", .{(try std.fmt.parseInt(u64, seq, 10)) + 1});
     }
 }

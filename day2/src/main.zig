@@ -18,7 +18,7 @@ pub fn main(init: std.process.Init) !void {
         while (range[end - 1] == '\n' or range[end - 1] == ' ') {
             end -= 1;
         }
-        sum += try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end]);
+        sum += try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end], 2);
     }
 
     try stdout.print("{}\n", .{sum});
@@ -34,29 +34,29 @@ fn find(str: []const u8, char: u8) !usize {
     return error.NotFound;
 }
 
-fn sumInvalidIds(first: []const u8, last: []const u8) !u128 {
+fn sumInvalidIds(first: []const u8, last: []const u8, seq_cnt: usize) !u64 {
     const min = try std.fmt.parseInt(u64, first, 10);
     const max = try std.fmt.parseInt(u64, last, 10);
     var sbuf: [16:0]u8 = .{0} ** 16;
     var cbuf: [32:0]u8 = .{0} ** 32;
-    var seq: []u8 = "";
-    if (first.len % 2 == 0) {
-        const len = @divExact(first.len, 2);
+    var seq: []u8 = undefined;
+    if (first.len % seq_cnt == 0) {
+        const len = @divExact(first.len, seq_cnt);
         @memcpy(sbuf[0..len], first[0..len]);
         seq = sbuf[0..len];
     } else {
+        const digits: usize = @divTrunc(first.len, seq_cnt) + 1;
         sbuf[0] = '1';
-        if (first.len > 1) {
-            @memset(sbuf[1 .. first.len - 1], '0');
-            seq = sbuf[0 .. first.len - 1];
-        } else {
-            seq = sbuf[0..1];
-        }
+        @memset(sbuf[1..digits], '0');
+        seq = sbuf[0..digits];
     }
-    var sum: u128 = 0;
+    var sum: u64 = 0;
     while (true) {
-        const candidate = try std.fmt.bufPrint(&cbuf, "{s}{s}", .{ seq, seq });
-        const id_num = try std.fmt.parseInt(u64, candidate, 10);
+        for (0..seq_cnt) |i| {
+            const buf_idx = i * seq.len;
+            @memcpy(cbuf[buf_idx .. buf_idx + seq.len], seq);
+        }
+        const id_num = try std.fmt.parseInt(u64, cbuf[0 .. seq.len * seq_cnt], 10);
         if (id_num > max) {
             return sum;
         } else if (id_num >= min) {

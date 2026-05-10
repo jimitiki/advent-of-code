@@ -13,8 +13,12 @@ pub fn main(init: std.process.Init) !void {
     var stdout = &ini.stdout_writer.interface;
     var input = &ini.input_reader.interface;
     var answer: u64 = 0;
+    const battery_cnt: u8 = switch (ini.algo) {
+        .p1 => 2,
+        .p2 => 12,
+    };
     while (try input.takeDelimiter('\n')) |line| {
-        answer += try highestJoltage(line, 2);
+        answer += try highestJoltage(line, battery_cnt);
     }
 
     try stdout.print("{}\n", .{answer});

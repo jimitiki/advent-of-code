@@ -28,6 +28,7 @@ pub fn main(init: std.process.Init) !void {
             }
             sum += try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end], seq_len, &invalid_ids, ini.arena);
             try lengths.put(ini.arena, seq_len, {});
+            if (ini.algo == .p1) break;
         }
     }
 
@@ -44,7 +45,13 @@ fn find(str: []const u8, char: u8) !usize {
     return error.NotFound;
 }
 
-fn sumInvalidIds(first: []const u8, last: []const u8, seq_cnt: usize, invalid_ids: *AutoArrayHashMap(u64, void), alloc: std.mem.Allocator) !u64 {
+fn sumInvalidIds(
+    first: []const u8,
+    last: []const u8,
+    seq_cnt: usize,
+    invalid_ids: *AutoArrayHashMap(u64, void),
+    alloc: std.mem.Allocator,
+) !u64 {
     const min = try std.fmt.parseInt(u64, first, 10);
     const max = try std.fmt.parseInt(u64, last, 10);
     var sbuf: [16:0]u8 = .{0} ** 16;

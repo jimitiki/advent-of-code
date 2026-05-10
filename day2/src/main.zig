@@ -28,7 +28,7 @@ pub fn main(init: std.process.Init) !void {
             }
             sum += try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end], seq_len, &invalid_ids, ini.arena);
             try lengths.put(ini.arena, seq_len, {});
-            if (ini.algo == .p1) break;
+            if (ini.part == .p1) break;
         }
     }
 

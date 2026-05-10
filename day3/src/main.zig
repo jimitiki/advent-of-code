@@ -13,7 +13,7 @@ pub fn main(init: std.process.Init) !void {
     var stdout = &ini.stdout_writer.interface;
     var input = &ini.input_reader.interface;
     var answer: u64 = 0;
-    const battery_cnt: u8 = switch (ini.algo) {
+    const battery_cnt: u8 = switch (ini.part) {
         .p1 => 2,
         .p2 => 12,
     };

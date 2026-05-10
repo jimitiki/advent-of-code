@@ -2,6 +2,7 @@ const std = @import("std");
 const Io = std.Io;
 const assert = std.debug.assert;
 const lib = @import("lib");
+const AutoArrayHashMap = std.array_hash_map.Auto;
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
@@ -12,13 +13,22 @@ pub fn main(init: std.process.Init) !void {
     var stdout = &ini.stdout_writer.interface;
     var input = &ini.input_reader.interface;
     var sum: u128 = 0;
+    var invalid_ids: AutoArrayHashMap(u64, void) = .empty;
     while (try input.takeDelimiter(',')) |range| {
+        var lengths: AutoArrayHashMap(usize, void) = .empty;
+        defer lengths.deinit(ini.arena);
         const split_point = try find(range, '-');
         var end = range.len;
         while (range[end - 1] == '\n' or range[end - 1] == ' ') {
             end -= 1;
         }
-        sum += try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end], 2);
+        outer_loop: for (2..end - split_point + 1) |seq_len| {
+            for (lengths.keys()) |l| {
+                if (seq_len % l == 0) continue :outer_loop;
+            }
+            sum += try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end], seq_len, &invalid_ids, ini.arena);
+            try lengths.put(ini.arena, seq_len, {});
+        }
     }
 
     try stdout.print("{}\n", .{sum});
@@ -34,7 +44,7 @@ fn find(str: []const u8, char: u8) !usize {
     return error.NotFound;
 }
 
-fn sumInvalidIds(first: []const u8, last: []const u8, seq_cnt: usize) !u64 {
+fn sumInvalidIds(first: []const u8, last: []const u8, seq_cnt: usize, invalid_ids: *AutoArrayHashMap(u64, void), alloc: std.mem.Allocator) !u64 {
     const min = try std.fmt.parseInt(u64, first, 10);
     const max = try std.fmt.parseInt(u64, last, 10);
     var sbuf: [16:0]u8 = .{0} ** 16;
@@ -59,8 +69,9 @@ fn sumInvalidIds(first: []const u8, last: []const u8, seq_cnt: usize) !u64 {
         const id_num = try std.fmt.parseInt(u64, cbuf[0 .. seq.len * seq_cnt], 10);
         if (id_num > max) {
             return sum;
-        } else if (id_num >= min) {
+        } else if (id_num >= min and !invalid_ids.contains(id_num)) {
             sum += id_num;
+            try invalid_ids.put(alloc, id_num, {});
         }
         seq = try std.fmt.bufPrint(&sbuf, "{}", .{(try std.fmt.parseInt(u64, seq, 10)) + 1});
     }

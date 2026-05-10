@@ -16,10 +16,9 @@ pub fn main(init: std.process.Init) !void {
     var stdout = &ini.stdout_writer.interface;
     var input = &ini.input_reader.interface;
 
-    const algo: *const fn (u8, i32) u8 = switch (ini.args[1][1]) {
-        '1' => test_line_p1,
-        '2' => test_line_p2,
-        else => unreachable,
+    const algo: *const fn (u8, i32) u8 = switch (ini.algo) {
+        .p1 => test_line_p1,
+        .p2 => test_line_p2,
     };
 
     var dial: u8 = 50;

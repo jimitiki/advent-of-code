@@ -1,5 +1,10 @@
 const std = @import("std");
 
+pub const Algo = enum {
+    p1,
+    p2,
+};
+
 pub const Init = struct {
     io: std.Io,
     arena: std.mem.Allocator,
@@ -7,6 +12,7 @@ pub const Init = struct {
     input_file: std.Io.File,
     input_reader: std.Io.File.Reader,
     stdout_writer: std.Io.File.Writer,
+    algo: Algo,
 
     pub fn init(std_init: std.process.Init, stdout_buf: []u8, input_buf: []u8) !Init {
         const arena = std_init.arena.allocator();
@@ -21,6 +27,7 @@ pub const Init = struct {
             .input_file = input_file,
             .input_reader = input_file.reader(std_init.io, input_buf),
             .stdout_writer = stdout_writer,
+            .algo = std.meta.stringToEnum(Algo, args[1]) orelse return error.InvalidAlgorithm,
         };
     }
 

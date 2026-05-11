@@ -1,4 +1,5 @@
 const std = @import("std");
+const ArrayList = std.ArrayList;
 const BitSet = std.DynamicBitSetUnmanaged;
 
 const Init = @import("lib").Init;
@@ -13,59 +14,74 @@ pub fn main(init: std.process.Init) !void {
     var input = &ini.input_reader.interface;
 
     var answer: u32 = 0;
-    var width: usize = undefined;
-    var rows: [3]BitSet = undefined;
-    var top: usize = 0;
-    var mid: usize = 1;
-    var bot: usize = 2;
-    if (try input.takeDelimiter('\n')) |line| {
-        width = line.len;
-        for (0..3) |idx| rows[idx] = try .initEmpty(ini.arena, width);
-        try parseLine(line, &rows[mid]);
-    }
-    if (try input.takeDelimiter('\n')) |line| {
-        if (line.len != width) return error.InvalidInput;
-        try parseLine(line, &rows[bot]);
-    }
-    answer += countAccessible(rows[top], rows[mid], rows[bot]);
+    var width: usize = 0;
+    var rows: ArrayList(BitSet) = try .initCapacity(ini.arena, 3);
     while (try input.takeDelimiter('\n')) |line| {
-        if (line.len != width) return error.InvalidInput;
-        top = advanceRow(top);
-        mid = advanceRow(mid);
-        bot = advanceRow(bot);
-        try parseLine(line, &rows[bot]);
-        answer += countAccessible(rows[top], rows[mid], rows[bot]);
-    } else {
-        top = advanceRow(top);
-        mid = advanceRow(mid);
-        bot = advanceRow(bot);
-        rows[bot].unsetAll();
-        answer += countAccessible(rows[top], rows[mid], rows[bot]);
+        if (width == 0) {
+            width = line.len;
+            try rows.append(ini.arena, try .initEmpty(ini.arena, width));
+        } else if (line.len != width) {
+            return error.InvalidInput;
+        }
+        var row: BitSet = try .initEmpty(ini.arena, width);
+        try rows.append(ini.arena, row);
+        try parseLine(line, &row);
+    }
+    try rows.append(ini.arena, try .initEmpty(ini.arena, width));
+
+    var to_remove: ArrayList(BitSet) = try .initCapacity(ini.arena, rows.items.len - 2);
+    for (0..rows.items.len - 1) |_| {
+        try to_remove.append(ini.arena, try .initEmpty(ini.arena, width));
+    }
+
+    while (true) {
+        findRemovable(rows, &to_remove);
+        const removed = remove(&rows, to_remove);
+        for (to_remove.items) |*row| row.unsetAll();
+        answer += removed;
+
+        if (ini.part == .p1) break;
+        if (removed == 0) break;
     }
 
     try stdout.print("{}\n", .{answer});
     try stdout.flush();
 }
 
-fn advanceRow(idx: usize) usize {
-    return (idx + 1) % 3;
+fn findRemovable(rows: ArrayList(BitSet), to_remove: *ArrayList(BitSet)) void {
+    for (1..rows.items.len - 1) |i| {
+        const top = rows.items[i - 1];
+        const mid = rows.items[i];
+        const bot = rows.items[i + 1];
+
+        var removal = to_remove.items[i - 1];
+
+        var it = mid.iterator(.{ .kind = .set });
+        while (it.next()) |col| {
+            var adjacent: u4 = 0;
+            const left = if (col == 0) col else col - 1;
+            const right = @min(mid.bit_length, col + 2);
+            for (left..right) |c| {
+                if (c != col and mid.isSet(c)) adjacent += 1;
+                if (top.isSet(c)) adjacent += 1;
+                if (bot.isSet(c)) adjacent += 1;
+            }
+            if (adjacent < 4) removal.set(col);
+        }
+    }
 }
 
-fn countAccessible(top: BitSet, mid: BitSet, bot: BitSet) u32 {
-    var cnt: u32 = 0;
-    var it = mid.iterator(.{ .kind = .set });
-    while (it.next()) |col| {
-        var adjacent: u4 = 0;
-        const left = if (col == 0) col else col - 1;
-        const right = @min(mid.bit_length, col + 2);
-        for (left..right) |c| {
-            if (c != col and mid.isSet(c)) adjacent += 1;
-            if (top.isSet(c)) adjacent += 1;
-            if (bot.isSet(c)) adjacent += 1;
+fn remove(rows: *ArrayList(BitSet), to_remove: ArrayList(BitSet)) u32 {
+    var removed: u32 = 0;
+    for (to_remove.items, 0..) |r, i| {
+        var row = rows.items[i + 1];
+        var it = r.iterator(.{ .kind = .set });
+        while (it.next()) |col| {
+            row.unset(col);
+            removed += 1;
         }
-        if (adjacent < 4) cnt += 1;
     }
-    return cnt;
+    return removed;
 }
 
 fn parseLine(line: []u8, bitset: *BitSet) !void {

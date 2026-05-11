@@ -46,16 +46,24 @@ pub fn main(init: std.process.Init) !void {
         try ranges.append(ini.arena, range_merged);
     }
 
-    // Handle IDs
-    var answer: u32 = 0;
-    while (try input.takeDelimiter('\n')) |line| {
-        const id = try std.fmt.parseInt(u64, line, 10);
-        for (ranges.items) |range| {
-            if (id >= range.start and id <= range.end) {
-                answer += 1;
+    var answer: u64 = 0;
+
+    if (ini.part == .p1) {
+        // Find which input IDs are valid
+        while (try input.takeDelimiter('\n')) |line| {
+            const id = try std.fmt.parseInt(u64, line, 10);
+            for (ranges.items) |range| {
+                if (id >= range.start and id <= range.end) {
+                    answer += 1;
+                }
             }
         }
-    }
+    } else if (ini.part == .p2) {
+        // Count all valid IDs
+        for (ranges.items) |range| {
+            answer += range.end - range.start + 1;
+        }
+    } else unreachable;
 
     try stdout.print("{}\n", .{answer});
     try stdout.flush();

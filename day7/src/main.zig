@@ -10,9 +10,33 @@ pub fn main(init: std.process.Init) !void {
 
     var stdout = &ini.stdout_writer.interface;
     var input = &ini.input_reader.interface;
-    _ = try input.takeDelimiter('\n');
-
-    const answer = 0;
+    const width = compw: {
+        const first_line = try input.peekDelimiterExclusive('\n');
+        break :compw first_line.len;
+    };
+    var beams: std.DynamicBitSetUnmanaged = try .initEmpty(ini.arena, width);
+    var next: std.DynamicBitSetUnmanaged = try .initEmpty(ini.arena, width);
+    var answer: u32 = 0;
+    while (try input.takeDelimiter('\n')) |line| {
+        for (line, 0..) |c, i| {
+            switch (c) {
+                'S' => next.set(i),
+                '.' => if (beams.isSet(i)) next.set(i),
+                '^' => {
+                    next.unset(i);
+                    if (beams.isSet(i)) {
+                        next.set(i - 1);
+                        next.set(i + 1);
+                        answer += 1;
+                    }
+                },
+                else => unreachable,
+            }
+        }
+        beams.unsetAll();
+        beams.setUnion(next);
+        next.unsetAll();
+    }
 
     try stdout.print("{}\n", .{answer});
     try stdout.flush();

@@ -23,6 +23,8 @@ pub fn main(init: std.process.Init) !void {
                 'S' => next.set(i),
                 '.' => if (beams.isSet(i)) next.set(i),
                 '^' => {
+                    if (i == 0 or i == line.len - 1) return error.InvalidInput;
+                    if (line[i + 1] == '^') return error.InvalidInput;
                     next.unset(i);
                     if (beams.isSet(i)) {
                         next.set(i - 1);

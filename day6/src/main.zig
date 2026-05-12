@@ -17,8 +17,9 @@ pub fn main(init: std.process.Init) !void {
     defer ini.deinit();
 
     var stdout = &ini.stdout_writer.interface;
+    const solution = if (ini.part == .p1) &computeHorizontal else &computeVertical;
 
-    const answer = try computeHorizontal(ini.arena, &ini.input_reader.interface);
+    const answer = try solution(ini.arena, &ini.input_reader.interface);
     try stdout.print("{}\n", .{answer});
     try stdout.flush();
 }
@@ -84,6 +85,50 @@ fn computeHorizontal(alloc: std.mem.Allocator, input: *std.Io.Reader) !u64 {
                 }
                 answer += product;
             },
+        }
+    }
+    return answer;
+}
+
+fn computeVertical(alloc: std.mem.Allocator, input: *std.Io.Reader) !u64 {
+    var count: usize = 0;
+    var text: ArrayList(ArrayList(u8)) = .empty;
+    while (try input.takeDelimiter('\n')) |line| {
+        if (count == 0) count = line.len;
+        if (line.len != count) return error.InvalidInput;
+        var row: ArrayList(u8) = .empty;
+        try row.appendSlice(alloc, line);
+        try text.append(alloc, row);
+    }
+
+    var answer: u64 = 0;
+    var acc: u64 = 0;
+    var op: Op = undefined;
+    var digits: []u8 = try alloc.alloc(u8, text.items.len - 1);
+    for (0..count) |col| {
+        switch (text.items[text.items.len - 1].items[col]) {
+            '+' => op = .add,
+            '*' => op = .mult,
+            ' ' => {},
+            else => unreachable,
+        }
+        var digit_cnt: usize = 0;
+        for (text.items[0 .. text.items.len - 1]) |row| {
+            if (row.items[col] >= '1' and row.items[col] <= '9') {
+                digits[digit_cnt] = row.items[col];
+                digit_cnt += 1;
+            }
+        }
+        if (digit_cnt > 0) {
+            const operand = try std.fmt.parseUnsigned(u64, digits[0..digit_cnt], 10);
+            acc = switch (op) {
+                .add => acc + operand,
+                .mult => if (acc == 0) operand else acc * operand,
+            };
+        }
+        if (digit_cnt == 0 or col == count - 1) {
+            answer += acc;
+            acc = 0;
         }
     }
     return answer;

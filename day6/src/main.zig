@@ -17,33 +17,38 @@ pub fn main(init: std.process.Init) !void {
     defer ini.deinit();
 
     var stdout = &ini.stdout_writer.interface;
-    var input = &ini.input_reader.interface;
 
+    const answer = try computeHorizontal(ini.arena, &ini.input_reader.interface);
+    try stdout.print("{}\n", .{answer});
+    try stdout.flush();
+}
+
+fn computeHorizontal(alloc: std.mem.Allocator, input: *std.Io.Reader) !u64 {
     var count: usize = 0;
     var operand_tbl: ArrayList(OperandRow) = .empty;
     var operators: ArrayList(Op) = undefined;
     while (try input.takeDelimiter('\n')) |line| {
         if (line[0] == '+' or line[0] == '*') {
             // Read final line of operators
-            operators = try .initCapacity(ini.arena, count);
+            operators = try .initCapacity(alloc, count);
             for (line) |char| {
                 switch (char) {
-                    '+' => try operators.append(ini.arena, .add),
-                    '*' => try operators.append(ini.arena, .mult),
+                    '+' => try operators.append(alloc, .add),
+                    '*' => try operators.append(alloc, .mult),
                     ' ' => {},
                     else => unreachable,
                 }
             }
         } else {
             // Read row of operands
-            var row: OperandRow = try .initCapacity(ini.arena, count);
+            var row: OperandRow = try .initCapacity(alloc, count);
             var start: usize = 0;
             var reading: bool = false;
             for (line, 0..) |char, i| {
                 if (char == ' ') {
                     if (reading) {
                         reading = false;
-                        try row.append(ini.arena, try std.fmt.parseInt(u64, line[start..i], 10));
+                        try row.append(alloc, try std.fmt.parseInt(u64, line[start..i], 10));
                     }
                 } else if (char >= '0' and char <= '9') {
                     if (!reading) {
@@ -55,9 +60,9 @@ pub fn main(init: std.process.Init) !void {
                 }
             }
             if (reading) {
-                try row.append(ini.arena, try std.fmt.parseInt(u64, line[start..], 10));
+                try row.append(alloc, try std.fmt.parseInt(u64, line[start..], 10));
             }
-            try operand_tbl.append(ini.arena, row);
+            try operand_tbl.append(alloc, row);
             if (count == 0) count = row.items.len;
         }
     }
@@ -81,7 +86,5 @@ pub fn main(init: std.process.Init) !void {
             },
         }
     }
-
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    return answer;
 }

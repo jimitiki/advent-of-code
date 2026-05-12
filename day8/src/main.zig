@@ -67,10 +67,7 @@ pub fn main(init: std.process.Init) !void {
 
     var circuits: std.ArrayList(Circuit) = .empty;
     defer circuits.deinit(ini.arena);
-    for (pairs.items, 0..) |pair, j| {
-        if (j == 1000) {
-            break;
-        }
+    const answer: u64 = for (pairs.items, 0..) |pair, j| {
         const ia: ?usize = for (circuits.items, 0..) |circuit, i| {
             if (circuit.contains(pair.a)) break i;
         } else null;
@@ -97,10 +94,14 @@ pub fn main(init: std.process.Init) !void {
             try circuit.put(ini.arena, pair.b, {});
             try circuits.append(ini.arena, circuit);
         }
-    }
-
-    std.sort.pdq(Circuit, circuits.items, {}, cmpCircuit);
-    const answer = circuits.items[0].entries.len * circuits.items[1].entries.len * circuits.items[2].entries.len;
+        if (ini.part == .p1 and j == 1000) {
+            std.sort.pdq(Circuit, circuits.items, {}, cmpCircuit);
+            break circuits.items[0].entries.len * circuits.items[1].entries.len * circuits.items[2].entries.len;
+        }
+        if (ini.part == .p2 and circuits.items.len == 1 and circuits.items[0].entries.len == boxes.items.len) {
+            break pair.a[0] * pair.b[0];
+        }
+    } else unreachable;
 
     try stdout.print("{}\n", .{answer});
     try stdout.flush();

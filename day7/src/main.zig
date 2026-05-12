@@ -10,36 +10,42 @@ pub fn main(init: std.process.Init) !void {
 
     var stdout = &ini.stdout_writer.interface;
     var input = &ini.input_reader.interface;
-    const width = compw: {
+    const width = checkwidth: {
         const first_line = try input.peekDelimiterExclusive('\n');
-        break :compw first_line.len;
+        break :checkwidth first_line.len;
     };
-    var beams: std.DynamicBitSetUnmanaged = try .initEmpty(ini.arena, width);
-    var next: std.DynamicBitSetUnmanaged = try .initEmpty(ini.arena, width);
-    var answer: u32 = 0;
+    const paths = try ini.arena.alloc(u64, width);
+    var next = try ini.arena.alloc(u64, width);
+    @memset(paths, 0);
+    @memset(next, 0);
+    var splits: u32 = 0;
     while (try input.takeDelimiter('\n')) |line| {
         for (line, 0..) |c, i| {
             switch (c) {
-                'S' => next.set(i),
-                '.' => if (beams.isSet(i)) next.set(i),
+                'S' => next[i] = 1,
+                '.' => next[i] += paths[i],
                 '^' => {
                     if (i == 0 or i == line.len - 1) return error.InvalidInput;
                     if (line[i + 1] == '^') return error.InvalidInput;
-                    next.unset(i);
-                    if (beams.isSet(i)) {
-                        next.set(i - 1);
-                        next.set(i + 1);
-                        answer += 1;
+                    if (paths[i] > 0) {
+                        next[i - 1] += paths[i];
+                        next[i + 1] += paths[i];
+                        splits += 1;
                     }
                 },
                 else => unreachable,
             }
         }
-        beams.unsetAll();
-        beams.setUnion(next);
-        next.unsetAll();
+        @memcpy(paths, next);
+        @memset(next, 0);
     }
 
-    try stdout.print("{}\n", .{answer});
+    if (ini.part == .p1) {
+        try stdout.print("{}\n", .{splits});
+    } else {
+        var sum: u64 = 0;
+        for (paths) |path_cnt| sum += path_cnt;
+        try stdout.print("{}\n", .{sum});
+    }
     try stdout.flush();
 }

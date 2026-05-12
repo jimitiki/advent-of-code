@@ -23,14 +23,8 @@ const Pair = struct {
         };
     }
 
-    pub fn cmp(_: void, lhs: Pair, rhs: Pair) Order {
-        if (lhs.dist < rhs.dist) {
-            return Order.lt;
-        } else if (lhs.dist > rhs.dist) {
-            return Order.gt;
-        } else {
-            return Order.eq;
-        }
+    pub fn lessThan(_: void, lhs: Pair, rhs: Pair) bool {
+        return (lhs.dist < rhs.dist);
     }
 };
 
@@ -43,9 +37,8 @@ pub fn main(init: std.process.Init) !void {
     var stdout = &ini.stdout_writer.interface;
     var input = &ini.input_reader.interface;
 
-    var closest_pairs: std.PriorityDequeue(Pair, void, Pair.cmp) = .initContext({});
-    defer closest_pairs.deinit(ini.arena);
-    try closest_pairs.ensureTotalCapacity(ini.arena, 1001);
+    var pairs: std.ArrayList(Pair) = .empty;
+    defer pairs.deinit(ini.arena);
     var boxes: std.ArrayList(Pos) = .empty;
     defer boxes.deinit(ini.arena);
 
@@ -66,27 +59,33 @@ pub fn main(init: std.process.Init) !void {
             }
         } else unreachable;
         for (boxes.items) |p| {
-            try closest_pairs.push(ini.arena, .init(pos, p));
-            if (closest_pairs.len > 1000) _ = closest_pairs.popMax();
+            try pairs.append(ini.arena, .init(pos, p));
         }
         try boxes.append(ini.arena, pos);
     }
+    std.sort.pdq(Pair, pairs.items, {}, Pair.lessThan);
 
     var circuits: std.ArrayList(Circuit) = .empty;
-    while (closest_pairs.popMin()) |pair| {
+    defer circuits.deinit(ini.arena);
+    for (pairs.items, 0..) |pair, j| {
+        if (j == 1000) {
+            break;
+        }
         const ia: ?usize = for (circuits.items, 0..) |circuit, i| {
             if (circuit.contains(pair.a)) break i;
         } else null;
         const ib: ?usize = for (circuits.items, 0..) |circuit, i| {
             if (circuit.contains(pair.b)) break i;
         } else null;
+
         if (ia) |ca| {
             if (ib) |cb| {
-                if (ia == ib) continue;
-                try circuits.items[ca].ensureUnusedCapacity(ini.arena, circuits.items[cb].entries.len);
-                for (circuits.items[cb].keys()) |p| try circuits.items[ca].put(ini.arena, p, {});
-                circuits.items[cb].deinit(ini.arena);
-                _ = circuits.swapRemove(cb);
+                if (ia != ib) {
+                    try circuits.items[ca].ensureUnusedCapacity(ini.arena, circuits.items[cb].entries.len);
+                    for (circuits.items[cb].keys()) |p| try circuits.items[ca].put(ini.arena, p, {});
+                    circuits.items[cb].deinit(ini.arena);
+                    _ = circuits.swapRemove(cb);
+                }
             } else {
                 try circuits.items[ca].put(ini.arena, pair.b, {});
             }
@@ -99,6 +98,7 @@ pub fn main(init: std.process.Init) !void {
             try circuits.append(ini.arena, circuit);
         }
     }
+
     std.sort.pdq(Circuit, circuits.items, {}, cmpCircuit);
     const answer = circuits.items[0].entries.len * circuits.items[1].entries.len * circuits.items[2].entries.len;
 

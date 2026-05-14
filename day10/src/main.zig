@@ -2,15 +2,8 @@ const std = @import("std");
 
 const Init = @import("lib").Init;
 
-const State = struct {
-    lights: BitSet,
-    step_cnt: usize,
-};
-
 const BitSet = std.bit_set.IntegerBitSet(16);
 const Buttons = std.ArrayList(BitSet);
-const StepMap = std.AutoHashMapUnmanaged(BitSet, usize);
-const StateQueue = std.Deque(State);
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
@@ -27,10 +20,10 @@ pub fn main(init: std.process.Init) !void {
             if (c == ']') break i - 1;
         } else return error.InvalidInput;
 
-        var pattern: BitSet = .initEmpty();
+        var lights: BitSet = .initEmpty();
         for (line[1 .. light_cnt + 1], 0..) |light, i| {
             switch (light) {
-                '#' => pattern.set(i),
+                '#' => lights.set(i),
                 '.' => {},
                 else => return error.InvalidInput,
             }
@@ -56,29 +49,33 @@ pub fn main(init: std.process.Init) !void {
                 else => {},
             }
         }
-
-        var step_cnts: StepMap = .empty;
-        var queue: StateQueue = .empty;
-        const starting_state: State = .{ .lights = .initEmpty(), .step_cnt = 0 };
-        try queue.pushBack(ini.arena, starting_state);
-
-        while (queue.popFront()) |state| {
-            if (step_cnts.get(state.lights)) |step_cnt| {
-                if (step_cnt <= state.step_cnt) continue;
-            }
-            try step_cnts.put(ini.arena, state.lights, state.step_cnt);
-            for (buttons.items) |button| {
-                try queue.pushBack(ini.arena, .{
-                    .lights = state.lights.xorWith(button),
-                    .step_cnt = state.step_cnt + 1,
-                });
-            }
-        }
-        if (step_cnts.get(pattern)) |step_cnt| {
-            answer += step_cnt;
-        } else @panic("Failed to find a solution");
+        answer += try minPresses(ini.arena, lights, buttons.items);
     }
 
     try stdout.print("{}\n", .{answer});
     try stdout.flush();
+}
+
+fn minPresses(alloc: std.mem.Allocator, expected: BitSet, buttons: []const BitSet) !u64 {
+    var step_cnts: std.AutoHashMapUnmanaged(BitSet, usize) = .empty;
+    const State = struct { sequence: BitSet, step_cnt: usize };
+    const starting_state: State = .{ .sequence = BitSet.initEmpty(), .step_cnt = 0 };
+    var queue: std.Deque(State) = .empty;
+    try queue.pushBack(alloc, starting_state);
+
+    while (queue.popFront()) |state| {
+        if (step_cnts.get(state.sequence)) |step_cnt| {
+            if (step_cnt <= state.step_cnt) continue;
+        }
+        try step_cnts.put(alloc, state.sequence, state.step_cnt);
+        for (buttons) |button| {
+            try queue.pushBack(alloc, .{
+                .sequence = state.sequence.xorWith(button),
+                .step_cnt = state.step_cnt + 1,
+            });
+        }
+    }
+    if (step_cnts.get(expected)) |step_cnt| {
+        return step_cnt;
+    } else @panic("Failed to find a solution");
 }

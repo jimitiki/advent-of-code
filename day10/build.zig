@@ -8,7 +8,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
     const exe = b.addExecutable(.{
-        .name = "day9",
+        .name = "day10",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,

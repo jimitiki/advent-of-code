@@ -2,7 +2,10 @@ const std = @import("std");
 
 const Init = @import("lib").Init;
 const DevMap = std.AutoHashMapUnmanaged(u32, std.ArrayList(u32));
-const PathCache = std.AutoArrayHashMapUnmanaged(u32, usize);
+const PathCache = std.AutoArrayHashMapUnmanaged(u32, struct { usize, u2 });
+
+const dac = convertDevName("dac");
+const fft = convertDevName("fft");
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
@@ -28,23 +31,54 @@ pub fn main(init: std.process.Init) !void {
         try devices.put(ini.arena, convertDevName(line[0..3]), outputs);
     }
     var cache: PathCache = .empty;
-    const answer = try countPaths(ini.arena, devices, &cache, convertDevName("you"), convertDevName("out"));
+    defer cache.deinit(ini.arena);
+    const start, const required: u2 = if (ini.part == .p1) .{ convertDevName("you"), 0 } else .{ convertDevName("svr"), 2 };
+    const answer = try countPaths(ini.arena, devices, &cache, start, convertDevName("out"), required);
+    if (answer[1] < required) return error.Unsolvable;
 
-    try stdout.print("{}\n", .{answer});
+    try stdout.print("{}\n", .{answer[0]});
     try stdout.flush();
 }
 
-fn countPaths(alloc: std.mem.Allocator, devices: DevMap, cache: *PathCache, start: u32, end: u32) !usize {
-    if (cache.get(start)) |paths| return paths;
-    if (start == end) return 1;
+fn countPaths(
+    alloc: std.mem.Allocator,
+    devices: DevMap,
+    cache: *PathCache,
+    start: u32,
+    end: u32,
+    required: u2,
+) !struct { usize, u2 } {
+    if (start == end) {
+        return .{ 1, 0 };
+    }
+    if (cache.get(start)) |rec| return rec;
+
     var paths: usize = 0;
+    var reqs: u2 = 0;
     if (devices.get(start)) |outputs| {
         for (outputs.items) |next| {
-            paths += try countPaths(alloc, devices, cache, next, end);
+            const subpaths, const subreqs = try countPaths(
+                alloc,
+                devices,
+                cache,
+                next,
+                end,
+                required,
+            );
+            if (subreqs == reqs) {
+                paths += subpaths;
+            } else if (subreqs > reqs) {
+                reqs = subreqs;
+                paths = subpaths;
+            }
         }
-    } else std.debug.panic("Unrecognized device name");
-    try cache.put(alloc, start, paths);
-    return paths;
+    } else std.debug.panic("Unrecognized device name", .{});
+    if (start == dac or start == fft) {
+        std.debug.assert(reqs < 2);
+        reqs += 1;
+    }
+    try cache.put(alloc, start, .{ paths, reqs });
+    return .{ paths, @min(reqs, required) };
 }
 
 fn convertDevName(name: []const u8) u32 {

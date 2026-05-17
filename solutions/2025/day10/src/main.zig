@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Init = @import("lib").Init;
+const Boilerplate = @import("boilerplate").Boilerplate;
 
 const BitSet = std.bit_set.IntegerBitSet(16);
 const Buttons = std.ArrayList(BitSet);
@@ -68,11 +68,11 @@ const ComboMap = std.AutoHashMapUnmanaged(BitSet, std.ArrayList(Combination));
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;
-    var ini = try Init.init(init, &stdout_buffer, &read_buffer);
-    defer ini.deinit();
+    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
+    defer bp.deinit();
 
-    var stdout = &ini.stdout_writer.interface;
-    var input = &ini.input_reader.interface;
+    var stdout = &bp.stdout_writer.interface;
+    var input = &bp.input_reader.interface;
     var answer: usize = 0;
     while (try input.takeDelimiter('\n')) |line| {
         if (line[0] == '#') continue;
@@ -104,7 +104,7 @@ pub fn main(init: std.process.Init) !void {
                     btn_set.set(try std.fmt.parseUnsigned(usize, line[start..i], 10));
                     start = i + 1;
                     if (c == ')') {
-                        try buttons.append(ini.arena, btn_set);
+                        try buttons.append(bp.arena, btn_set);
                     }
                 },
                 else => {},
@@ -112,25 +112,25 @@ pub fn main(init: std.process.Init) !void {
         } else return error.InvalidInput;
 
         var jolts: std.ArrayList(u16) = .empty;
-        defer jolts.deinit(ini.arena);
+        defer jolts.deinit(bp.arena);
         start = idx + 1;
         for (line[idx..], idx..) |c, i| {
             if (c == '}' or c == ',') {
-                try jolts.append(ini.arena, try std.fmt.parseUnsigned(u16, line[start..i], 10));
+                try jolts.append(bp.arena, try std.fmt.parseUnsigned(u16, line[start..i], 10));
                 start = i + 1;
             }
         }
-        if (ini.part == .p1) {
-            answer += try minPressLights(ini.arena, lights, buttons.items);
+        if (bp.part == .p1) {
+            answer += try minPressLights(bp.arena, lights, buttons.items);
         } else {
             var combos: ComboMap = .empty;
-            defer combos.deinit(ini.arena);
+            defer combos.deinit(bp.arena);
             for (0..std.math.pow(usize, 2, buttons.items.len)) |i| {
-                const combo: Combination = try .init(ini.arena, .{ .mask = @intCast(i) }, buttons.items, light_cnt);
-                const entry = try combos.getOrPutValue(ini.arena, combo.parity(), .empty);
-                try entry.value_ptr.append(ini.arena, combo);
+                const combo: Combination = try .init(bp.arena, .{ .mask = @intCast(i) }, buttons.items, light_cnt);
+                const entry = try combos.getOrPutValue(bp.arena, combo.parity(), .empty);
+                try entry.value_ptr.append(bp.arena, combo);
             }
-            answer += try minPressJolts(ini.arena, jolts.items, combos, 0) orelse return error.Unsolvable;
+            answer += try minPressJolts(bp.arena, jolts.items, combos, 0) orelse return error.Unsolvable;
         }
     }
 

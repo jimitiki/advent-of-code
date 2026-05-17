@@ -1,22 +1,18 @@
 const std = @import("std");
 const Io = std.Io;
 const assert = std.debug.assert;
-const lib = @import("lib");
+const Boilerplate = @import("boilerplate").Boilerplate;
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;
-    var ini = try lib.Init.init(init, &stdout_buffer, &read_buffer);
-    defer ini.deinit();
+    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
+    defer bp.deinit();
 
-    assert(ini.args.len > 2);
-    assert(ini.args[1].len == 2);
-    assert(ini.args[1][0] == 'p');
+    var stdout = &bp.stdout_writer.interface;
+    var input = &bp.input_reader.interface;
 
-    var stdout = &ini.stdout_writer.interface;
-    var input = &ini.input_reader.interface;
-
-    const algo: *const fn (u8, i32) u8 = switch (ini.part) {
+    const algo: *const fn (u8, i32) u8 = switch (bp.part) {
         .p1 => test_line_p1,
         .p2 => test_line_p2,
     };

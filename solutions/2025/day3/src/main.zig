@@ -1,19 +1,19 @@
 const std = @import("std");
 
-const Init = @import("lib").Init;
+const Boilerplate = @import("boilerplate").Boilerplate;
 
 const digits = "987654321";
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [64]u8 = undefined;
     var read_buffer: [128]u8 = undefined;
-    var ini = try Init.init(init, &stdout_buffer, &read_buffer);
-    defer ini.deinit();
+    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
+    defer bp.deinit();
 
-    var stdout = &ini.stdout_writer.interface;
-    var input = &ini.input_reader.interface;
+    var stdout = &bp.stdout_writer.interface;
+    var input = &bp.input_reader.interface;
     var answer: u64 = 0;
-    const battery_cnt: u8 = switch (ini.part) {
+    const battery_cnt: u8 = switch (bp.part) {
         .p1 => 2,
         .p2 => 12,
     };

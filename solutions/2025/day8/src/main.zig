@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Init = @import("lib").Init;
+const Boilerplate = @import("boilerplate").Boilerplate;
 
 const Order = std.math.Order;
 const Circuit = std.array_hash_map.Auto(Pos, void);
@@ -31,16 +31,16 @@ const Pair = struct {
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;
-    var ini = try Init.init(init, &stdout_buffer, &read_buffer);
-    defer ini.deinit();
+    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
+    defer bp.deinit();
 
-    var stdout = &ini.stdout_writer.interface;
-    var input = &ini.input_reader.interface;
+    var stdout = &bp.stdout_writer.interface;
+    var input = &bp.input_reader.interface;
 
     var pairs: std.ArrayList(Pair) = .empty;
-    defer pairs.deinit(ini.arena);
+    defer pairs.deinit(bp.arena);
     var boxes: std.ArrayList(Pos) = .empty;
-    defer boxes.deinit(ini.arena);
+    defer boxes.deinit(bp.arena);
 
     // Find closest pairs
     while (try input.takeDelimiter('\n')) |line| {
@@ -59,14 +59,14 @@ pub fn main(init: std.process.Init) !void {
             }
         } else unreachable;
         for (boxes.items) |p| {
-            try pairs.append(ini.arena, .init(pos, p));
+            try pairs.append(bp.arena, .init(pos, p));
         }
-        try boxes.append(ini.arena, pos);
+        try boxes.append(bp.arena, pos);
     }
     std.sort.pdq(Pair, pairs.items, {}, Pair.lessThan);
 
     var circuits: std.ArrayList(Circuit) = .empty;
-    defer circuits.deinit(ini.arena);
+    defer circuits.deinit(bp.arena);
     const answer: u64 = for (pairs.items, 0..) |pair, j| {
         const ia: ?usize = for (circuits.items, 0..) |circuit, i| {
             if (circuit.contains(pair.a)) break i;
@@ -78,27 +78,27 @@ pub fn main(init: std.process.Init) !void {
         if (ia) |ca| {
             if (ib) |cb| {
                 if (ia != ib) {
-                    try circuits.items[ca].ensureUnusedCapacity(ini.arena, circuits.items[cb].entries.len);
-                    for (circuits.items[cb].keys()) |p| try circuits.items[ca].put(ini.arena, p, {});
-                    circuits.items[cb].deinit(ini.arena);
+                    try circuits.items[ca].ensureUnusedCapacity(bp.arena, circuits.items[cb].entries.len);
+                    for (circuits.items[cb].keys()) |p| try circuits.items[ca].put(bp.arena, p, {});
+                    circuits.items[cb].deinit(bp.arena);
                     _ = circuits.swapRemove(cb);
                 }
             } else {
-                try circuits.items[ca].put(ini.arena, pair.b, {});
+                try circuits.items[ca].put(bp.arena, pair.b, {});
             }
         } else if (ib) |cb| {
-            try circuits.items[cb].put(ini.arena, pair.a, {});
+            try circuits.items[cb].put(bp.arena, pair.a, {});
         } else {
             var circuit: Circuit = .empty;
-            try circuit.put(ini.arena, pair.a, {});
-            try circuit.put(ini.arena, pair.b, {});
-            try circuits.append(ini.arena, circuit);
+            try circuit.put(bp.arena, pair.a, {});
+            try circuit.put(bp.arena, pair.b, {});
+            try circuits.append(bp.arena, circuit);
         }
-        if (ini.part == .p1 and j == 1000) {
+        if (bp.part == .p1 and j == 1000) {
             std.sort.pdq(Circuit, circuits.items, {}, cmpCircuit);
             break circuits.items[0].entries.len * circuits.items[1].entries.len * circuits.items[2].entries.len;
         }
-        if (ini.part == .p2 and circuits.items.len == 1 and circuits.items[0].entries.len == boxes.items.len) {
+        if (bp.part == .p2 and circuits.items.len == 1 and circuits.items[0].entries.len == boxes.items.len) {
             break pair.a[0] * pair.b[0];
         }
     } else unreachable;

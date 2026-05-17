@@ -1,7 +1,7 @@
 .{
-    .name = .day12,
+    .name = .aocz,
     .version = "0.0.1",
     .minimum_zig_version = "0.16.0",
     .paths = .{""},
-    .fingerprint = 0x7ca0b31b96da48ac,
+    .fingerprint = 0x1f5563213dde6f81,
 }

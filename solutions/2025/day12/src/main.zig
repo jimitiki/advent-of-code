@@ -1,16 +1,16 @@
 const std = @import("std");
 
-const Init = @import("lib").Init;
+const Boilerplate = @import("boilerplate").Boilerplate;
 const Shape = std.bit_set.IntegerBitSet(9);
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;
-    var ini = try Init.init(init, &stdout_buffer, &read_buffer);
-    defer ini.deinit();
+    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
+    defer bp.deinit();
 
-    var stdout = &ini.stdout_writer.interface;
-    var input = &ini.input_reader.interface;
+    var stdout = &bp.stdout_writer.interface;
+    var input = &bp.input_reader.interface;
 
     var valid: usize = 0;
     var invalid: usize = 0;
@@ -18,7 +18,7 @@ pub fn main(init: std.process.Init) !void {
     var shape_mode = true;
     var counter: usize = 0;
     var shapes: std.ArrayList(Shape) = .empty;
-    defer shapes.deinit(ini.arena);
+    defer shapes.deinit(bp.arena);
     var shape: Shape = undefined;
     while (try input.takeDelimiter('\n')) |line| {
         if (shape_mode and line.len > 2 and line[2] == 'x') {
@@ -26,7 +26,7 @@ pub fn main(init: std.process.Init) !void {
         }
         if (shape_mode) {
             if (line.len == 0) {
-                try shapes.append(ini.arena, shape);
+                try shapes.append(bp.arena, shape);
             } else if (line[1] == ':') {
                 shape = .empty;
                 counter = 0;
@@ -42,8 +42,8 @@ pub fn main(init: std.process.Init) !void {
         const width = try std.fmt.parseUnsigned(u16, line[0..2], 10);
         const height = try std.fmt.parseUnsigned(u16, line[3..5], 10);
         const area = width * height;
-        var counts: []u8 = try ini.arena.alloc(u8, shapes.items.len);
-        defer ini.arena.free(counts);
+        var counts: []u8 = try bp.arena.alloc(u8, shapes.items.len);
+        defer bp.arena.free(counts);
         for (line[6..], 6..) |c, i| {
             if (c == ' ') {
                 counts[@divExact(i - 6, 3)] = try std.fmt.parseUnsigned(u8, line[i + 1 .. i + 3], 10);

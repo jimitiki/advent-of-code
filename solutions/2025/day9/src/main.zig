@@ -1,26 +1,26 @@
 const std = @import("std");
 
-const Init = @import("lib").Init;
+const Boilerplate = @import("boilerplate").Boilerplate;
 
 const Tile = struct { u64, u64 };
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;
-    var ini = try Init.init(init, &stdout_buffer, &read_buffer);
-    defer ini.deinit();
+    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
+    defer bp.deinit();
 
-    var stdout = &ini.stdout_writer.interface;
-    var input = &ini.input_reader.interface;
-    const validator: *const fn (Tile, Tile, []const Tile) bool = if (ini.part == .p1) validateRectP1 else validateRectP2;
+    var stdout = &bp.stdout_writer.interface;
+    var input = &bp.input_reader.interface;
+    const validator: *const fn (Tile, Tile, []const Tile) bool = if (bp.part == .p1) validateRectP1 else validateRectP2;
 
     var tiles: std.ArrayList(Tile) = .empty;
-    defer tiles.deinit(ini.arena);
+    defer tiles.deinit(bp.arena);
     var answer: u64 = 0;
     while (try input.takeDelimiter('\n')) |line| {
         for (line, 0..) |c, i| {
             if (c == ',') {
-                try tiles.append(ini.arena, .{
+                try tiles.append(bp.arena, .{
                     try std.fmt.parseUnsigned(u64, line[0..i], 10),
                     try std.fmt.parseUnsigned(u64, line[i + 1 ..], 10),
                 });

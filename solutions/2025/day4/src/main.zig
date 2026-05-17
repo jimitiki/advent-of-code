@@ -2,36 +2,36 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const BitSet = std.DynamicBitSetUnmanaged;
 
-const Init = @import("lib").Init;
+const Boilerplate = @import("boilerplate").Boilerplate;
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;
-    var ini = try Init.init(init, &stdout_buffer, &read_buffer);
-    defer ini.deinit();
+    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
+    defer bp.deinit();
 
-    var stdout = &ini.stdout_writer.interface;
-    var input = &ini.input_reader.interface;
+    var stdout = &bp.stdout_writer.interface;
+    var input = &bp.input_reader.interface;
 
     var answer: u32 = 0;
     var width: usize = 0;
-    var rows: ArrayList(BitSet) = try .initCapacity(ini.arena, 3);
+    var rows: ArrayList(BitSet) = try .initCapacity(bp.arena, 3);
     while (try input.takeDelimiter('\n')) |line| {
         if (width == 0) {
             width = line.len;
-            try rows.append(ini.arena, try .initEmpty(ini.arena, width));
+            try rows.append(bp.arena, try .initEmpty(bp.arena, width));
         } else if (line.len != width) {
             return error.InvalidInput;
         }
-        var row: BitSet = try .initEmpty(ini.arena, width);
-        try rows.append(ini.arena, row);
+        var row: BitSet = try .initEmpty(bp.arena, width);
+        try rows.append(bp.arena, row);
         try parseLine(line, &row);
     }
-    try rows.append(ini.arena, try .initEmpty(ini.arena, width));
+    try rows.append(bp.arena, try .initEmpty(bp.arena, width));
 
-    var to_remove: ArrayList(BitSet) = try .initCapacity(ini.arena, rows.items.len - 2);
+    var to_remove: ArrayList(BitSet) = try .initCapacity(bp.arena, rows.items.len - 2);
     for (0..rows.items.len - 1) |_| {
-        try to_remove.append(ini.arena, try .initEmpty(ini.arena, width));
+        try to_remove.append(bp.arena, try .initEmpty(bp.arena, width));
     }
 
     while (true) {
@@ -40,7 +40,7 @@ pub fn main(init: std.process.Init) !void {
         for (to_remove.items) |*row| row.unsetAll();
         answer += removed;
 
-        if (ini.part == .p1) break;
+        if (bp.part == .p1) break;
         if (removed == 0) break;
     }
 

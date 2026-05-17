@@ -1,22 +1,22 @@
 const std = @import("std");
 const Io = std.Io;
 const assert = std.debug.assert;
-const lib = @import("lib");
+const lib = @import("boilerplate");
 const AutoArrayHashMap = std.array_hash_map.Auto;
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;
-    var ini = try lib.Init.init(init, &stdout_buffer, &read_buffer);
-    defer ini.deinit();
+    var bp = try lib.Boilerplate.init(init, &stdout_buffer, &read_buffer);
+    defer bp.deinit();
 
-    var stdout = &ini.stdout_writer.interface;
-    var input = &ini.input_reader.interface;
+    var stdout = &bp.stdout_writer.interface;
+    var input = &bp.input_reader.interface;
     var sum: u128 = 0;
     var invalid_ids: AutoArrayHashMap(u64, void) = .empty;
     while (try input.takeDelimiter(',')) |range| {
         var lengths: AutoArrayHashMap(usize, void) = .empty;
-        defer lengths.deinit(ini.arena);
+        defer lengths.deinit(bp.arena);
         const split_point = try find(range, '-');
         var end = range.len;
         while (range[end - 1] == '\n' or range[end - 1] == ' ') {
@@ -26,9 +26,9 @@ pub fn main(init: std.process.Init) !void {
             for (lengths.keys()) |l| {
                 if (seq_len % l == 0) continue :outer_loop;
             }
-            sum += try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end], seq_len, &invalid_ids, ini.arena);
-            try lengths.put(ini.arena, seq_len, {});
-            if (ini.part == .p1) break;
+            sum += try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end], seq_len, &invalid_ids, bp.arena);
+            try lengths.put(bp.arena, seq_len, {});
+            if (bp.part == .p1) break;
         }
     }
 

@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Init = @import("lib").Init;
+const Boilerplate = @import("boilerplate").Boilerplate;
 const DevMap = std.AutoHashMapUnmanaged(u32, std.ArrayList(u32));
 const PathCache = std.AutoArrayHashMapUnmanaged(u32, struct { usize, u2 });
 
@@ -10,30 +10,30 @@ const fft = convertDevName("fft");
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;
-    var ini = try Init.init(init, &stdout_buffer, &read_buffer);
-    defer ini.deinit();
+    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
+    defer bp.deinit();
 
-    var stdout = &ini.stdout_writer.interface;
-    var input = &ini.input_reader.interface;
+    var stdout = &bp.stdout_writer.interface;
+    var input = &bp.input_reader.interface;
     var devices: DevMap = .empty;
     defer {
         var it = devices.valueIterator();
-        while (it.next()) |d| d.deinit(ini.arena);
+        while (it.next()) |d| d.deinit(bp.arena);
     }
     while (try input.takeDelimiter('\n')) |line| {
         var outputs: std.ArrayList(u32) = .empty;
         for (line[5..], 5..) |c, i| {
             if (c == ' ') {
-                try outputs.append(ini.arena, convertDevName(line[i - 3 .. i]));
+                try outputs.append(bp.arena, convertDevName(line[i - 3 .. i]));
             }
         }
-        try outputs.append(ini.arena, convertDevName(line[line.len - 3 ..]));
-        try devices.put(ini.arena, convertDevName(line[0..3]), outputs);
+        try outputs.append(bp.arena, convertDevName(line[line.len - 3 ..]));
+        try devices.put(bp.arena, convertDevName(line[0..3]), outputs);
     }
     var cache: PathCache = .empty;
-    defer cache.deinit(ini.arena);
-    const start, const required: u2 = if (ini.part == .p1) .{ convertDevName("you"), 0 } else .{ convertDevName("svr"), 2 };
-    const answer = try countPaths(ini.arena, devices, &cache, start, convertDevName("out"), required);
+    defer cache.deinit(bp.arena);
+    const start, const required: u2 = if (bp.part == .p1) .{ convertDevName("you"), 0 } else .{ convertDevName("svr"), 2 };
+    const answer = try countPaths(bp.arena, devices, &cache, start, convertDevName("out"), required);
     if (answer[1] < required) return error.Unsolvable;
 
     try stdout.print("{}\n", .{answer[0]});

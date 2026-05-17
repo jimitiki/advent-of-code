@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Init = @import("lib").Init;
+const Boilerplate = @import("boilerplate").Boilerplate;
 
 const ArrayList = std.ArrayList;
 const OperandRow = std.ArrayList(u64);
@@ -13,13 +13,13 @@ const Op = enum {
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [4096]u8 = undefined;
-    var ini = try Init.init(init, &stdout_buffer, &read_buffer);
-    defer ini.deinit();
+    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
+    defer bp.deinit();
 
-    var stdout = &ini.stdout_writer.interface;
-    const solution = if (ini.part == .p1) &computeHorizontal else &computeVertical;
+    var stdout = &bp.stdout_writer.interface;
+    const solution = if (bp.part == .p1) &computeHorizontal else &computeVertical;
 
-    const answer = try solution(ini.arena, &ini.input_reader.interface);
+    const answer = try solution(bp.arena, &bp.input_reader.interface);
     try stdout.print("{}\n", .{answer});
     try stdout.flush();
 }

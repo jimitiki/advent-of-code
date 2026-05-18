@@ -1,4 +1,5 @@
 const std = @import("std");
+const Md5 = std.crypto.hash.Md5;
 
 const Boilerplate = @import("boilerplate").Boilerplate;
 
@@ -14,7 +15,7 @@ pub fn main(init: std.process.Init) !void {
     if (try input.takeDelimiter('\n')) |line| {
         var buf: [128]u8 = undefined;
         var i: u64 = 0;
-        while (!try checkHash(&buf, line, i)) : (i += 1) {} else {
+        while (!try checkHash(&buf, line, i, 5)) : (i += 1) {} else {
             answer = i;
         }
     } else return error.InvalidInput;
@@ -23,9 +24,13 @@ pub fn main(init: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn checkHash(buf: []u8, prefix: []const u8, suffix: u64) !bool {
+fn checkHash(buf: []u8, prefix: []const u8, suffix: u64, zero_cnt: usize) !bool {
     const input = try std.fmt.bufPrint(buf, "{s}{}", .{ prefix, suffix });
-    var digest: [std.crypto.hash.Md5.digest_length]u8 = undefined;
-    std.crypto.hash.Md5.hash(input, &digest, .{});
-    return digest[0] == 0 and digest[1] == 0 and digest[2] <= 16;
+    var digest: [Md5.digest_length]u8 = undefined;
+    Md5.hash(input, &digest, .{});
+    var hex: [Md5.digest_length * 2]u8 = undefined;
+    for (digest, 0..) |byte, i| {
+        _ = try std.fmt.bufPrint(hex[i * 2 .. i * 2 + 2], "{x:0>2}", .{byte});
+    }
+    return std.mem.allEqual(u8, hex[0..zero_cnt], '0');
 }

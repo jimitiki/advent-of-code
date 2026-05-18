@@ -29,13 +29,17 @@ pub fn main(init: std.process.Init) !void {
             try std.fmt.parseUnsigned(u32, line[wstart .. hstart - 1], 10),
             try std.fmt.parseUnsigned(u32, line[hstart..], 10),
         };
-        const area_lw = box[0] * box[1];
-        const area_lh = box[0] * box[2];
-        const area_wh = box[1] * box[2];
-        const surface_area = area_lw * 2 + area_lh * 2 + area_wh * 2;
-        answer += surface_area + @min(box[0] * box[1], box[0] * box[2], box[1] * box[2]);
+        answer += wrappingPaper(box);
     }
 
     try stdout.print("{}\n", .{answer});
     try stdout.flush();
+}
+
+fn wrappingPaper(box: Box) u32 {
+    const area_lw = box[0] * box[1];
+    const area_lh = box[0] * box[2];
+    const area_wh = box[1] * box[2];
+    const surface_area = area_lw * 2 + area_lh * 2 + area_wh * 2;
+    return surface_area + @min(box[0] * box[1], box[0] * box[2], box[1] * box[2]);
 }

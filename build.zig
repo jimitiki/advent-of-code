@@ -13,6 +13,22 @@ pub fn build(b: *std.Build) !void {
         .target = target,
     });
 
+    {
+        const mod = b.createModule(.{
+            .root_source_file = b.path("add.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        const exe = b.addExecutable(.{ .name = "add", .root_module = mod });
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.addDirectoryArg(b.path(""));
+        if (b.args) |args| {
+            run_cmd.addArgs(args);
+        }
+        const run_step = b.step("add", "Create a new solution");
+        run_step.dependOn(&run_cmd.step);
+    }
+
     const solutions = readSolutions(b) catch {
         std.debug.print("Failed to read solutions\n", .{});
         std.process.exit(1);

@@ -13,6 +13,10 @@ pub fn main(init: std.process.Init) !void {
     var stdout = &bp.stdout_writer.interface;
     var input = &bp.input_reader.interface;
     var answer: u32 = 0;
+    const compute: *const fn (Box) u32 = switch (bp.part) {
+        .p1 => wrappingPaper,
+        .p2 => ribbon,
+    };
     while (try input.takeDelimiter('\n')) |line| {
         const wstart = for (line, 0..) |c, i| {
             if (c == 'x') {
@@ -29,7 +33,7 @@ pub fn main(init: std.process.Init) !void {
             try std.fmt.parseUnsigned(u32, line[wstart .. hstart - 1], 10),
             try std.fmt.parseUnsigned(u32, line[hstart..], 10),
         };
-        answer += wrappingPaper(box);
+        answer += compute(box);
     }
 
     try stdout.print("{}\n", .{answer});
@@ -42,4 +46,13 @@ fn wrappingPaper(box: Box) u32 {
     const area_wh = box[1] * box[2];
     const surface_area = area_lw * 2 + area_lh * 2 + area_wh * 2;
     return surface_area + @min(box[0] * box[1], box[0] * box[2], box[1] * box[2]);
+}
+
+fn ribbon(box: Box) u32 {
+    const volume = box[0] * box[1] * box[2];
+    return volume + @min(
+        2 * box[0] + 2 * box[1],
+        2 * box[0] + 2 * box[2],
+        2 * box[1] + 2 * box[2],
+    );
 }

@@ -15,20 +15,35 @@ pub fn main(init: std.process.Init) !void {
     var input = &bp.input_reader.interface;
 
     var visited: std.AutoHashMapUnmanaged(House, void) = .empty;
-    var x: i32 = 0;
-    var y: i32 = 0;
+    var x_santa: i32 = 0;
+    var y_santa: i32 = 0;
+    var x_robo: i32 = 0;
+    var y_robo: i32 = 0;
     while (true) {
-        try visited.put(bp.arena, .{ .x = x, .y = y }, {});
+        try visited.put(bp.arena, .{ .x = x_santa, .y = y_santa }, {});
         if (input.takeByte()) |c| {
             switch (c) {
-                '^' => y += 1,
-                'v' => y -= 1,
-                '>' => x += 1,
-                '<' => x -= 1,
+                '^' => y_santa += 1,
+                'v' => y_santa -= 1,
+                '>' => x_santa += 1,
+                '<' => x_santa -= 1,
                 '\n' => break,
                 else => return error.InvalidInput,
             }
         } else |_| break;
+        if (bp.part == .p2) {
+            try visited.put(bp.arena, .{ .x = x_robo, .y = y_robo }, {});
+            if (input.takeByte()) |c| {
+                switch (c) {
+                    '^' => y_robo += 1,
+                    'v' => y_robo -= 1,
+                    '>' => x_robo += 1,
+                    '<' => x_robo -= 1,
+                    '\n' => break,
+                    else => return error.InvalidInput,
+                }
+            } else |_| break;
+        }
     }
     while (try input.takeDelimiter('\n')) |line| {
         _ = line;

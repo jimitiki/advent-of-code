@@ -12,10 +12,14 @@ pub fn main(init: std.process.Init) !void {
     var stdout = &bp.stdout_writer.interface;
     var input = &bp.input_reader.interface;
     var answer: u64 = 0;
+    const zero_cnt: usize = switch (bp.part) {
+        .p1 => 5,
+        .p2 => 6,
+    };
     if (try input.takeDelimiter('\n')) |line| {
         var buf: [128]u8 = undefined;
         var i: u64 = 0;
-        while (!try checkHash(&buf, line, i, 5)) : (i += 1) {} else {
+        while (!try checkHash(&buf, line, i, zero_cnt)) : (i += 1) {} else {
             answer = i;
         }
     } else return error.InvalidInput;

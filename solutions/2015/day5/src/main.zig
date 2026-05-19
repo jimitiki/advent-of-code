@@ -12,7 +12,10 @@ pub fn main(init: std.process.Init) !void {
     var input = &bp.input_reader.interface;
     var answer: usize = 0;
     while (try input.takeDelimiter('\n')) |line| {
-        if (evaluateP1(line)) {
+        if (switch (bp.part) {
+            .p1 => evaluateP1(line),
+            .p2 => evaluateP2(line),
+        }) {
             answer += 1;
         }
     }
@@ -42,6 +45,25 @@ fn evaluateP1(string: []const u8) bool {
         }
     }
     return vowels >= 3 and double;
+}
+
+fn evaluateP2(string: []const u8) bool {
+    if (string.len < 4) {
+        return false;
+    }
+    const split_repeat = for (string[0 .. string.len - 2], string[2..]) |a, b| {
+        if (a == b) {
+            break true;
+        }
+    } else false;
+    const double_pair = dbl: for (0..string.len - 3) |i| {
+        for (i + 2..string.len - 1) |j| {
+            if (string[i] == string[j] and string[i + 1] == string[j + 1]) {
+                break :dbl true;
+            }
+        }
+    } else false;
+    return split_repeat and double_pair;
 }
 
 fn isVowel(char: u8) bool {

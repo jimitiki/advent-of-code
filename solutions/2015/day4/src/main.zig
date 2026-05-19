@@ -1,7 +1,7 @@
 const std = @import("std");
 const Md5 = std.crypto.hash.Md5;
 
-const Boilerplate = @import("boilerplate").Boilerplate;
+const Boilerplate = @import("lib").Boilerplate;
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;

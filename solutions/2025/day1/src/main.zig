@@ -1,7 +1,7 @@
 const std = @import("std");
 const Io = std.Io;
 const assert = std.debug.assert;
-const Boilerplate = @import("boilerplate").Boilerplate;
+const Boilerplate = @import("lib").Boilerplate;
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;

@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Boilerplate = @import("boilerplate").Boilerplate;
+const Boilerplate = @import("lib").Boilerplate;
 const Shape = std.bit_set.IntegerBitSet(9);
 
 pub fn main(init: std.process.Init) !void {

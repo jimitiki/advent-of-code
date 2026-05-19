@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Boilerplate = @import("boilerplate").Boilerplate;
+const Boilerplate = @import("lib").Boilerplate;
 
 const Order = std.math.Order;
 const Circuit = std.array_hash_map.Auto(Pos, void);

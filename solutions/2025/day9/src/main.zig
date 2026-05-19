@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Boilerplate = @import("boilerplate").Boilerplate;
+const Boilerplate = @import("lib").Boilerplate;
 
 const Tile = struct { u64, u64 };
 

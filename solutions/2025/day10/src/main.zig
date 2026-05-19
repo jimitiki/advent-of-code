@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Boilerplate = @import("boilerplate").Boilerplate;
+const Boilerplate = @import("lib").Boilerplate;
 
 const BitSet = std.bit_set.IntegerBitSet(16);
 const Buttons = std.ArrayList(BitSet);

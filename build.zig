@@ -8,8 +8,8 @@ const Solution = struct {
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const lib = b.addModule("boilerplate", .{
-        .root_source_file = b.path("lib/boilerplate.zig"),
+    const lib = b.addModule("lib", .{
+        .root_source_file = b.path("lib/root.zig"),
         .target = target,
     });
 
@@ -48,7 +48,7 @@ pub fn build(b: *std.Build) !void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "boilerplate", .module = lib },
+                .{ .name = "lib", .module = lib },
             },
         });
 

@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Boilerplate = @import("boilerplate").Boilerplate;
+const Boilerplate = @import("lib").Boilerplate;
 
 const ArrayList = std.ArrayList;
 const OperandRow = std.ArrayList(u64);

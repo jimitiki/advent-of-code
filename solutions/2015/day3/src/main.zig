@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Boilerplate = @import("boilerplate").Boilerplate;
+const Boilerplate = @import("lib").Boilerplate;
 
 const House = struct { x: i32, y: i32 };
 const HouseSet = std.AutoHashMap(House, void);

@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Boilerplate = @import("boilerplate").Boilerplate;
+const Boilerplate = @import("lib").Boilerplate;
 const DevMap = std.AutoHashMapUnmanaged(u32, std.ArrayList(u32));
 const PathCache = std.AutoArrayHashMapUnmanaged(u32, struct { usize, u2 });
 

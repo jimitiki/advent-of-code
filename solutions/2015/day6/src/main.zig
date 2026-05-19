@@ -8,7 +8,6 @@ const Instruction = union(Action) {
     toggle: void,
     turn: State,
 };
-const Row = std.bit_set.ArrayBitSet(usize, 1000);
 const Position = struct { x: usize, y: usize };
 
 pub fn main(init: std.process.Init) !void {
@@ -16,7 +15,7 @@ pub fn main(init: std.process.Init) !void {
     var read_buffer: [256]u8 = undefined;
     var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
     defer bp.deinit();
-    var lights = [_]Row{.empty} ** 1000;
+    var lights: [1000][1000]u8 = .{.{0} ** 1000} ** 1000;
 
     var stdout = &bp.stdout_writer.interface;
     var input = &bp.input_reader.interface;
@@ -30,27 +29,20 @@ pub fn main(init: std.process.Init) !void {
         const start = try parsePosition(getNextWord(line, &index));
         _ = getNextWord(line, &index);
         const end = try parsePosition(getNextWord(line, &index));
-        const rows: []Row = lights[start.y .. end.y + 1];
-        const range: std.bit_set.Range = .{ .start = start.x, .end = end.x + 1 };
-        switch (inst) {
-            .toggle => {
-                var mask: Row = .empty;
-                mask.setRangeValue(range, true);
-                for (rows) |*row| {
-                    row.toggleSet(mask);
-                }
-            },
-            .turn => |state| {
-                const value = state == .on;
-                for (rows) |*row| {
-                    row.setRangeValue(range, value);
-                }
-            },
+        for (lights[start.y .. end.y + 1]) |*row| {
+            for (row[start.x .. end.x + 1]) |*light| {
+                light.* = switch (inst) {
+                    .toggle => light.* ^ 1,
+                    .turn => |state| if (state == .on) 1 else 0,
+                };
+            }
         }
     }
     var answer: usize = 0;
     for (lights) |row| {
-        answer += row.count();
+        for (row) |light| {
+            answer += light;
+        }
     }
 
     try stdout.print("{}\n", .{answer});

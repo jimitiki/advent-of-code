@@ -22,6 +22,9 @@ pub fn main(init: std.process.Init) !void {
 }
 
 fn evaluateP1(string: []const u8) bool {
+    if (string.len < 3) {
+        return false;
+    }
     var vowels: usize = 0;
     var double: bool = false;
     if (isVowel(string[0])) {

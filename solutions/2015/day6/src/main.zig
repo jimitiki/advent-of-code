@@ -1,6 +1,8 @@
 const std = @import("std");
 
-const Boilerplate = @import("lib").Boilerplate;
+const lib = @import("lib");
+const Boilerplate = lib.Boilerplate;
+const getNextWord = lib.parse.getNextWord;
 
 const Action = enum { toggle, turn };
 const State = enum { off, on };
@@ -65,11 +67,4 @@ fn parsePosition(string: []const u8) !Position {
         .x = try std.fmt.parseUnsigned(usize, string[0..split_point], 10),
         .y = try std.fmt.parseUnsigned(usize, string[split_point + 1 ..], 10),
     };
-}
-
-fn getNextWord(string: []const u8, index: *usize) []const u8 {
-    while (index.* < string.len and string[index.*] == ' ') : (index.* += 1) {}
-    const start = index.*;
-    while (index.* < string.len and string[index.*] != ' ') : (index.* += 1) {}
-    return string[start..index.*];
 }

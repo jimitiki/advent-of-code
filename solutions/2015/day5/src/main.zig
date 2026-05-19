@@ -12,29 +12,33 @@ pub fn main(init: std.process.Init) !void {
     var input = &bp.input_reader.interface;
     var answer: usize = 0;
     while (try input.takeDelimiter('\n')) |line| {
-        var vowels: usize = 0;
-        var double: bool = false;
-        if (isVowel(line[0])) {
-            vowels += 1;
-        }
-        const contains_bad = for (line[0 .. line.len - 1], line[1..]) |a, b| {
-            if (isVowel(b)) {
-                vowels += 1;
-            }
-            if (a == b) {
-                double = true;
-            }
-            if (isForbiddenPair(a, b)) {
-                break true;
-            }
-        } else false;
-        if (vowels >= 3 and double and !contains_bad) {
+        if (evaluateP1(line)) {
             answer += 1;
         }
     }
 
     try stdout.print("{}\n", .{answer});
     try stdout.flush();
+}
+
+fn evaluateP1(string: []const u8) bool {
+    var vowels: usize = 0;
+    var double: bool = false;
+    if (isVowel(string[0])) {
+        vowels += 1;
+    }
+    for (string[0 .. string.len - 1], string[1..]) |a, b| {
+        if (isVowel(b)) {
+            vowels += 1;
+        }
+        if (a == b) {
+            double = true;
+        }
+        if (isForbiddenPair(a, b)) {
+            return false;
+        }
+    }
+    return vowels >= 3 and double;
 }
 
 fn isVowel(char: u8) bool {

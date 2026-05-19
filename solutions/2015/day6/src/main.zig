@@ -31,9 +31,15 @@ pub fn main(init: std.process.Init) !void {
         const end = try parsePosition(getNextWord(line, &index));
         for (lights[start.y .. end.y + 1]) |*row| {
             for (row[start.x .. end.x + 1]) |*light| {
-                light.* = switch (inst) {
-                    .toggle => light.* ^ 1,
-                    .turn => |state| if (state == .on) 1 else 0,
+                light.* = switch (bp.part) {
+                    .p1 => switch (inst) {
+                        .toggle => light.* ^ 1,
+                        .turn => |state| if (state == .on) 1 else 0,
+                    },
+                    .p2 => switch (inst) {
+                        .toggle => light.* + 2,
+                        .turn => |state| if (state == .on) light.* + 1 else light.* -| 1,
+                    },
                 };
             }
         }

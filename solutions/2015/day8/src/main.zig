@@ -12,33 +12,37 @@ pub fn main(init: std.process.Init) !void {
     var input = &bp.input_reader.interface;
     var answer: u64 = 0;
     while (try input.takeDelimiter('\n')) |line| {
-        var i: usize = 1;
-        var mem_chars: usize = 0;
-        if (line[0] != '"' or line[line.len - 1] != '"') {
-            return error.InvalidInput;
-        }
-        while (i < line.len - 1) : (i += 1) {
-            mem_chars += 1;
-            if (line[i] == '\\') {
-                i += 1;
-                switch (line[i]) {
-                    '"', '\\' => {},
-                    'x' => {
-                        if (!isHex(line[i + 1]) or !isHex(line[i + 2])) {
-                            return error.InvalidInput;
-                        } else {
-                            i += 2;
-                        }
-                    },
-                    else => return error.InvalidInput,
-                }
-            }
-        }
-        answer += line.len - mem_chars;
+        answer += line.len - try decodedChars(line);
     }
 
     try stdout.print("{}\n", .{answer});
     try stdout.flush();
+}
+
+fn decodedChars(string: []const u8) !usize {
+    var i: usize = 1;
+    var chars: usize = 0;
+    if (string[0] != '"' or string[string.len - 1] != '"') {
+        return error.InvalidInput;
+    }
+    while (i < string.len - 1) : (i += 1) {
+        chars += 1;
+        if (string[i] == '\\') {
+            i += 1;
+            switch (string[i]) {
+                '"', '\\' => {},
+                'x' => {
+                    if (!isHex(string[i + 1]) or !isHex(string[i + 2])) {
+                        return error.InvalidInput;
+                    } else {
+                        i += 2;
+                    }
+                },
+                else => return error.InvalidInput,
+            }
+        }
+    }
+    return chars;
 }
 
 fn isHex(char: u8) bool {

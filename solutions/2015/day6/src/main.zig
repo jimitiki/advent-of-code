@@ -2,7 +2,7 @@ const std = @import("std");
 
 const lib = @import("lib");
 const Boilerplate = lib.Boilerplate;
-const getNextWord = lib.parse.getNextWord;
+const WordIterator = lib.parse.WordIterator;
 
 const Action = enum { toggle, turn };
 const State = enum { off, on };
@@ -22,15 +22,15 @@ pub fn main(init: std.process.Init) !void {
     var stdout = &bp.stdout_writer.interface;
     var input = &bp.input_reader.interface;
     while (try input.takeDelimiter('\n')) |line| {
-        var index: usize = 0;
-        const action: Action = std.meta.stringToEnum(Action, getNextWord(line, &index)) orelse return error.InvalidInput;
+        var it: WordIterator = .init(line);
+        const action: Action = std.meta.stringToEnum(Action, it.next().?) orelse return error.InvalidInput;
         const inst: Instruction = switch (action) {
             .toggle => .{ .toggle = {} },
-            .turn => .{ .turn = std.meta.stringToEnum(State, getNextWord(line, &index)) orelse return error.InvalidInput },
+            .turn => .{ .turn = std.meta.stringToEnum(State, it.next().?) orelse return error.InvalidInput },
         };
-        const start = try parsePosition(getNextWord(line, &index));
-        _ = getNextWord(line, &index);
-        const end = try parsePosition(getNextWord(line, &index));
+        const start = try parsePosition(it.next().?);
+        _ = it.next();
+        const end = try parsePosition(it.next().?);
         for (lights[start.y .. end.y + 1]) |*row| {
             for (row[start.x .. end.x + 1]) |*light| {
                 light.* = switch (bp.part) {

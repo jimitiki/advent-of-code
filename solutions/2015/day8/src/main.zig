@@ -12,11 +12,26 @@ pub fn main(init: std.process.Init) !void {
     var input = &bp.input_reader.interface;
     var answer: u64 = 0;
     while (try input.takeDelimiter('\n')) |line| {
-        answer += line.len - try decodedChars(line);
+        if (bp.part == .p1) {
+            answer += line.len - try decodedChars(line);
+        } else {
+            answer += encodedChars(line) - line.len;
+        }
     }
 
     try stdout.print("{}\n", .{answer});
     try stdout.flush();
+}
+
+fn encodedChars(string: []const u8) usize {
+    var chars: usize = 2;
+    for (string) |char| {
+        chars += 1;
+        if (char == '\\' or char == '"') {
+            chars += 1;
+        }
+    }
+    return chars;
 }
 
 fn decodedChars(string: []const u8) !usize {

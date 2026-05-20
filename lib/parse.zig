@@ -21,3 +21,19 @@ pub const WordIterator = struct {
         return self.string[start..self.index];
     }
 };
+
+pub fn splitWords(buf: [][]const u8, string: []const u8) error{TooManyWords}!?[][]const u8 {
+    var it = WordIterator.init(string);
+    var i: usize = 0;
+    while (it.next()) |word| : (i += 1) {
+        if (i >= buf.len) {
+            return error.TooManyWords;
+        }
+        buf[i] = word;
+    }
+    if (i > 0) {
+        return buf[0..i];
+    } else {
+        return null;
+    }
+}

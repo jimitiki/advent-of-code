@@ -7,6 +7,7 @@
     .{ .year = 2015, .day = 6 },
     .{ .year = 2015, .day = 7 },
     .{ .year = 2015, .day = 8 },
+    .{ .year = 2015, .day = 9 },
     .{ .year = 2025, .day = 1 },
     .{ .year = 2025, .day = 2 },
     .{ .year = 2025, .day = 3 },

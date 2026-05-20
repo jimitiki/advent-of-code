@@ -35,19 +35,33 @@ pub fn main(init: std.process.Init) !void {
         try addEdge(bp.arena, &graph, end_name, start_name, dist);
     }
     var it = graph.iterator();
-    var shortest_path: u64 = std.math.maxInt(u64);
-    while (it.next()) |entry| {
-        shortest_path = @min(shortest_path, try shortestPath(
-            bp.arena,
-            graph,
-            shortest_path,
-            .empty,
-            entry.key_ptr.*,
-            0,
-        ));
+    if (bp.part == .p1) {
+        var shortest_path: u64 = std.math.maxInt(u64);
+        while (it.next()) |entry| {
+            shortest_path = @min(shortest_path, try shortestPath(
+                bp.arena,
+                graph,
+                shortest_path,
+                .empty,
+                entry.key_ptr.*,
+                0,
+            ));
+        }
+        try stdout.print("{}\n", .{shortest_path});
+    } else {
+        var longest_path: u64 = 0;
+        while (it.next()) |entry| {
+            longest_path = @max(longest_path, try longestPath(
+                bp.arena,
+                graph,
+                .empty,
+                entry.key_ptr.*,
+                0,
+            ));
+        }
+        try stdout.print("{}\n", .{longest_path});
     }
 
-    try stdout.print("{}\n", .{shortest_path});
     try stdout.flush();
 }
 
@@ -113,4 +127,37 @@ fn shortestPath(
         ));
     }
     return new_shortest_path;
+}
+
+fn longestPath(
+    allocator: std.mem.Allocator,
+    graph: Graph,
+    visited: NameSet,
+    current: []const u8,
+    distance: u64,
+) !u64 {
+    if (visited.count() + 1 == graph.count()) {
+        return distance;
+    }
+
+    var visited_new: NameSet = try visited.clone(allocator);
+    defer visited_new.deinit(allocator);
+    try visited_new.put(allocator, current, {});
+
+    const connections = graph.get(current).?;
+    var it = connections.iterator();
+    var longest_path: u64 = 0;
+    while (it.next()) |entry| {
+        if (visited.contains(entry.key_ptr.*)) {
+            continue;
+        }
+        longest_path = @max(longest_path, try longestPath(
+            allocator,
+            graph,
+            visited_new,
+            entry.key_ptr.*,
+            distance + entry.value_ptr.*,
+        ));
+    }
+    return longest_path;
 }

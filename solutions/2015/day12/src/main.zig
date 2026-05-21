@@ -10,11 +10,34 @@ pub fn main(init: std.process.Init) !void {
 
     var stdout = &bp.stdout_writer.interface;
     var input = &bp.input_reader.interface;
-    const answer = 0;
-    while (try input.takeDelimiter('\n')) |line| {
-        _ = line;
+
+    var answer: i64 = 0;
+    var buffer: [64]u8 = undefined;
+    var end: usize = 0;
+    var i: usize = 0;
+    while (true) : (i += 1) {
+        if (input.takeByte()) |char| {
+            if (end > 0) {
+                if (!isDigit(char)) {
+                    answer += try std.fmt.parseInt(i64, buffer[0..end], 10);
+                    end = 0;
+                } else {
+                    buffer[end] = char;
+                    end += 1;
+                }
+            } else {
+                if (isDigit(char) or (char == '-' and if (input.peekByte()) |c| isDigit(c) else |_| false)) {
+                    buffer[end] = char;
+                    end += 1;
+                }
+            }
+        } else |_| break;
     }
 
     try stdout.print("{}\n", .{answer});
     try stdout.flush();
+}
+
+fn isDigit(char: u8) bool {
+    return char >= '0' and char <= '9';
 }

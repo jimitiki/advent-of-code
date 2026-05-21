@@ -1,43 +1,41 @@
 const std = @import("std");
 
-const Boilerplate = @import("lib").Boilerplate;
-
 pub fn main(init: std.process.Init) !void {
+    const arena = init.arena.allocator();
+    const args = try init.minimal.args.toSlice(arena);
+    defer arena.free(args);
+
     var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
+    var stdout_writer: std.Io.File.Writer = .init(.stdout(), init.io, &stdout_buffer);
+    var stdout = &stdout_writer.interface;
 
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
+    const dir = try std.Io.Dir.openDirAbsolute(init.io, args[1], .{});
+    const subpath = try std.fmt.allocPrint(arena, "data/{s}.txt", .{args[3]});
+    const json = try dir.readFileAlloc(init.io, subpath, arena, .unlimited);
+    const parsed = try std.json.parseFromSliceLeaky(std.json.Value, arena, json, .{});
 
-    var answer: i64 = 0;
-    var buffer: [64]u8 = undefined;
-    var end: usize = 0;
-    var i: usize = 0;
-    while (true) : (i += 1) {
-        if (input.takeByte()) |char| {
-            if (end > 0) {
-                if (!isDigit(char)) {
-                    answer += try std.fmt.parseInt(i64, buffer[0..end], 10);
-                    end = 0;
-                } else {
-                    buffer[end] = char;
-                    end += 1;
-                }
-            } else {
-                if (isDigit(char) or (char == '-' and if (input.peekByte()) |c| isDigit(c) else |_| false)) {
-                    buffer[end] = char;
-                    end += 1;
-                }
-            }
-        } else |_| break;
-    }
-
-    try stdout.print("{}\n", .{answer});
+    try stdout.print("{}\n", .{try sumJsonValue(parsed)});
     try stdout.flush();
 }
 
-fn isDigit(char: u8) bool {
-    return char >= '0' and char <= '9';
+fn sumJsonValue(value: std.json.Value) !i64 {
+    switch (value) {
+        .float => return error.InvalidInput,
+        .integer => |i| return i,
+        .array => |a| {
+            var sum: i64 = 0;
+            for (a.items) |v| {
+                sum += try sumJsonValue(v);
+            }
+            return sum;
+        },
+        .object => |o| {
+            var sum: i64 = 0;
+            for (o.values()) |v| {
+                sum += try sumJsonValue(v);
+            }
+            return sum;
+        },
+        else => return 0,
+    }
 }

@@ -45,6 +45,19 @@ pub fn main(init: std.process.Init) !void {
         try addOpinion(bp.arena, &relatives, rel1, rel2, mod, points);
     }
 
+    if (bp.part == .p2) {
+        var table: HappinessTable = .empty;
+        const self = try addName(bp.arena, &names, "");
+        for (names.keys()) |name| {
+            if (std.mem.eql(u8, name, self)) {
+                continue;
+            }
+            try table.put(bp.arena, name, 0);
+            try relatives.getPtr(name).?.put(bp.arena, self, 0);
+        }
+        try relatives.put(bp.arena, self, table);
+    }
+
     const seating = try bp.arena.alloc([]const u8, names.count());
     seating[0] = names.keys()[0];
     var unseated: NameSet = try names.clone(bp.arena);

@@ -7,6 +7,46 @@ const Reindeer = struct {
     speed: u32,
     duration: u32,
     rest: u32,
+
+    fn distance(self: Reindeer, time: u32) u32 {
+        const cycles = time / (self.duration + self.rest);
+        const remainder = @min(self.duration, time % (self.duration + self.rest));
+        const dist_per_cycle = self.speed * self.duration;
+        return cycles * dist_per_cycle + remainder * self.speed;
+    }
+};
+
+const Counter = struct {
+    backing: Backing,
+
+    const Self = @This();
+    const Backing = std.AutoHashMapUnmanaged(usize, u32);
+
+    pub fn init(allocator: std.mem.Allocator, reindeer: []const Reindeer) std.mem.Allocator.Error!Self {
+        var backing: Backing = .empty;
+        for (reindeer, 0..) |_, i| {
+            try backing.put(allocator, i, 0);
+        }
+        return .{ .backing = backing };
+    }
+
+    pub fn add(self: *Self, item: usize) void {
+        const count = self.backing.getPtr(item).?;
+        count.* += 1;
+    }
+
+    pub fn max(self: Self) u32 {
+        var m: u32 = 0;
+        var it = self.backing.valueIterator();
+        while (it.next()) |count| {
+            m = @max(m, count.*);
+        }
+        return m;
+    }
+
+    pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
+        self.backing.deinit(allocator);
+    }
 };
 
 pub fn main(init: std.process.Init) !void {
@@ -36,17 +76,31 @@ pub fn main(init: std.process.Init) !void {
         try reindeer.append(bp.arena, .{ .speed = speed, .duration = duration, .rest = rest });
     }
 
-    try stdout.print("{}\n", .{maxDistance(reindeer.items, try std.fmt.parseUnsigned(u32, bp.args[4], 10))});
+    const time = try std.fmt.parseUnsigned(u32, bp.args[4], 10);
+    if (bp.part == .p1) {
+        try stdout.print("{}\n", .{maxDistance(reindeer.items, time)});
+    } else {
+        var scoreboard: Counter = try .init(bp.arena, reindeer.items);
+        try stdout.print("{}\n", .{maxPoints(&scoreboard, reindeer.items, time)});
+    }
+
     try stdout.flush();
 }
 
 fn maxDistance(reindeer: []Reindeer, time: u32) u32 {
     var max: u32 = 0;
     for (reindeer) |r| {
-        const cycles = time / (r.duration + r.rest);
-        const remainder = @min(r.duration, time % (r.duration + r.rest));
-        const dist_per_cycle = r.speed * r.duration;
-        max = @max(max, cycles * dist_per_cycle + remainder * r.speed);
+        max = @max(max, r.distance(time));
     }
     return max;
+}
+
+fn maxPoints(scoreboard: *Counter, reindeer: []Reindeer, time: u32) u32 {
+    for (1..time + 1) |t| {
+        const max = maxDistance(reindeer, @truncate(t));
+        for (reindeer, 0..) |r, i| {
+            if (r.distance(@truncate(t)) == max) scoreboard.add(i);
+        }
+    }
+    return scoreboard.max();
 }

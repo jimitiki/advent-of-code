@@ -26,7 +26,7 @@ pub fn main(init: std.process.Init) !void {
 
     const quantities = try bp.arena.alloc(u8, ingredients.items.len);
     defer bp.arena.free(quantities);
-    try stdout.print("{}\n", .{maxScore(ingredients.items, quantities, 0, 0)});
+    try stdout.print("{}\n", .{maxScore(ingredients.items, quantities, 0, 0, bp.part == .p2)});
     try stdout.flush();
 }
 
@@ -47,29 +47,35 @@ fn parseProperty(it: *lib.parse.WordIterator) !i64 {
     return try std.fmt.parseInt(i64, it.next().?, 10);
 }
 
-fn maxScore(ingredients: []const Ingredient, quantities: []u8, count: usize, amount_used: usize) i64 {
+fn maxScore(ingredients: []const Ingredient, quantities: []u8, count: usize, amount_used: usize, calorie_target: bool) i64 {
     if (count == ingredients.len - 1) {
         quantities[count] = @truncate(100 - amount_used);
-        return computeScore(ingredients, quantities);
+        return computeScore(ingredients, quantities, calorie_target);
     }
     var max: i64 = 0;
     for (0..100 - amount_used) |amount| {
         quantities[count] = @truncate(amount);
-        max = @max(max, maxScore(ingredients, quantities, count + 1, amount_used + amount));
+        max = @max(max, maxScore(ingredients, quantities, count + 1, amount_used + amount, calorie_target));
     }
     return max;
 }
 
-fn computeScore(ingredients: []const Ingredient, quantities: []const u8) i64 {
+fn computeScore(ingredients: []const Ingredient, quantities: []const u8, calorie_target: bool) i64 {
     var capacity: i64 = 0;
     var durability: i64 = 0;
     var flavor: i64 = 0;
     var texture: i64 = 0;
+    var calories: i64 = 0;
     for (ingredients, quantities) |ingredient, quantity| {
         capacity += quantity * ingredient.capacity;
         durability += quantity * ingredient.durability;
         flavor += quantity * ingredient.flavor;
         texture += quantity * ingredient.texture;
+        calories += quantity * ingredient.calories;
     }
-    return @max(0, capacity) * @max(0, durability) * @max(0, flavor) * @max(0, texture);
+    if (calorie_target and calories != 500) {
+        return 0;
+    } else {
+        return @max(0, capacity) * @max(0, durability) * @max(0, flavor) * @max(0, texture);
+    }
 }

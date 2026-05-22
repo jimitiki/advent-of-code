@@ -1,6 +1,7 @@
 const std = @import("std");
 
-const Boilerplate = @import("lib").Boilerplate;
+const lib = @import("lib");
+const Boilerplate = lib.Boilerplate;
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;

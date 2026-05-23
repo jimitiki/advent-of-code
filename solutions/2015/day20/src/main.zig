@@ -1,7 +1,6 @@
 const std = @import("std");
 
 const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
 
 pub fn main(init: std.process.Init) !void {
     const arena = init.arena.allocator();

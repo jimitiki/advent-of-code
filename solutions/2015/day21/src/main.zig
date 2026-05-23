@@ -68,7 +68,13 @@ pub fn main(init: std.process.Init) !void {
     std.sort.pdq(Item, armor.items, {}, Item.costsLessThan);
     std.sort.pdq(Item, rings.items, {}, Item.costsLessThan);
 
-    const answer = minCost(boss, weapons.items, armor.items, rings.items);
+    const optimizer: *const fn (
+        Fighter,
+        []const Item,
+        []const Item,
+        []const Item,
+    ) u32 = if (bp.part == .p1) minCost else maxCost;
+    const answer = optimizer(boss, weapons.items, armor.items, rings.items);
     try stdout.print("{}\n", .{answer});
     try stdout.flush();
 }
@@ -122,6 +128,26 @@ fn minCost(boss: Fighter, weapons: []const Item, armor: []const Item, rings: []c
         }
     }
     return min_cost;
+}
+
+fn maxCost(boss: Fighter, weapons: []const Item, armor: []const Item, rings: []const Item) u32 {
+    var max_cost: u32 = 0;
+    for (rings, 0..) |lring, i| {
+        for (rings[i + 1 ..]) |rring| {
+            for (armor) |a| {
+                for (weapons) |weapon| {
+                    const cost = lring.cost + rring.cost + a.cost + weapon.cost;
+                    if (cost <= max_cost) continue;
+                    const dmg = lring.damage + rring.damage + a.damage + weapon.damage;
+                    const def = lring.armor + rring.armor + a.armor + weapon.armor;
+                    if (!playerWins(.{ .hp = 100, .damage = dmg, .armor = def }, boss)) {
+                        max_cost = cost;
+                    }
+                }
+            }
+        }
+    }
+    return max_cost;
 }
 
 fn playerWins(player: Fighter, boss: Fighter) bool {

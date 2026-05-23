@@ -23,7 +23,7 @@ pub fn main(init: std.process.Init) !void {
     const answer = while (try input.takeDelimiter('\n')) |line| : (i += 1) {
         var candidate = try parseSue(bp.arena, line);
         defer candidate.deinit(bp.arena);
-        if (isMatch(sue, candidate)) {
+        if (isMatch(sue, candidate, bp.part)) {
             break i;
         }
     } else return error.Unsolvable;
@@ -52,17 +52,22 @@ fn parseProperty(it: *WordIterator) !?struct { []const u8, u8 } {
     }
 }
 
-fn isMatch(lhs: Sue, rhs: Sue) bool {
-    for (rhs.keys()) |key| {
-        if (!lhs.contains(key)) {
-            return false;
-        }
-    }
+fn isMatch(lhs: Sue, rhs: Sue, part: lib.Part) bool {
     var it = lhs.iterator();
     while (it.next()) |entry| {
-        if (rhs.get(entry.key_ptr.*)) |value| {
-            if (value != entry.value_ptr.*) {
-                return false;
+        if (rhs.get(entry.key_ptr.*)) |expected| {
+            if (part == .p2 and (std.mem.eql(u8, "cats", entry.key_ptr.*) or std.mem.eql(u8, "trees", entry.key_ptr.*))) {
+                if (entry.value_ptr.* >= expected) {
+                    return false;
+                }
+            } else if (part == .p2 and (std.mem.eql(u8, "pomeranians", entry.key_ptr.*) or std.mem.eql(u8, "goldfish", entry.key_ptr.*))) {
+                if (entry.value_ptr.* <= expected) {
+                    return false;
+                }
+            } else {
+                if (expected != entry.value_ptr.*) {
+                    return false;
+                }
             }
         }
     }

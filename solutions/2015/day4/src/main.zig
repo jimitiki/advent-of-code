@@ -3,6 +3,8 @@ const Md5 = std.crypto.hash.Md5;
 
 const Boilerplate = @import("lib").Boilerplate;
 
+// TODO: Re-implement MD5?
+
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;

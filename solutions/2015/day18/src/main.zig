@@ -5,6 +5,8 @@ const Boilerplate = lib.Boilerplate;
 
 const Row = std.bit_set.ArrayBitSet(usize, 102);
 
+// TODO: Create a visualization
+
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;

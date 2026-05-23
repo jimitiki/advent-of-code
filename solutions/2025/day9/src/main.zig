@@ -4,6 +4,11 @@ const Boilerplate = @import("lib").Boilerplate;
 
 const Tile = struct { u64, u64 };
 
+// TODO: Fix rect intersects. Currently, it will approve a rectangle whose points lie on the edge
+// of a concavity in the tile polygon such that the inside of the rectangle covers the outside.
+// Is there a way to do it with just testing that the center of the rectangle is within the
+// polygon?
+
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;

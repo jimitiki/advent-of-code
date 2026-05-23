@@ -2,6 +2,8 @@ const std = @import("std");
 
 const lib = @import("lib");
 
+// TODO: Implement a faster sum of divisors algorithm
+
 pub fn main(init: std.process.Init) !void {
     const arena = init.arena.allocator();
     const args = try init.minimal.args.toSlice(arena);

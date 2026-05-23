@@ -4,6 +4,8 @@ const lib = @import("lib");
 const Boilerplate = lib.Boilerplate;
 const WordIterator = lib.parse.WordIterator;
 
+// TODO: Create a visualization
+
 const Action = enum { toggle, turn };
 const State = enum { off, on };
 const Instruction = union(Action) {

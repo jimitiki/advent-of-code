@@ -4,6 +4,8 @@ const lib = @import("lib");
 const Boilerplate = lib.Boilerplate;
 const splitWords = lib.parse.splitWords;
 
+// TODO: Evaluate signal with "lazy recursion". Check the wires needed, if they haven't been evaluated yet, evaluate them, etc.
+
 const WireId = u16;
 const Signal = u16;
 const Wire = ?Signal;

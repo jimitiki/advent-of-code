@@ -8,6 +8,8 @@ const Sue = std.StringArrayHashMapUnmanaged(u8);
 
 const sue_str = "Sue 0: children: 3, cats: 7, samoyeds: 2, pomeranians: 3, akitas: 0, vizslas: 0, goldfish: 5, trees: 3, cars: 2, perfumes: 1";
 
+// TODO: Maybe "Sue"s should be represented by a struct after all?
+
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;

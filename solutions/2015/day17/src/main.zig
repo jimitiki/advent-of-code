@@ -3,6 +3,8 @@ const std = @import("std");
 const lib = @import("lib");
 const Boilerplate = lib.Boilerplate;
 
+// TODO: Potentially represent containers with a bitset
+
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;

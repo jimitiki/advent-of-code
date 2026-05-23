@@ -5,6 +5,8 @@ const Boilerplate = @import("lib").Boilerplate;
 const House = struct { x: i32, y: i32 };
 const HouseSet = std.AutoHashMap(House, void);
 
+// TODO: Create a visualization
+
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [1]u8 = undefined;

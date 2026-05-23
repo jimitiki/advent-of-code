@@ -3,6 +3,8 @@ const std = @import("std");
 const Boilerplate = @import("lib").Boilerplate;
 const Shape = std.bit_set.IntegerBitSet(9);
 
+// TODO: Fix known-good computation (needs to see if 3x3 will fit, not, say, 1x9)
+
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;

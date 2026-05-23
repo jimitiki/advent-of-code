@@ -3,6 +3,8 @@ const std = @import("std");
 const lib = @import("lib");
 const Boilerplate = lib.Boilerplate;
 
+// TODO: Create a visualization
+
 const Reindeer = struct {
     speed: u32,
     duration: u32,

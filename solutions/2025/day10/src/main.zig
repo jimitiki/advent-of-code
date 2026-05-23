@@ -5,6 +5,9 @@ const Boilerplate = @import("lib").Boilerplate;
 const BitSet = std.bit_set.IntegerBitSet(16);
 const Buttons = std.ArrayList(BitSet);
 
+// TODO: Use vectors for joltage computations
+// TODO: Stop testing extraneous button presses for part 1
+
 const ArrayHashContext = struct {
     pub fn hash(self: @This(), a: []const u16) u64 {
         _ = self;

@@ -7,6 +7,8 @@ const WordIterator = lib.parse.WordIterator;
 const MoleculeSet = std.StringHashMapUnmanaged(void);
 const RuleTable = std.StringHashMapUnmanaged(std.ArrayList([]const u8));
 
+// TODO: Implement part 2 programatically. Maybe using CYK algorithm?
+
 const AtomIterator = struct {
     string: []const u8,
     index: usize = 0,

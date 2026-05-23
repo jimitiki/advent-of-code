@@ -4,6 +4,8 @@ const BitSet = std.DynamicBitSetUnmanaged;
 
 const Boilerplate = @import("lib").Boilerplate;
 
+// TODO: Create a visualization
+
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;

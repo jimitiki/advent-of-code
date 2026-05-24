@@ -68,6 +68,9 @@ pub fn main(init: std.process.Init) !void {
     var pc: usize = 0;
     var reg_a: u64 = 0;
     var reg_b: u64 = 0;
+    if (bp.part == .p2) {
+        reg_a += 1;
+    }
     while (pc < program.items.len) {
         switch (program.items[pc]) {
             .hlf => |reg| {

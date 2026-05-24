@@ -6,6 +6,8 @@ const Boilerplate = lib.Boilerplate;
 
 const Result = struct { usize, u64 };
 
+// TODO: Ensure that packages can be grouped correctly when the number of groups is more than 3
+
 pub fn main(init: std.process.Init) !void {
     var stdout_buffer: [256]u8 = undefined;
     var read_buffer: [256]u8 = undefined;
@@ -23,7 +25,9 @@ pub fn main(init: std.process.Init) !void {
         try weights.append(bp.arena, weight);
     }
 
-    const target_weight = @divExact(total_weight, 3);
+    const groups: u8 = if (bp.part == .p1) 3 else 4;
+
+    const target_weight = @divExact(total_weight, groups);
     std.sort.pdq(u64, weights.items, {}, weighsMore);
     var unused: WeightList = .empty;
     defer unused.deinit(bp.arena);

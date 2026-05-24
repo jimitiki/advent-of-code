@@ -1,21 +1,31 @@
 const std = @import("std");
 
 const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
+
+// TODO: Use `modpow`?
 
 pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
+    const arena = init.arena.allocator();
+    const args = try init.minimal.args.toSlice(arena);
+    defer arena.free(args);
+    _ = std.meta.stringToEnum(lib.Part, args[2]);
+    const row = try std.fmt.parseUnsigned(u64, args[3], 10);
+    const col = try std.fmt.parseUnsigned(u64, args[4], 10);
 
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-    const answer = 0;
-    while (try input.takeDelimiter('\n')) |line| {
-        _ = line;
+    var code: u64 = 20151125;
+    compute: for (2..row + col) |i| {
+        for (1..i + 1) |c| {
+            const r = i + 1 - c;
+            code = (code * 252533) % 33554393;
+            if (c == col and r == row) {
+                break :compute;
+            }
+        }
     }
 
-    try stdout.print("{}\n", .{answer});
+    var stdout_buffer: [256]u8 = undefined;
+    var stdout_writer: std.Io.File.Writer = .init(.stdout(), init.io, &stdout_buffer);
+    var stdout = &stdout_writer.interface;
+    try stdout.print("{}\n", .{code});
     try stdout.flush();
 }

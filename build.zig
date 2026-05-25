@@ -35,16 +35,16 @@ pub fn build(b: *std.Build) !void {
     };
     defer std.zon.parse.free(b.allocator, solutions);
     for (solutions) |solution| {
-        const subpath = b.fmt("solutions/{}/day{}", .{ solution.year, solution.day });
-        defer b.allocator.free(subpath);
+        const srcpath = b.fmt("src/y{}/d{:0>2}.zig", .{ solution.year - 2000, solution.day });
+        defer b.allocator.free(srcpath);
         const name = b.fmt("{}-{}", .{ solution.year - 2000, solution.day });
         defer b.allocator.free(name);
         const desc = b.fmt("Solution for {} day {}", .{ solution.year, solution.day });
         defer b.allocator.free(desc);
+        const datapath = b.fmt("inputs/y{}", .{solution.year - 2000});
 
-        const dirpath = b.path(subpath);
         const mod = b.createModule(.{
-            .root_source_file = dirpath.join(b.allocator, "src/main.zig") catch unreachable,
+            .root_source_file = b.path(srcpath),
             .target = target,
             .optimize = optimize,
             .imports = &.{
@@ -58,7 +58,7 @@ pub fn build(b: *std.Build) !void {
         });
 
         const run_cmd = b.addRunArtifact(exe);
-        run_cmd.addDirectoryArg(dirpath);
+        run_cmd.addDirectoryArg(b.path(datapath));
         if (b.args) |args| {
             run_cmd.addArgs(args);
         }
@@ -71,7 +71,7 @@ pub fn build(b: *std.Build) !void {
 fn readSolutions(b: *std.Build) ![]const Solution {
     if (b.build_root.handle.readFileAllocOptions(
         b.graph.io,
-        "solutions/solutions.zon",
+        "solutions.zon",
         b.allocator,
         .unlimited,
         .@"1",

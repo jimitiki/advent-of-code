@@ -17,7 +17,7 @@ pub const Boilerplate = struct {
     pub fn init(std_init: std.process.Init, stdout_buf: []u8, input_buf: []u8) !Boilerplate {
         const arena = std_init.arena.allocator();
         const args = try std_init.minimal.args.toSlice(arena);
-        const file_path = try std.fmt.allocPrint(arena, "{s}/data/{s}.txt", .{ args[1], args[3] });
+        const file_path = try std.fmt.allocPrint(arena, "{s}/{s}.txt", .{ args[1], args[3] });
         const input_file = try std.Io.Dir.cwd().openFile(std_init.io, file_path, .{});
         const stdout_writer: std.Io.File.Writer = .init(.stdout(), std_init.io, stdout_buf);
         return .{

@@ -15,8 +15,7 @@ pub fn main(init: std.process.Init) !void {
     var stdout = &stdout_writer.interface;
 
     const dir = try std.Io.Dir.openDirAbsolute(init.io, args[1], .{});
-    const subpath = try std.fmt.allocPrint(arena, "data/{s}.txt", .{args[3]});
-    const json = try dir.readFileAlloc(init.io, subpath, arena, .unlimited);
+    const json = try dir.readFileAlloc(init.io, "d12.txt", arena, .unlimited);
     const parsed = try std.json.parseFromSliceLeaky(std.json.Value, arena, json, .{});
 
     try stdout.print("{}\n", .{try sumJsonValue(parsed, part == .p2)});

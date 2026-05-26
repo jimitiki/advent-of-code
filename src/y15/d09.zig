@@ -6,7 +6,13 @@ const WordIterator = @import("../parse.zig").WordIterator;
 const solver = @import("../solver.zig");
 fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
     var graph: Graph = .empty;
-    defer graph.deinit(gpa);
+    defer {
+        var it = graph.iterator();
+        while (it.next()) |entry| {
+            entry.value_ptr.deinit(gpa);
+        }
+        graph.deinit(gpa);
+    }
     var names: NameSet = .empty;
     defer {
         var it = names.keyIterator();

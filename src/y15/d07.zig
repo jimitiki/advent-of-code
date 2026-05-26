@@ -1,8 +1,7 @@
 const std = @import("std");
 
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
-const splitWords = lib.parse.splitWords;
+const splitWords = @import("../parse.zig").splitWords;
+const solver = @import("../solver.zig");
 
 // TODO: Evaluate signal with "lazy recursion". Check the wires needed, if they haven't been evaluated yet, evaluate them, etc.
 
@@ -36,10 +35,10 @@ const Circuit = struct {
     gates: std.AutoHashMapUnmanaged(u16, std.ArrayList(Gate)),
     wires: WireMap,
 
-    fn init(alloc: std.mem.Allocator, gates: []Gate) !Self {
+    fn init(alloc: std.mem.Allocator, gates: []const Gate) Self {
         var circuit: Self = .{ .inputs = .empty, .gates = .empty, .wires = .empty };
         for (gates) |gate| {
-            try circuit.addGate(alloc, gate);
+            circuit.addGate(alloc, gate);
         }
         return circuit;
     }
@@ -54,53 +53,67 @@ const Circuit = struct {
         self.gates.deinit(alloc);
     }
 
-    fn addGate(self: *Self, alloc: std.mem.Allocator, gate: Gate) !void {
+    fn addGate(self: *Self, alloc: std.mem.Allocator, gate: Gate) void {
         switch (gate.inputs) {
             .AND, .OR => |in| {
-                try self.connectWire(alloc, in[0], gate);
-                try self.connectWire(alloc, in[1], gate);
+                self.connectWire(alloc, in[0], gate);
+                self.connectWire(alloc, in[1], gate);
             },
             .NOT => |in| {
-                try self.connectWire(alloc, in, gate);
+                self.connectWire(alloc, in, gate);
             },
             .LSHIFT, .RSHIFT => |in| {
-                try self.connectWire(alloc, in[0], gate);
+                self.connectWire(alloc, in[0], gate);
             },
             .SIGNAL => |in| {
                 switch (in) {
-                    .wire_id => try self.connectWire(alloc, in, gate),
-                    .signal => try self.inputs.append(alloc, gate),
+                    .wire_id => self.connectWire(alloc, in, gate),
+                    .signal => self.inputs.append(alloc, gate) catch unreachable,
                 }
             },
         }
-        try self.wires.putNoClobber(alloc, gate.output, null);
+        self.wires.putNoClobber(alloc, gate.output, null) catch unreachable;
     }
 
-    fn connectWire(self: *Self, alloc: std.mem.Allocator, input: Input, gate: Gate) !void {
+    fn connectWire(self: *Self, alloc: std.mem.Allocator, input: Input, gate: Gate) void {
         switch (input) {
             .wire_id => |wire_id| {
-                var entry = try self.gates.getOrPutValue(alloc, wire_id, .empty);
-                try entry.value_ptr.append(alloc, gate);
+                var entry = self.gates.getOrPutValue(alloc, wire_id, .empty) catch unreachable;
+                entry.value_ptr.append(alloc, gate) catch unreachable;
             },
             .signal => {},
         }
     }
 
-    fn resolve(self: *Self, alloc: std.mem.Allocator) !void {
+    fn resolve(self: *Self, alloc: std.mem.Allocator) void {
         var next: std.Deque(Gate) = .empty;
         defer next.deinit(alloc);
+
+        // This handles any predefined signals. If the output wire has not been set, do so. Either
+        // way, the gates connected to the output wire must be added to the queue. The reason for
+        // this is that the simplest way to handle part 2 is to set the signal of a wire before the
+        // resolution step.
         for (self.inputs.items) |gate| {
-            try next.pushBack(alloc, gate);
+            if (self.getWireSignal(gate.output)) |_| {} else {
+                const signal = self.resolveGate(gate).?;
+                self.setWire(gate.output, signal);
+            }
+            if (self.gates.get(gate.output)) |connections| {
+                for (connections.items) |g| {
+                    next.pushBack(alloc, g) catch unreachable;
+                }
+            }
         }
+
         while (next.popFront()) |gate| {
             if (self.getWireSignal(gate.output)) |_| {
                 continue;
             }
             if (self.resolveGate(gate)) |signal| {
-                try self.setWire(gate.output, signal);
+                self.setWire(gate.output, signal);
                 if (self.gates.get(gate.output)) |connections| {
                     for (connections.items) |g| {
-                        try next.pushBack(alloc, g);
+                        next.pushBack(alloc, g) catch unreachable;
                     }
                 }
             }
@@ -132,56 +145,45 @@ const Circuit = struct {
         };
     }
 
-    fn setWire(self: *Self, wire_id: WireId, signal: Signal) !void {
-        if (self.wires.getPtr(wire_id)) |wire| {
-            if (wire.*) |_| {
-                return error.InvalidCircuit;
-            } else {
-                wire.* = signal;
-            }
-        } else {
-            return error.InvalidCircuit;
-        }
+    fn setWire(self: *Self, wire_id: WireId, signal: Signal) void {
+        const wire = self.wires.getPtr(wire_id).?;
+        wire.* = signal;
     }
 
     fn getSignal(self: Self, input: Input) ?Signal {
         return switch (input) {
             .signal => |signal| signal,
-            .wire_id => |wire_id| if (self.wires.get(wire_id)) |wire| wire else unreachable,
+            .wire_id => |wire_id| self.wires.get(wire_id) orelse unreachable,
         };
     }
 
     fn getWireSignal(self: Self, wire_id: WireId) ?Signal {
-        if (self.wires.get(wire_id)) |wire| {
-            return wire;
-        } else unreachable;
+        return self.wires.get(wire_id) orelse unreachable;
     }
 };
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u16, ?u16 } {
     var gates: std.ArrayList(Gate) = .empty;
-    defer gates.deinit(bp.arena);
+    defer gates.deinit(gpa);
     while (try input.takeDelimiter('\n')) |line| {
-        try gates.append(bp.arena, try parseGate(line));
+        gates.append(gpa, try parseGate(line)) catch unreachable;
     }
-    var circuit: Circuit = try .init(bp.arena, gates.items);
-    defer circuit.deinit(bp.arena);
+    var circuit1: Circuit = .init(gpa, gates.items);
+    defer circuit1.deinit(gpa);
+    circuit1.resolve(gpa);
+    const answer1 = circuit1.getWireSignal('a') orelse return .{ null, null };
 
-    try circuit.resolve(bp.arena);
-
-    try stdout.print("{?}\n", .{circuit.getWireSignal('a')});
-    try stdout.flush();
+    var circuit2: Circuit = .init(gpa, gates.items);
+    defer circuit2.deinit(gpa);
+    circuit2.setWire('b', answer1);
+    circuit2.resolve(gpa);
+    const answer2 = circuit2.getWireSignal('a');
+    return .{ answer1, answer2 };
 }
 
-fn parseGate(string: []const u8) !Gate {
+pub const solve = solver.intSolver(u16, solveInt);
+
+fn parseGate(string: []const u8) solver.Error!Gate {
     var buf: [5][]const u8 = undefined;
     const words: [][]const u8 = if (try splitWords(&buf, string)) |w| w else return error.InvalidInput;
 
@@ -200,8 +202,8 @@ fn parseGate(string: []const u8) !Gate {
         const inputs: Inputs = switch (gate_type) {
             .AND => .{ .AND = .{ input1, try parseInput(words[2]) } },
             .OR => .{ .OR = .{ input1, try parseInput(words[2]) } },
-            .LSHIFT => .{ .LSHIFT = .{ input1, try std.fmt.parseInt(u4, words[2], 10) } },
-            .RSHIFT => .{ .RSHIFT = .{ input1, try std.fmt.parseInt(u4, words[2], 10) } },
+            .LSHIFT => .{ .LSHIFT = .{ input1, std.fmt.parseInt(u4, words[2], 10) catch return error.InvalidInput } },
+            .RSHIFT => .{ .RSHIFT = .{ input1, std.fmt.parseInt(u4, words[2], 10) catch return error.InvalidInput } },
             else => return error.InvalidInput,
         };
         return .{ .inputs = inputs, .output = try parseWire(words[4]) };
@@ -210,15 +212,15 @@ fn parseGate(string: []const u8) !Gate {
     }
 }
 
-fn parseInput(string: []const u8) !Input {
+fn parseInput(string: []const u8) solver.Error!Input {
     if (string[0] >= '0' and string[0] <= '9') {
-        return .{ .signal = try std.fmt.parseInt(u16, string, 10) };
+        return .{ .signal = std.fmt.parseInt(u16, string, 10) catch return error.InvalidInput };
     } else {
         return .{ .wire_id = try parseWire(string) };
     }
 }
 
-fn parseWire(string: []const u8) !WireId {
+fn parseWire(string: []const u8) solver.Error!WireId {
     if (string.len == 1) {
         return string[0];
     } else if (string.len == 2) {

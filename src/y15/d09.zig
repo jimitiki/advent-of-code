@@ -1,104 +1,87 @@
 const std = @import("std");
-
 const NameSet = std.StringHashMapUnmanaged(void);
 const EdgeMap = std.StringArrayHashMapUnmanaged(u16);
 const Graph = std.StringArrayHashMapUnmanaged(EdgeMap);
-
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
-const WordIterator = lib.parse.WordIterator;
-
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-
+const WordIterator = @import("../parse.zig").WordIterator;
+const solver = @import("../solver.zig");
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
     var graph: Graph = .empty;
-    defer graph.deinit(bp.arena);
+    defer graph.deinit(gpa);
     var names: NameSet = .empty;
     defer {
         var it = names.keyIterator();
         while (it.next()) |name| {
-            bp.arena.free(name.*);
+            gpa.free(name.*);
         }
-        names.deinit(bp.arena);
+        names.deinit(gpa);
     }
     while (try input.takeDelimiter('\n')) |line| {
         const start, const end, const dist = try parseEdge(line);
-        const start_name = try getName(bp.arena, &names, start);
-        const end_name = try getName(bp.arena, &names, end);
-        try addEdge(bp.arena, &graph, start_name, end_name, dist);
-        try addEdge(bp.arena, &graph, end_name, start_name, dist);
+        const start_name = getName(gpa, &names, start);
+        const end_name = getName(gpa, &names, end);
+        addEdge(gpa, &graph, start_name, end_name, dist);
+        addEdge(gpa, &graph, end_name, start_name, dist);
     }
     var it = graph.iterator();
-    if (bp.part == .p1) {
-        var shortest_path: u64 = std.math.maxInt(u64);
-        while (it.next()) |entry| {
-            shortest_path = @min(shortest_path, try shortestPath(
-                bp.arena,
-                graph,
-                shortest_path,
-                .empty,
-                entry.key_ptr.*,
-                0,
-            ));
-        }
-        try stdout.print("{}\n", .{shortest_path});
-    } else {
-        var longest_path: u64 = 0;
-        while (it.next()) |entry| {
-            longest_path = @max(longest_path, try longestPath(
-                bp.arena,
-                graph,
-                .empty,
-                entry.key_ptr.*,
-                0,
-            ));
-        }
-        try stdout.print("{}\n", .{longest_path});
+    var shortest_path: u32 = std.math.maxInt(u32);
+    var longest_path: u32 = 0;
+    while (it.next()) |entry| {
+        shortest_path = @min(shortest_path, shortestPath(
+            gpa,
+            graph,
+            shortest_path,
+            .empty,
+            entry.key_ptr.*,
+            0,
+        ));
+        longest_path = @max(longest_path, longestPath(
+            gpa,
+            graph,
+            .empty,
+            entry.key_ptr.*,
+            0,
+        ));
     }
-
-    try stdout.flush();
+    return .{ shortest_path, longest_path };
 }
 
-fn parseEdge(string: []const u8) !struct { []const u8, []const u8, u16 } {
+pub const solve = solver.intSolver(u32, solveInt);
+
+fn parseEdge(string: []const u8) error{InvalidInput}!struct { []const u8, []const u8, u16 } {
     var it: WordIterator = .init(string);
-    const start = it.next().?;
-    _ = it.next().?;
-    const end = it.next().?;
-    _ = it.next().?;
-    const dist = it.next().?;
-    return .{ start, end, try std.fmt.parseUnsigned(u16, dist, 10) };
+    const start = it.next() orelse return error.InvalidInput;
+    _ = it.next() orelse return error.InvalidInput;
+    const end = it.next() orelse return error.InvalidInput;
+    _ = it.next() orelse return error.InvalidInput;
+    const dist = it.next() orelse return error.InvalidInput;
+    const distance = std.fmt.parseUnsigned(u16, dist, 10) catch return error.InvalidInput;
+    return .{ start, end, distance };
 }
 
-fn getName(allocator: std.mem.Allocator, names: *NameSet, string: []const u8) ![]const u8 {
+fn getName(allocator: std.mem.Allocator, names: *NameSet, string: []const u8) []const u8 {
     if (names.getKey(string)) |name| {
         return name;
     } else {
-        const name: []u8 = try allocator.alloc(u8, string.len);
+        const name: []u8 = allocator.alloc(u8, string.len) catch unreachable;
         @memcpy(name, string);
-        try names.put(allocator, name, {});
+        names.put(allocator, name, {}) catch unreachable;
         return name;
     }
 }
 
-fn addEdge(allocator: std.mem.Allocator, graph: *Graph, start: []const u8, end: []const u8, dist: u16) !void {
-    const result = try graph.getOrPutValue(allocator, start, .empty);
-    try result.value_ptr.putNoClobber(allocator, end, dist);
+fn addEdge(allocator: std.mem.Allocator, graph: *Graph, start: []const u8, end: []const u8, dist: u16) void {
+    const result = graph.getOrPutValue(allocator, start, .empty) catch unreachable;
+    result.value_ptr.putNoClobber(allocator, end, dist) catch unreachable;
 }
 
 fn shortestPath(
     allocator: std.mem.Allocator,
     graph: Graph,
-    shortest_path: u64,
+    shortest_path: u32,
     visited: NameSet,
     current: []const u8,
-    distance: u64,
-) !u64 {
+    distance: u32,
+) u32 {
     if (shortest_path <= distance) {
         return shortest_path;
     }
@@ -106,9 +89,9 @@ fn shortestPath(
         return distance;
     }
 
-    var visited_new: NameSet = try visited.clone(allocator);
+    var visited_new: NameSet = visited.clone(allocator) catch unreachable;
     defer visited_new.deinit(allocator);
-    try visited_new.put(allocator, current, {});
+    visited_new.put(allocator, current, {}) catch unreachable;
 
     const connections = graph.get(current).?;
     var it = connections.iterator();
@@ -117,7 +100,7 @@ fn shortestPath(
         if (visited.contains(entry.key_ptr.*)) {
             continue;
         }
-        new_shortest_path = @min(new_shortest_path, try shortestPath(
+        new_shortest_path = @min(new_shortest_path, shortestPath(
             allocator,
             graph,
             new_shortest_path,
@@ -134,24 +117,24 @@ fn longestPath(
     graph: Graph,
     visited: NameSet,
     current: []const u8,
-    distance: u64,
-) !u64 {
+    distance: u32,
+) u32 {
     if (visited.count() + 1 == graph.count()) {
         return distance;
     }
 
-    var visited_new: NameSet = try visited.clone(allocator);
+    var visited_new: NameSet = visited.clone(allocator) catch unreachable;
     defer visited_new.deinit(allocator);
-    try visited_new.put(allocator, current, {});
+    visited_new.put(allocator, current, {}) catch unreachable;
 
     const connections = graph.get(current).?;
     var it = connections.iterator();
-    var longest_path: u64 = 0;
+    var longest_path: u32 = 0;
     while (it.next()) |entry| {
         if (visited.contains(entry.key_ptr.*)) {
             continue;
         }
-        longest_path = @max(longest_path, try longestPath(
+        longest_path = @max(longest_path, longestPath(
             allocator,
             graph,
             visited_new,

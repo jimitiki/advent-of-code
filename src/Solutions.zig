@@ -7,6 +7,7 @@ const solutions: []const []const Solver = &.{
         @import("y15/d03.zig").solve,
         @import("y15/d04.zig").solve,
         @import("y15/d05.zig").solve,
+        @import("y15/d06.zig").solve,
     },
 };
 

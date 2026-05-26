@@ -3,6 +3,7 @@ const Solver = @import("solver.zig").Solver;
 const solutions: []const []const Solver = &.{
     &.{
         @import("y15/d01.zig").solve,
+        @import("y15/d02.zig").solve,
     },
 };
 

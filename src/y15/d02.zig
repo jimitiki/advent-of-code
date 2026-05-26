@@ -1,22 +1,11 @@
 const std = @import("std");
-
-const Boilerplate = @import("lib").Boilerplate;
+const solver = @import("../solver.zig");
 
 const Box = struct { u32, u32, u32 };
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-    var answer: u32 = 0;
-    const compute: *const fn (Box) u32 = switch (bp.part) {
-        .p1 => wrappingPaper,
-        .p2 => ribbon,
-    };
+fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+    var answer1: u32 = 0;
+    var answer2: u32 = 0;
     while (try input.takeDelimiter('\n')) |line| {
         const wstart = for (line, 0..) |c, i| {
             if (c == 'x') {
@@ -29,16 +18,17 @@ pub fn main(init: std.process.Init) !void {
             }
         } else return error.InvalidInput;
         const box: Box = .{
-            try std.fmt.parseUnsigned(u32, line[0 .. wstart - 1], 10),
-            try std.fmt.parseUnsigned(u32, line[wstart .. hstart - 1], 10),
-            try std.fmt.parseUnsigned(u32, line[hstart..], 10),
+            std.fmt.parseUnsigned(u32, line[0 .. wstart - 1], 10) catch return error.InvalidInput,
+            std.fmt.parseUnsigned(u32, line[wstart .. hstart - 1], 10) catch return error.InvalidInput,
+            std.fmt.parseUnsigned(u32, line[hstart..], 10) catch return error.InvalidInput,
         };
-        answer += compute(box);
+        answer1 += wrappingPaper(box);
+        answer2 += ribbon(box);
     }
-
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    return .{ answer1, answer2 };
 }
+
+pub const solve = solver.intSolver(u32, solveInt);
 
 fn wrappingPaper(box: Box) u32 {
     const area_lw = box[0] * box[1];

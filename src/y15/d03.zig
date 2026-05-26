@@ -1,57 +1,48 @@
 const std = @import("std");
 
-const Boilerplate = @import("lib").Boilerplate;
+const solver = @import("../solver.zig");
 
-const House = struct { x: i32, y: i32 };
-const HouseSet = std.AutoHashMap(House, void);
+const House = struct { x: i32 = 0, y: i32 = 0 };
+const HouseSet = std.AutoHashMapUnmanaged(House, void);
 
 // TODO: Create a visualization
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [1]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+    var visited_p1: HouseSet = .empty;
+    var visited_p2: HouseSet = .empty;
+    defer visited_p1.deinit(gpa);
+    defer visited_p2.deinit(gpa);
+    var santa1: House = .{};
+    var santa2: House = .{};
+    var robosanta: House = .{};
 
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-
-    var visited: std.AutoHashMapUnmanaged(House, void) = .empty;
-    var x_santa: i32 = 0;
-    var y_santa: i32 = 0;
-    var x_robo: i32 = 0;
-    var y_robo: i32 = 0;
     while (true) {
-        try visited.put(bp.arena, .{ .x = x_santa, .y = y_santa }, {});
-        if (input.takeByte()) |c| {
-            switch (c) {
-                '^' => y_santa += 1,
-                'v' => y_santa -= 1,
-                '>' => x_santa += 1,
-                '<' => x_santa -= 1,
-                '\n' => break,
-                else => return error.InvalidInput,
-            }
+        visited_p1.put(gpa, santa1, {}) catch unreachable;
+        visited_p2.put(gpa, santa2, {}) catch unreachable;
+        if (input.takeByte()) |char| {
+            if (char == '\n') break;
+            santa1 = try move(santa1, char);
+            santa2 = try move(santa2, char);
         } else |_| break;
-        if (bp.part == .p2) {
-            try visited.put(bp.arena, .{ .x = x_robo, .y = y_robo }, {});
-            if (input.takeByte()) |c| {
-                switch (c) {
-                    '^' => y_robo += 1,
-                    'v' => y_robo -= 1,
-                    '>' => x_robo += 1,
-                    '<' => x_robo -= 1,
-                    '\n' => break,
-                    else => return error.InvalidInput,
-                }
-            } else |_| break;
-        }
+        visited_p1.put(gpa, santa1, {}) catch unreachable;
+        visited_p2.put(gpa, robosanta, {}) catch unreachable;
+        if (input.takeByte()) |char| {
+            if (char == '\n') break;
+            santa1 = try move(santa1, char);
+            robosanta = try move(robosanta, char);
+        } else |_| break;
     }
-    while (try input.takeDelimiter('\n')) |line| {
-        _ = line;
-    }
-    const answer = visited.size;
+    return .{ visited_p1.size, visited_p2.size };
+}
 
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+pub const solve = solver.intSolver(u32, solveInt);
+
+fn move(pos: House, char: u8) error{InvalidInput}!House {
+    return switch (char) {
+        '^' => .{ .x = pos.x, .y = pos.y + 1 },
+        'v' => .{ .x = pos.x, .y = pos.y - 1 },
+        '>' => .{ .x = pos.x + 1, .y = pos.y },
+        '<' => .{ .x = pos.x - 1, .y = pos.y },
+        else => return error.InvalidInput,
+    };
 }

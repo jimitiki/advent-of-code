@@ -1,27 +1,17 @@
 const std = @import("std");
+const solver = @import("../solver.zig");
 
-const Boilerplate = @import("lib").Boilerplate;
-
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-    var answer: u64 = 0;
+fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
+    var answer1: usize = 0;
+    var answer2: usize = 0;
     while (try input.takeDelimiter('\n')) |line| {
-        if (bp.part == .p1) {
-            answer += line.len - try decodedChars(line);
-        } else {
-            answer += encodedChars(line) - line.len;
-        }
+        answer1 += line.len - try decodedChars(line);
+        answer2 += encodedChars(line) - line.len;
     }
-
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    return .{ answer1, answer2 };
 }
+
+pub const solve = solver.intSolver(usize, solveInt);
 
 fn encodedChars(string: []const u8) usize {
     var chars: usize = 2;
@@ -34,7 +24,7 @@ fn encodedChars(string: []const u8) usize {
     return chars;
 }
 
-fn decodedChars(string: []const u8) !usize {
+fn decodedChars(string: []const u8) error{InvalidInput}!usize {
     var i: usize = 1;
     var chars: usize = 0;
     if (string[0] != '"' or string[string.len - 1] != '"') {

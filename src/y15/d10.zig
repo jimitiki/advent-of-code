@@ -1,35 +1,32 @@
 const std = @import("std");
+const solver = @import("../solver.zig");
 
 // TODO: Use "elements": https://en.wikipedia.org/wiki/Look-and-say_sequence#Cosmological_decay
 
-pub fn main(init: std.process.Init) !void {
-    const arena = init.arena.allocator();
-    const args = try init.minimal.args.toSlice(arena);
-    defer arena.free(args);
-    const seed = args[2];
-    const iterations = try std.fmt.parseUnsigned(usize, args[3], 10);
-
-    var stdout_buffer: [256]u8 = undefined;
-    var stdout_writer: std.Io.File.Writer = .init(.stdout(), init.io, &stdout_buffer);
-    var stdout = &stdout_writer.interface;
-
-    var buf_cur: []u8 = try arena.alloc(u8, seed.len);
-    defer arena.free(buf_cur);
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+    const seed = try input.takeDelimiter('\n') orelse return error.InvalidInput;
+    var buf_cur: []u8 = gpa.alloc(u8, seed.len) catch unreachable;
+    defer gpa.free(buf_cur);
     for (seed, 0..) |char, i| {
         buf_cur[i] = char - 48;
     }
     var sequence: []const u8 = buf_cur;
-    for (0..iterations) |_| {
-        const buf_next: []u8 = try arena.alloc(u8, sequence.len * 2);
+    var answer1: u32 = 0;
+    for (0..50) |i| {
+        const buf_next: []u8 = gpa.alloc(u8, sequence.len * 2) catch unreachable;
         const next_sequence: []const u8 = lookSay(sequence, buf_next);
-        arena.free(buf_cur);
+        gpa.free(buf_cur);
         buf_cur = buf_next;
         sequence = next_sequence;
+        if (i == 40) {
+            answer1 = @intCast(sequence.len);
+        }
     }
-
-    try stdout.print("{}\n", .{sequence.len});
-    try stdout.flush();
+    const answer2: u32 = @intCast(sequence.len);
+    return .{ answer1, answer2 };
 }
+
+pub const solve = solver.intSolver(u32, solveInt);
 
 fn lookSay(sequence: []const u8, buf: []u8) []const u8 {
     var i: usize = 0;

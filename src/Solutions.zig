@@ -11,6 +11,7 @@ const solutions: []const []const Solver = &.{
         @import("y15/d07.zig").solve,
         @import("y15/d08.zig").solve,
         @import("y15/d09.zig").solve,
+        @import("y15/d10.zig").solve,
     },
 };
 

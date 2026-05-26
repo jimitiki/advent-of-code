@@ -1,53 +1,76 @@
 const std = @import("std");
 
-const Part = @import("lib").Part;
-
-// TODO: Write a simplified parser. It only needs to look for '{', '}', ": \"red\" and <NUMBER>
+const lib = @import("lib");
+const Boilerplate = lib.Boilerplate;
+const Part = lib.Part;
 
 pub fn main(init: std.process.Init) !void {
-    const arena = init.arena.allocator();
-    const args = try init.minimal.args.toSlice(arena);
-    defer arena.free(args);
-    const part = std.meta.stringToEnum(Part, args[2]);
-
     var stdout_buffer: [256]u8 = undefined;
-    var stdout_writer: std.Io.File.Writer = .init(.stdout(), init.io, &stdout_buffer);
-    var stdout = &stdout_writer.interface;
-
-    const dir = try std.Io.Dir.openDirAbsolute(init.io, args[1], .{});
-    const json = try dir.readFileAlloc(init.io, "d12.txt", arena, .unlimited);
-    const parsed = try std.json.parseFromSliceLeaky(std.json.Value, arena, json, .{});
-
-    try stdout.print("{}\n", .{try sumJsonValue(parsed, part == .p2)});
+    var read_buffer: [1]u8 = undefined;
+    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
+    defer bp.deinit();
+    var stdout = &bp.stdout_writer.interface;
+    try stdout.print("{}\n", .{try sumNumbers(bp.arena, &bp.input_reader.interface, bp.part == .p2)});
     try stdout.flush();
 }
 
-fn sumJsonValue(value: std.json.Value, exclude_red: bool) !i64 {
-    switch (value) {
-        .float => return error.InvalidInput,
-        .integer => |i| return i,
-        .array => |a| {
-            var sum: i64 = 0;
-            for (a.items) |v| {
-                sum += try sumJsonValue(v, exclude_red);
+fn sumNumbers(allocator: std.mem.Allocator, reader: *std.Io.Reader, skip_red: bool) !i64 {
+    var sum: i64 = 0;
+    while (true) {
+        const char = reader.peekByte() catch return sum;
+        if (char == '-' or char >= '0' and char <= '9') {
+            const num = try readNumber(allocator, reader);
+            sum += num;
+        } else {
+            reader.seek += 1;
+            switch (char) {
+                '}' => {
+                    return sum;
+                },
+                '{' => sum += try sumNumbers(allocator, reader, skip_red),
+                ':' => if (skip_red and try checkRed(reader)) {
+                    skipObject(reader);
+                    return 0;
+                },
+                else => {},
             }
-            return sum;
-        },
-        .object => |o| {
-            var sum: i64 = 0;
-            for (o.values()) |v| {
-                if (exclude_red) {
-                    switch (v) {
-                        .string => |s| if (std.mem.eql(u8, s, "red")) {
-                            return 0;
-                        },
-                        else => {},
-                    }
-                }
-                sum += try sumJsonValue(v, exclude_red);
-            }
-            return sum;
-        },
-        else => return 0,
+        }
     }
+}
+
+fn skipObject(reader: *std.Io.Reader) void {
+    var depth: usize = 1;
+    while (true) {
+        const char = reader.takeByte() catch unreachable;
+        switch (char) {
+            '{' => depth += 1,
+            '}' => {
+                depth -= 1;
+                if (depth == 0) return;
+            },
+            else => {},
+        }
+    }
+}
+
+fn readNumber(allocator: std.mem.Allocator, reader: *std.Io.Reader) !i64 {
+    var chars: std.ArrayList(u8) = .empty;
+    defer chars.deinit(allocator);
+    try chars.append(allocator, try reader.takeByte());
+    while (true) {
+        const char = try reader.peekByte();
+        if (char < '0' or char > '9') break;
+        try chars.append(allocator, char);
+        reader.seek += 1;
+    }
+    return std.fmt.parseInt(i64, chars.items, 10) catch error.InvalidInput;
+}
+
+fn checkRed(reader: *std.Io.Reader) !bool {
+    for ("\"red\"") |expected| {
+        const actual = try reader.peekByte();
+        if (actual != expected) return false;
+        reader.seek += 1;
+    }
+    return true;
 }

@@ -28,26 +28,22 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
         addEdge(gpa, &graph, start_name, end_name, dist);
         addEdge(gpa, &graph, end_name, start_name, dist);
     }
-    var it = graph.iterator();
-    var shortest_path: u32 = std.math.maxInt(u32);
-    var longest_path: u32 = 0;
-    while (it.next()) |entry| {
-        shortest_path = @min(shortest_path, shortestPath(
-            gpa,
-            graph,
-            shortest_path,
-            .empty,
-            entry.key_ptr.*,
-            0,
-        ));
-        longest_path = @max(longest_path, longestPath(
-            gpa,
-            graph,
-            .empty,
-            entry.key_ptr.*,
-            0,
-        ));
-    }
+    const start = graph.keys()[0];
+    const shortest_path: u32 = shortestPath(
+        gpa,
+        graph,
+        std.math.maxInt(u32),
+        .empty,
+        start,
+        0,
+    );
+    const longest_path: u32 = longestPath(
+        gpa,
+        graph,
+        .empty,
+        start,
+        0,
+    );
     return .{ shortest_path, longest_path };
 }
 

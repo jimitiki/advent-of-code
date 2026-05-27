@@ -1,78 +1,77 @@
 const std = @import("std");
 
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
-const WordIterator = lib.parse.WordIterator;
+const solver = @import("../solver.zig");
+const WordIterator = @import("../parse.zig").WordIterator;
 
 const NameSet = std.StringArrayHashMapUnmanaged(void);
 const HappinessTable = std.StringHashMapUnmanaged(i16);
 const RelativeTable = std.StringHashMapUnmanaged(HappinessTable);
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
+// TODO: Use indeces to represent relatives - switch from hash maps to slices.
 
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?i16, ?i16 } {
     var names: NameSet = .empty;
     defer {
         for (names.keys()) |name| {
-            bp.arena.free(name);
+            gpa.free(name);
         }
-        names.deinit(bp.arena);
+        names.deinit(gpa);
     }
     var relatives: RelativeTable = .empty;
     defer {
         var it = relatives.valueIterator();
         while (it.next()) |value| {
-            value.deinit(bp.arena);
+            value.deinit(gpa);
         }
-        relatives.deinit(bp.arena);
+        relatives.deinit(gpa);
     }
     while (try input.takeDelimiter('\n')) |line| {
         var it = WordIterator.init(line[0 .. line.len - 1]);
         const name1 = it.next().?;
         _ = it.next().?;
         const mod = it.next().?;
-        const points = try std.fmt.parseInt(i16, it.next().?, 10);
+        const points = std.fmt.parseInt(i16, it.next().?, 10) catch return error.InvalidInput;
         for (0..6) |_| _ = it.next().?;
         const name2 = it.next().?;
 
-        const rel1 = try addName(bp.arena, &names, name1);
-        const rel2 = try addName(bp.arena, &names, name2);
-        try addOpinion(bp.arena, &relatives, rel1, rel2, mod, points);
+        const rel1 = addName(gpa, &names, name1);
+        const rel2 = addName(gpa, &names, name2);
+        addOpinion(gpa, &relatives, rel1, rel2, mod, points);
     }
 
-    if (bp.part == .p2) {
-        var table: HappinessTable = .empty;
-        const self = try addName(bp.arena, &names, "");
-        for (names.keys()) |name| {
-            if (std.mem.eql(u8, name, self)) {
-                continue;
-            }
-            try table.put(bp.arena, name, 0);
-            try relatives.getPtr(name).?.put(bp.arena, self, 0);
-        }
-        try relatives.put(bp.arena, self, table);
-    }
-
-    const seating = try bp.arena.alloc([]const u8, names.count());
+    const seating = gpa.alloc([]const u8, names.count() + 1) catch unreachable;
+    defer gpa.free(seating);
     seating[0] = names.keys()[0];
-    var unseated: NameSet = try names.clone(bp.arena);
+    var unseated: NameSet = names.clone(gpa) catch unreachable;
+    defer unseated.deinit(gpa);
     _ = unseated.swapRemove(seating[0]);
-    try stdout.print("{}\n", .{try optimizeHappiness(bp.arena, relatives, seating, &unseated)});
-    try stdout.flush();
+    const answer1 = optimizeHappiness(gpa, relatives, seating[0 .. seating.len - 1], &unseated);
+
+    var table: HappinessTable = .empty;
+    const self = addName(gpa, &names, "");
+    unseated.put(gpa, self, {}) catch unreachable;
+    for (names.keys()) |name| {
+        if (std.mem.eql(u8, name, self)) {
+            continue;
+        }
+        table.put(gpa, name, 0) catch unreachable;
+        relatives.getPtr(name).?.put(gpa, self, 0) catch unreachable;
+    }
+    relatives.put(gpa, self, table) catch unreachable;
+    const answer2 = optimizeHappiness(gpa, relatives, seating, &unseated);
+
+    return .{ answer1, answer2 };
 }
 
-fn addName(allocator: std.mem.Allocator, names: *NameSet, name: []const u8) ![]const u8 {
+pub const solve = solver.intSolver(i16, solveInt);
+
+fn addName(allocator: std.mem.Allocator, names: *NameSet, name: []const u8) []const u8 {
     if (names.getKey(name)) |relative| {
         return relative;
     } else {
-        const relative = try allocator.alloc(u8, name.len);
+        const relative = allocator.alloc(u8, name.len) catch unreachable;
         @memcpy(relative, name);
-        try names.put(allocator, relative, {});
+        names.put(allocator, relative, {}) catch unreachable;
         return relative;
     }
 }
@@ -84,10 +83,10 @@ fn addOpinion(
     rel2: []const u8,
     modifier: []const u8,
     points: i16,
-) !void {
+) void {
     const score = if (std.mem.eql(u8, modifier, "gain")) points else -points;
-    var entry = try relatives.getOrPutValue(allocator, rel1, .empty);
-    try entry.value_ptr.put(allocator, rel2, score);
+    var entry = relatives.getOrPutValue(allocator, rel1, .empty) catch unreachable;
+    entry.value_ptr.put(allocator, rel2, score) catch unreachable;
 }
 
 fn optimizeHappiness(
@@ -95,7 +94,7 @@ fn optimizeHappiness(
     relatives: RelativeTable,
     seating: [][]const u8,
     unseated: *NameSet,
-) !i16 {
+) i16 {
     if (unseated.count() == 0) {
         var happiness: i16 = 0;
         for (seating, 0..) |rel1, i| {
@@ -106,7 +105,7 @@ fn optimizeHappiness(
         return happiness;
     }
 
-    const order = try allocator.alloc([]const u8, unseated.count());
+    const order = allocator.alloc([]const u8, unseated.count()) catch unreachable;
     defer allocator.free(order);
     @memcpy(order, unseated.keys());
 
@@ -114,8 +113,8 @@ fn optimizeHappiness(
     for (order) |next| {
         seating[seating.len - unseated.count()] = next;
         _ = unseated.swapRemove(next);
-        happiness = @max(happiness, try optimizeHappiness(allocator, relatives, seating, unseated));
-        try unseated.put(allocator, next, {});
+        happiness = @max(happiness, optimizeHappiness(allocator, relatives, seating, unseated));
+        unseated.put(allocator, next, {}) catch unreachable;
     }
     return happiness;
 }

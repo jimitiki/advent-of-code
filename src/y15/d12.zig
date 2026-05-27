@@ -1,36 +1,35 @@
 const std = @import("std");
 
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
-const Part = lib.Part;
+const solver = @import("../solver.zig");
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [1]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-    var stdout = &bp.stdout_writer.interface;
-    try stdout.print("{}\n", .{try sumNumbers(bp.arena, &bp.input_reader.interface, bp.part == .p2)});
-    try stdout.flush();
+fn solveInt(gpa: std.mem.Allocator, reader: *std.Io.Reader) solver.Error!struct { ?i64, ?i64 } {
+    const answer = try sumNumbers(gpa, reader);
+    return .{ answer[0], answer[1] };
 }
 
-fn sumNumbers(allocator: std.mem.Allocator, reader: *std.Io.Reader, skip_red: bool) !i64 {
+pub const solve = solver.intSolver(i64, solveInt);
+
+fn sumNumbers(allocator: std.mem.Allocator, reader: *std.Io.Reader) solver.Error!struct { i64, i64 } {
     var sum: i64 = 0;
+    var red_sum: i64 = 0;
+    var red = false;
     while (true) {
-        const char = reader.peekByte() catch return sum;
+        const char = reader.peekByte() catch return .{ sum, if (red) 0 else red_sum };
         if (char == '-' or char >= '0' and char <= '9') {
             const num = try readNumber(allocator, reader);
             sum += num;
+            red_sum += num;
         } else {
             reader.seek += 1;
             switch (char) {
-                '}' => {
-                    return sum;
+                '}' => return .{ sum, if (red) 0 else red_sum },
+                '{' => {
+                    const result = try sumNumbers(allocator, reader);
+                    sum += result[0];
+                    red_sum += result[1];
                 },
-                '{' => sum += try sumNumbers(allocator, reader, skip_red),
-                ':' => if (skip_red and try checkRed(reader)) {
-                    skipObject(reader);
-                    return 0;
+                ':' => if (try checkRed(reader)) {
+                    red = true;
                 },
                 else => {},
             }
@@ -38,37 +37,22 @@ fn sumNumbers(allocator: std.mem.Allocator, reader: *std.Io.Reader, skip_red: bo
     }
 }
 
-fn skipObject(reader: *std.Io.Reader) void {
-    var depth: usize = 1;
-    while (true) {
-        const char = reader.takeByte() catch unreachable;
-        switch (char) {
-            '{' => depth += 1,
-            '}' => {
-                depth -= 1;
-                if (depth == 0) return;
-            },
-            else => {},
-        }
-    }
-}
-
-fn readNumber(allocator: std.mem.Allocator, reader: *std.Io.Reader) !i64 {
+fn readNumber(allocator: std.mem.Allocator, reader: *std.Io.Reader) solver.Error!i64 {
     var chars: std.ArrayList(u8) = .empty;
     defer chars.deinit(allocator);
-    try chars.append(allocator, try reader.takeByte());
+    chars.append(allocator, reader.takeByte() catch return error.InvalidInput) catch unreachable;
     while (true) {
-        const char = try reader.peekByte();
+        const char = reader.peekByte() catch return error.InvalidInput;
         if (char < '0' or char > '9') break;
-        try chars.append(allocator, char);
+        chars.append(allocator, char) catch unreachable;
         reader.seek += 1;
     }
     return std.fmt.parseInt(i64, chars.items, 10) catch error.InvalidInput;
 }
 
-fn checkRed(reader: *std.Io.Reader) !bool {
+fn checkRed(reader: *std.Io.Reader) solver.Error!bool {
     for ("\"red\"") |expected| {
-        const actual = try reader.peekByte();
+        const actual = reader.peekByte() catch return error.InvalidInput;
         if (actual != expected) return false;
         reader.seek += 1;
     }

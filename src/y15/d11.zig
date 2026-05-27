@@ -1,26 +1,23 @@
 const std = @import("std");
+const solver = @import("../solver.zig");
 
-pub fn main(init: std.process.Init) !void {
-    const arena = init.arena.allocator();
-    const args = try init.minimal.args.toSlice(arena);
-    defer arena.free(args);
-    const old = args[2];
-
-    var stdout_buffer: [256]u8 = undefined;
-    var stdout_writer: std.Io.File.Writer = .init(.stdout(), init.io, &stdout_buffer);
-    var stdout = &stdout_writer.interface;
-
-    const pw: []u8 = try arena.alloc(u8, old.len);
+pub fn solve(gpa: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []u8) solver.Error!solver.Result {
+    const old = try input.takeDelimiter('\n') orelse return error.InvalidInput;
+    const pw: []u8 = gpa.alloc(u8, old.len) catch unreachable;
     @memcpy(pw, old);
-    defer arena.free(pw);
-    try increment(pw);
-    while (!isValid(pw)) : (try increment(pw)) {}
-
-    try stdout.print("{s}\n", .{pw});
-    try stdout.flush();
+    defer gpa.free(pw);
+    const answer1 = nextValidPassword(pw, buf1) orelse return .{ null, null };
+    return .{ answer1, nextValidPassword(pw, buf2) };
 }
 
-fn increment(pw: []u8) !void {
+fn nextValidPassword(pw: []u8, buf: []u8) ?[]const u8 {
+    increment(pw) catch return null;
+    while (!isValid(pw)) : (increment(pw) catch return null) {}
+    @memcpy(buf[0..pw.len], pw);
+    return buf[0..pw.len];
+}
+
+fn increment(pw: []u8) error{Unsolvable}!void {
     for (1..pw.len + 1) |i| {
         const pos = pw.len - i;
         pw[pos] = (pw[pos] - 96) % 26 + 97;

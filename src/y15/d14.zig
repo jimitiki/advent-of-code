@@ -1,7 +1,7 @@
 const std = @import("std");
 
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
+const solver = @import("../solver.zig");
+const WordIterator = @import("../parse.zig").WordIterator;
 
 // TODO: Create a visualization
 
@@ -24,10 +24,10 @@ const Counter = struct {
     const Self = @This();
     const Backing = std.AutoHashMapUnmanaged(usize, u32);
 
-    pub fn init(allocator: std.mem.Allocator, reindeer: []const Reindeer) std.mem.Allocator.Error!Self {
+    pub fn init(allocator: std.mem.Allocator, reindeer: []const Reindeer) Self {
         var backing: Backing = .empty;
         for (reindeer, 0..) |_, i| {
-            try backing.put(allocator, i, 0);
+            backing.put(allocator, i, 0) catch unreachable;
         }
         return .{ .backing = backing };
     }
@@ -46,48 +46,38 @@ const Counter = struct {
         return m;
     }
 
-    pub fn deinit(self: Self, allocator: std.mem.Allocator) void {
+    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
         self.backing.deinit(allocator);
     }
 };
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
     var reindeer: std.ArrayList(Reindeer) = .empty;
-    defer reindeer.deinit(bp.arena);
+    defer reindeer.deinit(gpa);
     while (try input.takeDelimiter('\n')) |line| {
-        var it = lib.parse.WordIterator.init(line);
+        var it: WordIterator = .init(line);
         for (0..3) |_| {
             _ = it.next();
         }
-        const speed = try std.fmt.parseUnsigned(u32, it.next().?, 10);
+        const speed = std.fmt.parseUnsigned(u32, it.next().?, 10) catch return error.InvalidInput;
         for (0..2) |_| {
             _ = it.next();
         }
-        const duration = try std.fmt.parseUnsigned(u32, it.next().?, 10);
+        const duration = std.fmt.parseUnsigned(u32, it.next().?, 10) catch return error.InvalidInput;
         for (0..6) |_| {
             _ = it.next();
         }
-        const rest = try std.fmt.parseUnsigned(u32, it.next().?, 10);
-        try reindeer.append(bp.arena, .{ .speed = speed, .duration = duration, .rest = rest });
+        const rest = std.fmt.parseUnsigned(u32, it.next().?, 10) catch return error.InvalidInput;
+        reindeer.append(gpa, .{ .speed = speed, .duration = duration, .rest = rest }) catch unreachable;
     }
 
-    const time = try std.fmt.parseUnsigned(u32, bp.args[4], 10);
-    if (bp.part == .p1) {
-        try stdout.print("{}\n", .{maxDistance(reindeer.items, time)});
-    } else {
-        var scoreboard: Counter = try .init(bp.arena, reindeer.items);
-        try stdout.print("{}\n", .{maxPoints(&scoreboard, reindeer.items, time)});
-    }
-
-    try stdout.flush();
+    const race_time = 2503;
+    var scoreboard: Counter = .init(gpa, reindeer.items);
+    defer scoreboard.deinit(gpa);
+    return .{ maxDistance(reindeer.items, race_time), maxPoints(&scoreboard, reindeer.items, race_time) };
 }
+
+pub const solve = solver.intSolver(u32, solveInt);
 
 fn maxDistance(reindeer: []Reindeer, time: u32) u32 {
     var max: u32 = 0;

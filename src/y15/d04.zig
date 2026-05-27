@@ -1,42 +1,30 @@
 const std = @import("std");
 const Md5 = std.crypto.hash.Md5;
-
-const Boilerplate = @import("lib").Boilerplate;
+const solver = @import("../solver.zig");
 
 // TODO: Re-implement MD5?
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
+fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+    const string = try input.takeDelimiter('\n') orelse return error.InvalidInput;
 
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-    var answer: u64 = 0;
-    const zero_cnt: usize = switch (bp.part) {
-        .p1 => 5,
-        .p2 => 6,
-    };
-    if (try input.takeDelimiter('\n')) |line| {
-        var buf: [128]u8 = undefined;
-        var i: u64 = 0;
-        while (!try checkHash(&buf, line, i, zero_cnt)) : (i += 1) {} else {
-            answer = i;
-        }
-    } else return error.InvalidInput;
+    var buf: [128]u8 = undefined;
+    var answer1: u32 = 0;
+    var answer2: u32 = 0;
+    while (!try checkHash(&buf, string, answer1, 5)) : (answer1 += 1) {}
+    while (!try checkHash(&buf, string, answer2, 6)) : (answer2 += 1) {}
 
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    return .{ answer1, answer2 };
 }
 
-fn checkHash(buf: []u8, prefix: []const u8, suffix: u64, zero_cnt: usize) !bool {
-    const input = try std.fmt.bufPrint(buf, "{s}{}", .{ prefix, suffix });
+pub const solve = solver.intSolver(u32, solveInt);
+
+fn checkHash(buf: []u8, prefix: []const u8, suffix: u32, zero_cnt: usize) !bool {
+    const input = std.fmt.bufPrint(buf, "{s}{}", .{ prefix, suffix }) catch unreachable;
     var digest: [Md5.digest_length]u8 = undefined;
     Md5.hash(input, &digest, .{});
     var hex: [Md5.digest_length * 2]u8 = undefined;
     for (digest, 0..) |byte, i| {
-        _ = try std.fmt.bufPrint(hex[i * 2 .. i * 2 + 2], "{x:0>2}", .{byte});
+        _ = std.fmt.bufPrint(hex[i * 2 .. i * 2 + 2], "{x:0>2}", .{byte}) catch unreachable;
     }
     return std.mem.allEqual(u8, hex[0..zero_cnt], '0');
 }

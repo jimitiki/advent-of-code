@@ -1,35 +1,26 @@
 const std = @import("std");
 
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
+const solver = @import("../solver.zig");
 
 // TODO: Potentially represent containers with a bitset
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
     var containers: std.ArrayList(u32) = .empty;
-    defer containers.deinit(bp.arena);
+    defer containers.deinit(gpa);
 
     while (try input.takeDelimiter('\n')) |line| {
-        try containers.append(bp.arena, try std.fmt.parseUnsigned(u32, line, 10));
+        const capacity = std.fmt.parseUnsigned(u32, line, 10) catch return error.InvalidInput;
+        containers.append(gpa, capacity) catch unreachable;
     }
 
-    if (bp.part == .p1) {
-        try stdout.print("{}\n", .{countCombinations(containers.items, 0, 0, 0)});
-    } else {
-        const limit = minUsed(containers.items, 0, 0);
-        try stdout.print("{}\n", .{countCombinations(containers.items, 0, 0, limit)});
-    }
-
-    try stdout.flush();
+    const limit = minUsed(containers.items, 0, 0);
+    return .{
+        countCombinations(containers.items, 0, 0, 0),
+        countCombinations(containers.items, 0, 0, limit),
+    };
 }
+
+pub const solve = solver.intSolver(u32, solveInt);
 
 fn countCombinations(containers: []u32, capacity: u32, used: u32, limit: u32) u32 {
     if (limit > 0 and used > limit) {

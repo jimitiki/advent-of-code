@@ -1,6 +1,7 @@
 const Solver = @import("solver.zig").Solver;
 
 const solutions: []const []const Solver = &.{
+    // 2015
     &.{
         @import("y15/d01.zig").solve,
         @import("y15/d02.zig").solve,
@@ -27,6 +28,28 @@ const solutions: []const []const Solver = &.{
         @import("y15/d23.zig").solve,
         @import("y15/d24.zig").solve,
         @import("y15/d25.zig").solve,
+    },
+    // 2016
+    &.{},
+    // 2017
+    &.{},
+    // 2018
+    &.{},
+    // 2019
+    &.{},
+    // 2020
+    &.{},
+    // 2021
+    &.{},
+    // 2022
+    &.{},
+    // 2023
+    &.{},
+    // 2024
+    &.{},
+    // 2025
+    &.{
+        @import("y25/d01.zig").solve,
     },
 };
 

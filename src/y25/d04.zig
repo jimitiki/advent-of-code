@@ -2,52 +2,58 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const BitSet = std.DynamicBitSetUnmanaged;
 
-const Boilerplate = @import("lib").Boilerplate;
+const solver = @import("../solver.zig");
 
 // TODO: Create a visualization
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-
-    var answer: u32 = 0;
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?i64, ?i64 } {
     var width: usize = 0;
-    var rows: ArrayList(BitSet) = try .initCapacity(bp.arena, 3);
+    var rows: ArrayList(BitSet) = try .initCapacity(gpa, 3);
+    defer {
+        for (rows.items) |*row| row.deinit(gpa);
+        rows.deinit(gpa);
+    }
     while (try input.takeDelimiter('\n')) |line| {
         if (width == 0) {
             width = line.len;
-            try rows.append(bp.arena, try .initEmpty(bp.arena, width));
+            try rows.append(gpa, try .initEmpty(gpa, width));
         } else if (line.len != width) {
             return error.InvalidInput;
         }
-        var row: BitSet = try .initEmpty(bp.arena, width);
-        try rows.append(bp.arena, row);
+        var row: BitSet = try .initEmpty(gpa, width);
+        try rows.append(gpa, row);
         try parseLine(line, &row);
     }
-    try rows.append(bp.arena, try .initEmpty(bp.arena, width));
+    try rows.append(gpa, try .initEmpty(gpa, width));
 
-    var to_remove: ArrayList(BitSet) = try .initCapacity(bp.arena, rows.items.len - 2);
+    var to_remove: ArrayList(BitSet) = try .initCapacity(gpa, rows.items.len - 2);
+    defer {
+        for (to_remove.items) |*row| row.deinit(gpa);
+        to_remove.deinit(gpa);
+    }
     for (0..rows.items.len - 1) |_| {
-        try to_remove.append(bp.arena, try .initEmpty(bp.arena, width));
+        try to_remove.append(gpa, try .initEmpty(gpa, width));
     }
 
-    while (true) {
-        findRemovable(rows, &to_remove);
-        const removed = remove(&rows, to_remove);
-        for (to_remove.items) |*row| row.unsetAll();
-        answer += removed;
-
-        if (bp.part == .p1) break;
-        if (removed == 0) break;
+    var removed = removeOnce(&rows, &to_remove);
+    const removed_first = removed;
+    var sum_removed = removed;
+    for (to_remove.items) |*row| row.unsetAll();
+    while (removed > 0) {
+        removed = removeOnce(&rows, &to_remove);
+        sum_removed += removed;
     }
 
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    return .{ removed_first, sum_removed };
+}
+
+pub const solve = solver.intSolver(i64, solveInt);
+
+fn removeOnce(rows: *ArrayList(BitSet), to_remove: *ArrayList(BitSet)) u32 {
+    findRemovable(rows.*, to_remove);
+    const removed = remove(rows, to_remove.*);
+    for (to_remove.items) |*row| row.unsetAll();
+    return removed;
 }
 
 fn findRemovable(rows: ArrayList(BitSet), to_remove: *ArrayList(BitSet)) void {

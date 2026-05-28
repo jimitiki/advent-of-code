@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub const Result = struct { ?[]const u8, ?[]const u8 };
-pub const Error = error{ InvalidInput, ReadFailed, StreamTooLong, TooManyWords };
+pub const Error = error{ InvalidInput, OutOfMemory, ReadFailed, StreamTooLong, TooManyWords };
 
 pub const InputType = enum { reader, file };
 pub const Solver = *const fn (std.mem.Allocator, *std.Io.Reader, []u8, []u8) Error!Result;

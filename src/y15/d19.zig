@@ -6,7 +6,7 @@ const WordIterator = @import("../parse.zig").WordIterator;
 const MoleculeSet = std.StringHashMapUnmanaged(void);
 const RuleTable = std.StringHashMapUnmanaged(std.ArrayList([]const u8));
 
-// TODO: Implement part 2 programatically. Maybe using CYK algorithm?
+// TODO: Implement part 2 using CYK algorithm?
 
 const AtomIterator = struct {
     string: []const u8,
@@ -50,7 +50,23 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
     const molecule = try input.takeDelimiter('\n') orelse return error.InvalidInput;
     const answer1 = calibrate(gpa, rules, molecule);
 
-    return .{ answer1, null };
+    var it: AtomIterator = .{ .string = molecule };
+    var total: u32 = 0;
+    var ar_count: u32 = 0;
+    var rn_count: u32 = 0;
+    var y_count: u32 = 0;
+    while (it.next()) |atom| {
+        total += 1;
+        if (std.mem.eql(u8, atom, "Ar")) {
+            ar_count += 1;
+        } else if (std.mem.eql(u8, atom, "Rn")) {
+            rn_count += 1;
+        } else if (std.mem.eql(u8, atom, "Y")) {
+            y_count += 1;
+        }
+    }
+
+    return .{ answer1, total - (ar_count + rn_count) - y_count * 2 - 1 };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);

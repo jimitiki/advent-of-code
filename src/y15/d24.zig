@@ -1,50 +1,49 @@
 const std = @import("std");
 const WeightList = std.ArrayList(u64);
 
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
+const solver = @import("../solver.zig");
 
 const Result = struct { usize, u64 };
 
 // TODO: Ensure that packages can be grouped correctly when the number of groups is more than 3
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
     var weights: std.ArrayList(u64) = .empty;
-    defer weights.deinit(bp.arena);
+    defer weights.deinit(gpa);
     var total_weight: u64 = 0;
     while (try input.takeDelimiter('\n')) |line| {
-        const weight = try std.fmt.parseUnsigned(u64, line, 10);
+        const weight = std.fmt.parseUnsigned(u64, line, 10) catch return error.InvalidInput;
         total_weight += weight;
-        try weights.append(bp.arena, weight);
+        weights.append(gpa, weight) catch unreachable;
     }
 
-    const groups: u8 = if (bp.part == .p1) 3 else 4;
-
-    const target_weight = @divExact(total_weight, groups);
     std.sort.pdq(u64, weights.items, {}, weighsMore);
     var unused: WeightList = .empty;
-    defer unused.deinit(bp.arena);
-    _, const answer = optimizePackages(
-        bp.arena,
-        target_weight,
+    defer unused.deinit(gpa);
+    _, const answer1 = optimizePackages(
+        gpa,
+        @divExact(total_weight, 3),
         weights.items,
         &unused,
         .{ std.math.maxInt(usize), 0 },
         0,
         0,
         1,
-    ) orelse return error.Unsolvable;
-
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    ) orelse .{ void, null };
+    _, const answer2 = optimizePackages(
+        gpa,
+        @divExact(total_weight, 4),
+        weights.items,
+        &unused,
+        .{ std.math.maxInt(usize), 0 },
+        0,
+        0,
+        1,
+    ) orelse .{ void, null };
+    return .{ answer1, answer2 };
 }
+
+pub const solve = solver.intSolver(u64, solveInt);
 
 fn optimizePackages(
     allocator: std.mem.Allocator,
@@ -63,7 +62,7 @@ fn optimizePackages(
             return null;
         }
         for (weights) |weight| {
-            unused.append(allocator, weight) catch @panic("Out of memory");
+            unused.append(allocator, weight) catch unreachable;
         }
         defer {
             for (weights) |_| _ = unused.pop();
@@ -72,7 +71,7 @@ fn optimizePackages(
     }
     var best = best_result;
     for (weights, 0..) |weight, i| {
-        defer unused.append(allocator, weight) catch @panic("Out of memory");
+        defer unused.append(allocator, weight) catch unreachable;
         best = optimizePackages(
             allocator,
             target_weight,

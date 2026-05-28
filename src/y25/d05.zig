@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Boilerplate = @import("lib").Boilerplate;
+const solver = @import("../solver.zig");
 
 const Range = struct {
     start: u64,
@@ -11,60 +11,53 @@ const Range = struct {
     }
 };
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
 
     //Read ID ranges from file
     var ranges_raw: std.ArrayList(Range) = .empty;
+    defer ranges_raw.deinit(gpa);
     while (try input.takeDelimiter('\n')) |line| {
         if (line.len == 0) break;
         var split_point: usize = 0;
         while (line[split_point] != '-') : (split_point += 1) {}
-        const start = try std.fmt.parseInt(u64, line[0..split_point], 10);
-        const end = try std.fmt.parseInt(u64, line[split_point + 1 ..], 10);
-        try ranges_raw.append(bp.arena, .{ .start = start, .end = end });
+        const start = std.fmt.parseInt(u64, line[0..split_point], 10) catch return error.InvalidInput;
+        const end = std.fmt.parseInt(u64, line[split_point + 1 ..], 10) catch return error.InvalidInput;
+        try ranges_raw.append(gpa, .{ .start = start, .end = end });
     }
 
     // Merge overlapping ranges
     std.sort.pdq(Range, ranges_raw.items, {}, Range.lessThan);
     var ranges: std.ArrayList(Range) = .empty;
+    defer ranges.deinit(gpa);
     var range_merged: Range = .{ .start = ranges_raw.items[0].start, .end = ranges_raw.items[0].end };
     for (ranges_raw.items) |range| {
         if (range.start > range_merged.end) {
-            try ranges.append(bp.arena, range_merged);
+            try ranges.append(gpa, range_merged);
             range_merged = range;
         } else {
             range_merged.end = @max(range.end, range_merged.end);
         }
     } else {
-        try ranges.append(bp.arena, range_merged);
+        try ranges.append(gpa, range_merged);
     }
 
-    var answer: u64 = 0;
-
-    if (bp.part == .p1) {
-        // Find which input IDs are valid
-        while (try input.takeDelimiter('\n')) |line| {
-            const id = try std.fmt.parseInt(u64, line, 10);
-            for (ranges.items) |range| {
-                if (id >= range.start and id <= range.end) {
-                    answer += 1;
-                }
+    // Find which input IDs are valid
+    var answer1: u64 = 0;
+    while (try input.takeDelimiter('\n')) |line| {
+        const id = std.fmt.parseInt(u64, line, 10) catch return error.InvalidInput;
+        for (ranges.items) |range| {
+            if (id >= range.start and id <= range.end) {
+                answer1 += 1;
             }
         }
-    } else if (bp.part == .p2) {
-        // Count all valid IDs
-        for (ranges.items) |range| {
-            answer += range.end - range.start + 1;
-        }
-    } else unreachable;
+    }
 
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    // Count all valid IDs
+    var answer2: u64 = 0;
+    for (ranges.items) |range| {
+        answer2 += range.end - range.start + 1;
+    }
+    return .{ answer1, answer2 };
 }
+
+pub const solve = solver.intSolver(u64, solveInt);

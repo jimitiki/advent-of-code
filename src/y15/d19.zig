@@ -1,8 +1,7 @@
 const std = @import("std");
 
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
-const WordIterator = lib.parse.WordIterator;
+const solver = @import("../solver.zig");
+const WordIterator = @import("../parse.zig").WordIterator;
 
 const MoleculeSet = std.StringHashMapUnmanaged(void);
 const RuleTable = std.StringHashMapUnmanaged(std.ArrayList([]const u8));
@@ -27,38 +26,34 @@ const AtomIterator = struct {
     }
 };
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [1024]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    const answer = try computeP1(&bp);
-
-    var stdout = &bp.stdout_writer.interface;
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
-}
-
-fn computeP1(bp: *Boilerplate) !u32 {
-    var input = &bp.input_reader.interface;
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
     var molecules: MoleculeSet = .empty;
     defer {
         var it = molecules.keyIterator();
-        while (it.next()) |m| bp.arena.free(m.*);
-        molecules.deinit(bp.arena);
+        while (it.next()) |m| gpa.free(m.*);
+        molecules.deinit(gpa);
     }
     var rules: RuleTable = .empty;
-    defer rules.deinit(bp.arena);
+    defer {
+        var it = rules.iterator();
+        while (it.next()) |entry| {
+            entry.value_ptr.deinit(gpa);
+        }
+        rules.deinit(gpa);
+    }
     while (try input.takeDelimiter('\n')) |line| {
         if (line.len == 0) break;
         const in, const out = parseRule(line);
-        try addRule(bp.arena, &rules, in, out);
+        addRule(gpa, &rules, in, out);
     }
 
     const molecule = try input.takeDelimiter('\n') orelse return error.InvalidInput;
-    return calibrate(bp.arena, rules, molecule);
+    const answer1 = calibrate(gpa, rules, molecule);
+
+    return .{ answer1, null };
 }
+
+pub const solve = solver.intSolver(u32, solveInt);
 
 fn parseRule(string: []const u8) struct { []const u8, []const u8 } {
     var it: WordIterator = .{ .string = string };
@@ -67,7 +62,7 @@ fn parseRule(string: []const u8) struct { []const u8, []const u8 } {
     return .{ start, it.next().? };
 }
 
-fn calibrate(allocator: std.mem.Allocator, rules: RuleTable, molecule: []const u8) !u32 {
+fn calibrate(allocator: std.mem.Allocator, rules: RuleTable, molecule: []const u8) u32 {
     var generated: MoleculeSet = .empty;
     defer {
         var it = generated.keyIterator();
@@ -80,11 +75,11 @@ fn calibrate(allocator: std.mem.Allocator, rules: RuleTable, molecule: []const u
         if (rules.get(atom)) |outputs| {
             for (outputs.items) |output| {
                 const parts = [_][]const u8{ molecule[0 .. it.index - atom.len], output, molecule[it.index..] };
-                const result = try std.mem.concat(allocator, u8, &parts);
+                const result = std.mem.concat(allocator, u8, &parts) catch unreachable;
                 if (generated.contains(result)) {
                     allocator.free(result);
                 } else {
-                    try generated.put(allocator, result, {});
+                    generated.put(allocator, result, {}) catch unreachable;
                 }
             }
         }
@@ -104,7 +99,7 @@ fn addMolecule(allocator: std.mem.Allocator, molecules: *MoleculeSet, molecule: 
     }
 }
 
-fn addRule(allocator: std.mem.Allocator, rules: *RuleTable, in: []const u8, out: []const u8) !void {
-    var rule = try rules.getOrPutValue(allocator, in, .empty);
-    try rule.value_ptr.append(allocator, out);
+fn addRule(allocator: std.mem.Allocator, rules: *RuleTable, in: []const u8, out: []const u8) void {
+    var rule = rules.getOrPutValue(allocator, in, .empty) catch unreachable;
+    rule.value_ptr.append(allocator, out) catch unreachable;
 }

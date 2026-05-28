@@ -1,23 +1,19 @@
 const std = @import("std");
 const Io = std.Io;
 const assert = std.debug.assert;
-const lib = @import("lib");
 const AutoArrayHashMap = std.array_hash_map.Auto;
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try lib.Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
+const solver = @import("../solver.zig");
 
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-    var sum: u128 = 0;
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
+    var answer1: u64 = 0;
+    var answer2: u64 = 0;
     var invalid_ids: AutoArrayHashMap(u64, void) = .empty;
+    defer invalid_ids.deinit(gpa);
     while (try input.takeDelimiter(',')) |range| {
         var lengths: AutoArrayHashMap(usize, void) = .empty;
-        defer lengths.deinit(bp.arena);
-        const split_point = try find(range, '-');
+        defer lengths.deinit(gpa);
+        const split_point = find(range, '-') orelse return error.InvalidInput;
         var end = range.len;
         while (range[end - 1] == '\n' or range[end - 1] == ' ') {
             end -= 1;
@@ -26,23 +22,26 @@ pub fn main(init: std.process.Init) !void {
             for (lengths.keys()) |l| {
                 if (seq_len % l == 0) continue :outer_loop;
             }
-            sum += try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end], seq_len, &invalid_ids, bp.arena);
-            try lengths.put(bp.arena, seq_len, {});
-            if (bp.part == .p1) break;
+            const sum = try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end], seq_len, &invalid_ids, gpa);
+            answer2 += sum;
+            if (seq_len == 2) {
+                answer1 += sum;
+            }
+            lengths.put(gpa, seq_len, {}) catch unreachable;
         }
     }
-
-    try stdout.print("{}\n", .{sum});
-    try stdout.flush();
+    return .{ answer1, answer2 };
 }
 
-fn find(str: []const u8, char: u8) !usize {
+pub const solve = solver.intSolver(u64, solveInt);
+
+fn find(str: []const u8, char: u8) ?usize {
     for (str, 0..) |c, i| {
         if (c == char) {
             return i;
         }
     }
-    return error.NotFound;
+    return null;
 }
 
 fn sumInvalidIds(
@@ -51,9 +50,9 @@ fn sumInvalidIds(
     seq_cnt: usize,
     invalid_ids: *AutoArrayHashMap(u64, void),
     alloc: std.mem.Allocator,
-) !u64 {
-    const min = try std.fmt.parseInt(u64, first, 10);
-    const max = try std.fmt.parseInt(u64, last, 10);
+) error{InvalidInput}!u64 {
+    const min = std.fmt.parseInt(u64, first, 10) catch return error.InvalidInput;
+    const max = std.fmt.parseInt(u64, last, 10) catch return error.InvalidInput;
     var sbuf: [16:0]u8 = .{0} ** 16;
     var cbuf: [32:0]u8 = .{0} ** 32;
     var seq: []u8 = undefined;
@@ -73,13 +72,14 @@ fn sumInvalidIds(
             const buf_idx = i * seq.len;
             @memcpy(cbuf[buf_idx .. buf_idx + seq.len], seq);
         }
-        const id_num = try std.fmt.parseInt(u64, cbuf[0 .. seq.len * seq_cnt], 10);
+        const id_num = std.fmt.parseInt(u64, cbuf[0 .. seq.len * seq_cnt], 10) catch return error.InvalidInput;
         if (id_num > max) {
             return sum;
         } else if (id_num >= min and !invalid_ids.contains(id_num)) {
             sum += id_num;
-            try invalid_ids.put(alloc, id_num, {});
+            invalid_ids.put(alloc, id_num, {}) catch unreachable;
         }
-        seq = try std.fmt.bufPrint(&sbuf, "{}", .{(try std.fmt.parseInt(u64, seq, 10)) + 1});
+        const int_seq = std.fmt.parseInt(u64, seq, 10) catch unreachable;
+        seq = std.fmt.bufPrint(&sbuf, "{}", .{int_seq + 1}) catch unreachable;
     }
 }

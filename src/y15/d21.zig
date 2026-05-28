@@ -1,8 +1,9 @@
 const std = @import("std");
 
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
-const WordIterator = lib.parse.WordIterator;
+const solver = @import("../solver.zig");
+const WordIterator = @import("../parse.zig").WordIterator;
+
+// TODO: Generalize the algorithm so that it could work for any combination of "gear slots"
 
 const Item = struct {
     cost: u32,
@@ -11,9 +12,41 @@ const Item = struct {
 
     const Self = @This();
 
+    fn init(cost: u32, damage: u32, armor: u32) Self {
+        return .{ .cost = cost, .damage = damage, .armor = armor };
+    }
+
     fn costsLessThan(_: void, lhs: Self, rhs: Self) bool {
         return (lhs.cost < rhs.cost);
     }
+};
+
+const weapons = [_]Item{
+    .init(8, 4, 0),
+    .init(10, 5, 0),
+    .init(25, 6, 0),
+    .init(40, 7, 0),
+    .init(74, 8, 0),
+};
+
+const armors = [_]Item{
+    .init(0, 0, 0),
+    .init(13, 0, 1),
+    .init(31, 0, 2),
+    .init(53, 0, 3),
+    .init(75, 0, 4),
+    .init(102, 0, 5),
+};
+
+const rings = [_]Item{
+    .init(0, 0, 0),
+    .init(0, 0, 0),
+    .init(20, 0, 1),
+    .init(25, 1, 0),
+    .init(40, 0, 2),
+    .init(50, 2, 0),
+    .init(80, 0, 3),
+    .init(100, 3, 0),
 };
 
 const Fighter = struct {
@@ -29,61 +62,23 @@ const Fighter = struct {
     }
 };
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    // Read boss stats
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
+fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
     const boss: Fighter = .{
         .hp = try parseBossStat(try input.takeDelimiter('\n')),
         .damage = try parseBossStat(try input.takeDelimiter('\n')),
         .armor = try parseBossStat(try input.takeDelimiter('\n')),
     };
 
-    // Read shop items
-    const dir = try std.Io.Dir.openDirAbsolute(bp.io, bp.args[1], .{});
-    defer dir.close(bp.io);
-    var shop_file = try dir.openFile(bp.io, "data/shop.txt", .{});
-    defer shop_file.close(bp.io);
-    var r = shop_file.reader(bp.io, &read_buffer);
-    const reader = &r.interface;
-    var weapons = try parseItems(bp.arena, reader);
-    defer weapons.deinit(bp.arena);
-    var armor = try parseItems(bp.arena, reader);
-    defer armor.deinit(bp.arena);
-    var rings = try parseItems(bp.arena, reader);
-    defer rings.deinit(bp.arena);
-
-    // Add options for empty slots
-    try armor.append(bp.arena, .{ .cost = 0, .damage = 0, .armor = 0 });
-    try rings.append(bp.arena, .{ .cost = 0, .damage = 0, .armor = 0 });
-    try rings.append(bp.arena, .{ .cost = 0, .damage = 0, .armor = 0 });
-
-    // Sort the items from cheapest to most expensive. This will save a little bit of time.
-    std.sort.pdq(Item, weapons.items, {}, Item.costsLessThan);
-    std.sort.pdq(Item, armor.items, {}, Item.costsLessThan);
-    std.sort.pdq(Item, rings.items, {}, Item.costsLessThan);
-
-    const optimizer: *const fn (
-        Fighter,
-        []const Item,
-        []const Item,
-        []const Item,
-    ) u32 = if (bp.part == .p1) minCost else maxCost;
-    const answer = optimizer(boss, weapons.items, armor.items, rings.items);
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    return .{ minCost(boss), maxCost(boss) };
 }
 
-fn parseBossStat(input: ?[]const u8) !u32 {
+pub const solve = solver.intSolver(u32, solveInt);
+
+fn parseBossStat(input: ?[]const u8) error{InvalidInput}!u32 {
     if (input) |string| {
         return for (string[0 .. string.len - 2], 0..) |char, i| {
             if (char == ':') {
-                break try std.fmt.parseUnsigned(u32, string[i + 2 ..], 10);
+                break std.fmt.parseUnsigned(u32, string[i + 2 ..], 10) catch error.InvalidInput;
             }
         } else error.InvalidInput;
     } else {
@@ -91,35 +86,16 @@ fn parseBossStat(input: ?[]const u8) !u32 {
     }
 }
 
-fn parseItems(allocator: std.mem.Allocator, reader: *std.Io.Reader) !std.ArrayList(Item) {
-    _ = try reader.takeDelimiter('\n');
-    var item_list: std.ArrayList(Item) = .empty;
-    while (try reader.takeDelimiter('\n')) |line| {
-        if (line.len == 0) break;
-        try item_list.append(allocator, try parseItem(line));
-    }
-    return item_list;
-}
-
-fn parseItem(string: []const u8) !Item {
-    var it: WordIterator = .initRev(string);
-    return .{
-        .armor = try std.fmt.parseUnsigned(u32, it.next().?, 10),
-        .damage = try std.fmt.parseUnsigned(u32, it.next().?, 10),
-        .cost = try std.fmt.parseUnsigned(u32, it.next().?, 10),
-    };
-}
-
-fn minCost(boss: Fighter, weapons: []const Item, armor: []const Item, rings: []const Item) u32 {
+fn minCost(boss: Fighter) u32 {
     var min_cost: u32 = std.math.maxInt(u32);
     for (rings, 0..) |lring, i| {
         for (rings[i + 1 ..]) |rring| {
-            for (armor) |a| {
+            for (armors) |armor| {
                 for (weapons) |weapon| {
-                    const cost = lring.cost + rring.cost + a.cost + weapon.cost;
+                    const cost = lring.cost + rring.cost + armor.cost + weapon.cost;
                     if (cost >= min_cost) continue;
-                    const dmg = lring.damage + rring.damage + a.damage + weapon.damage;
-                    const def = lring.armor + rring.armor + a.armor + weapon.armor;
+                    const dmg = lring.damage + rring.damage + armor.damage + weapon.damage;
+                    const def = lring.armor + rring.armor + armor.armor + weapon.armor;
                     if (playerWins(.{ .hp = 100, .damage = dmg, .armor = def }, boss)) {
                         min_cost = cost;
                     }
@@ -130,16 +106,16 @@ fn minCost(boss: Fighter, weapons: []const Item, armor: []const Item, rings: []c
     return min_cost;
 }
 
-fn maxCost(boss: Fighter, weapons: []const Item, armor: []const Item, rings: []const Item) u32 {
+fn maxCost(boss: Fighter) u32 {
     var max_cost: u32 = 0;
     for (rings, 0..) |lring, i| {
         for (rings[i + 1 ..]) |rring| {
-            for (armor) |a| {
+            for (armors) |armor| {
                 for (weapons) |weapon| {
-                    const cost = lring.cost + rring.cost + a.cost + weapon.cost;
+                    const cost = lring.cost + rring.cost + armor.cost + weapon.cost;
                     if (cost <= max_cost) continue;
-                    const dmg = lring.damage + rring.damage + a.damage + weapon.damage;
-                    const def = lring.armor + rring.armor + a.armor + weapon.armor;
+                    const dmg = lring.damage + rring.damage + armor.damage + weapon.damage;
+                    const def = lring.armor + rring.armor + armor.armor + weapon.armor;
                     if (!playerWins(.{ .hp = 100, .damage = dmg, .armor = def }, boss)) {
                         max_cost = cost;
                     }

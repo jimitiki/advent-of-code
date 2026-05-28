@@ -1,26 +1,21 @@
 const std = @import("std");
 
-const Boilerplate = @import("lib").Boilerplate;
+const solver = @import("../solver.zig");
 
 // TODO: Create a visualization
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
     const width = checkwidth: {
-        const first_line = try input.peekDelimiterExclusive('\n');
+        const first_line = input.peekDelimiterExclusive('\n') catch return error.InvalidInput;
         break :checkwidth first_line.len;
     };
-    const paths = try bp.arena.alloc(u64, width);
-    var next = try bp.arena.alloc(u64, width);
+    const paths = try gpa.alloc(u64, width);
+    defer gpa.free(paths);
+    var next = try gpa.alloc(u64, width);
+    defer gpa.free(next);
     @memset(paths, 0);
     @memset(next, 0);
-    var splits: u32 = 0;
+    var splits: u64 = 0;
     while (try input.takeDelimiter('\n')) |line| {
         for (line, 0..) |c, i| {
             switch (c) {
@@ -42,12 +37,9 @@ pub fn main(init: std.process.Init) !void {
         @memset(next, 0);
     }
 
-    if (bp.part == .p1) {
-        try stdout.print("{}\n", .{splits});
-    } else {
-        var sum: u64 = 0;
-        for (paths) |path_cnt| sum += path_cnt;
-        try stdout.print("{}\n", .{sum});
-    }
-    try stdout.flush();
+    var total_paths: u64 = 0;
+    for (paths) |path_cnt| total_paths += path_cnt;
+    return .{ splits, total_paths };
 }
+
+pub const solve = solver.intSolver(u64, solveInt);

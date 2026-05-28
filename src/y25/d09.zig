@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Boilerplate = @import("lib").Boilerplate;
+const solver = @import("../solver.zig");
 
 const Tile = struct { u64, u64 };
 
@@ -9,50 +9,41 @@ const Tile = struct { u64, u64 };
 // Is there a way to do it with just testing that the center of the rectangle is within the
 // polygon?
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-    const validator: *const fn (Tile, Tile, []const Tile) bool = if (bp.part == .p1) validateRectP1 else validateRectP2;
-
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
     var tiles: std.ArrayList(Tile) = .empty;
-    defer tiles.deinit(bp.arena);
-    var answer: u64 = 0;
+    defer tiles.deinit(gpa);
     while (try input.takeDelimiter('\n')) |line| {
         for (line, 0..) |c, i| {
             if (c == ',') {
-                try tiles.append(bp.arena, .{
-                    try std.fmt.parseUnsigned(u64, line[0..i], 10),
-                    try std.fmt.parseUnsigned(u64, line[i + 1 ..], 10),
+                try tiles.append(gpa, .{
+                    std.fmt.parseUnsigned(u64, line[0..i], 10) catch return error.InvalidInput,
+                    std.fmt.parseUnsigned(u64, line[i + 1 ..], 10) catch return error.InvalidInput,
                 });
             }
         }
     }
+
+    var max_rect: u64 = 0;
+    var max_green_rect: u64 = 0;
     for (tiles.items, 0..) |t1, i| {
         for (tiles.items[i + 1 ..]) |t2| {
-            if (validator(t1, t2, tiles.items)) {
-                answer = @max(area(t1, t2), answer);
+            max_rect = @max(max_rect, area(t1, t2));
+            if (validateRect(t1, t2, tiles.items)) {
+                max_green_rect = @max(area(t1, t2), max_green_rect);
             }
         }
     }
 
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    return .{ max_rect, max_green_rect };
 }
+
+pub const solve = solver.intSolver(u64, solveInt);
 
 fn area(t1: Tile, t2: Tile) u64 {
     return (1 + @max(t1[0], t2[0]) - @min(t1[0], t2[0])) * (1 + @max(t1[1], t2[1]) - @min(t1[1], t2[1]));
 }
 
-fn validateRectP1(_: Tile, _: Tile, _: []const Tile) bool {
-    return true;
-}
-
-fn validateRectP2(t1: Tile, t2: Tile, tiles: []const Tile) bool {
+fn validateRect(t1: Tile, t2: Tile, tiles: []const Tile) bool {
     const r1 = .{ @min(t1[0], t2[0]), @min(t1[1], t2[1]) };
     const r2 = .{ @max(t1[0], t2[0]), @max(t1[1], t2[1]) };
     for (tiles, 0..) |p1, i| {

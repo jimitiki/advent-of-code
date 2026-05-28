@@ -1,7 +1,10 @@
 const std = @import("std");
 
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
+const solver = @import("../solver.zig");
+
+// TODO: Stop relying on a global mutable variable
+// TODO: Improve handling of hard mode so that the initial HP doesn't have to be set to 49 for
+//       part 2 to work
 
 const Wizard = struct {
     hp: u32,
@@ -15,28 +18,25 @@ const Wizard = struct {
 const Spell = enum { magic_missile, drain, shield, poison, recharge };
 const spells = [_]Spell{ .magic_missile, .drain, .shield, .poison, .recharge };
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var input = &bp.input_reader.interface;
+fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
     const boss_hp = try parseBossStat(try input.takeDelimiter('\n'));
     const boss_atk = try parseBossStat(try input.takeDelimiter('\n'));
 
-    const hp: u32 = if (bp.part == .p2) 49 else 50;
-    const answer = minMana(boss_atk, boss_hp, .{ .hp = hp, .mana = 500 }, 0, bp.part == .p2, 0);
-    var stdout = &bp.stdout_writer.interface;
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    std.debug.print("{} - {}\n", .{ boss_hp, boss_atk });
+
+    const answer1 = minMana(boss_atk, boss_hp, .{ .hp = 50, .mana = 500 }, 0, false, 0);
+    min_spent = std.math.maxInt(u32);
+    const answer2 = minMana(boss_atk, boss_hp, .{ .hp = 49, .mana = 500 }, 0, true, 0);
+    return .{ answer1, answer2 };
 }
 
-fn parseBossStat(input: ?[]const u8) !u32 {
+pub const solve = solver.intSolver(u32, solveInt);
+
+fn parseBossStat(input: ?[]const u8) error{InvalidInput}!u32 {
     if (input) |string| {
         return for (string[0 .. string.len - 2], 0..) |char, i| {
             if (char == ':') {
-                break try std.fmt.parseUnsigned(u32, string[i + 2 ..], 10);
+                break std.fmt.parseUnsigned(u32, string[i + 2 ..], 10) catch error.InvalidInput;
             }
         } else error.InvalidInput;
     } else {

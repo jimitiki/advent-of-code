@@ -1,47 +1,46 @@
 const std = @import("std");
 
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
+const solver = @import("../solver.zig");
 
 const Row = std.bit_set.ArrayBitSet(usize, 102);
 
 // TODO: Create a visualization
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-
-    var grid_init = [_]Row{.empty} ** 102;
-    const grid_next = [_]Row{.empty} ** 102;
+fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
+    var grid = [_]Row{.empty} ** 102;
     var i: usize = 1;
     while (try input.takeDelimiter('\n')) |line| : (i += 1) {
-        grid_init[i] = parseRow(line);
+        grid[i] = parseRow(line);
     }
-    if (bp.part == .p2) {
-        grid_init[1].set(1);
-        grid_init[1].set(100);
-        grid_init[100].set(1);
-        grid_init[100].set(100);
+    return .{ run(grid, false), run(grid, true) };
+}
+
+pub const solve = solver.intSolver(usize, solveInt);
+
+fn run(grid_init: [102]Row, keep_corners_lit: bool) usize {
+    var grid1 = [_]Row{.empty} ** 102;
+    var grid2 = [_]Row{.empty} ** 102;
+    copyGrid(&grid1, grid_init);
+    const grids: [2]*[102]Row = .{ &grid1, &grid2 };
+
+    if (keep_corners_lit) {
+        grid1[1].set(1);
+        grid1[1].set(100);
+        grid1[100].set(1);
+        grid1[100].set(100);
     }
 
-    var grids: [2][102]Row = .{ grid_init, grid_next };
     var cur: usize = 0;
     for (0..100) |_| {
-        updateGrid(&grids[cur], &grids[(cur + 1) % 2], bp.part);
+        updateGrid(grids[cur], grids[(cur + 1) % 2], keep_corners_lit);
         cur = (cur + 1) % 2;
     }
 
-    var answer: usize = 0;
+    var light_count: usize = 0;
     for (grids[cur]) |row| {
-        answer += row.count();
+        light_count += row.count();
     }
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    return light_count;
 }
 
 fn parseRow(string: []const u8) Row {
@@ -54,13 +53,16 @@ fn parseRow(string: []const u8) Row {
     return row;
 }
 
-fn updateGrid(cur: []const Row, next: []Row, part: lib.Part) void {
+fn copyGrid(dest: *[102]Row, source: [102]Row) void {
+    for (dest, source) |*dest_row, source_row| {
+        dest_row.setRangeValue(.{ .start = 0, .end = dest_row.capacity() }, false);
+        dest_row.setUnion(source_row);
+    }
+}
+
+fn updateGrid(cur: []const Row, next: *[102]Row, keep_corners_lit: bool) void {
     for (cur[1 .. cur.len - 1], 1..cur.len - 1) |row, i| {
         for (1..row.capacity() - 1) |j| {
-            if (part == .p2 and (i == 1 or i == 100) and (j == 1 or j == 100)) {
-                next[i].set(j);
-                continue;
-            }
             var on_adj: u8 = 0;
             for (i - 1..i + 2) |k| {
                 for (j - 1..j + 2) |l| {
@@ -74,5 +76,11 @@ fn updateGrid(cur: []const Row, next: []Row, part: lib.Part) void {
                 next[i].setValue(j, on_adj == 3);
             }
         }
+    }
+    if (keep_corners_lit) {
+        next[1].set(1);
+        next[1].set(100);
+        next[100].set(1);
+        next[100].set(100);
     }
 }

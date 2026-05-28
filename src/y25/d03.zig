@@ -1,31 +1,22 @@
 const std = @import("std");
 
-const Boilerplate = @import("lib").Boilerplate;
+const solver = @import("../solver.zig");
 
 const digits = "987654321";
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [64]u8 = undefined;
-    var read_buffer: [128]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-    var answer: u64 = 0;
-    const battery_cnt: u8 = switch (bp.part) {
-        .p1 => 2,
-        .p2 => 12,
-    };
+fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
+    var answer1: u64 = 0;
+    var answer2: u64 = 0;
     while (try input.takeDelimiter('\n')) |line| {
-        answer += try highestJoltage(line, battery_cnt);
+        answer1 += highestJoltage(line, 2);
+        answer2 += highestJoltage(line, 12);
     }
-
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    return .{ answer1, answer2 };
 }
 
-fn highestJoltage(bank: []u8, battery_cnt: u8) !u64 {
+pub const solve = solver.intSolver(u64, solveInt);
+
+fn highestJoltage(bank: []u8, battery_cnt: u8) u64 {
     var digit_buf: [128]u8 = undefined;
     var min_idx: usize = 0;
     for (0..battery_cnt) |jolt_idx| {
@@ -38,7 +29,7 @@ fn highestJoltage(bank: []u8, battery_cnt: u8) !u64 {
             }
         }
     }
-    return try std.fmt.parseInt(u64, digit_buf[0..battery_cnt], 10);
+    return std.fmt.parseInt(u64, digit_buf[0..battery_cnt], 10) catch unreachable;
 }
 
 fn findBattery(bank: []u8, joltage: u8) ?usize {

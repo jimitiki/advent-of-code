@@ -1,9 +1,8 @@
 const std = @import("std");
-
-const Boilerplate = @import("lib").Boilerplate;
-
 const Order = std.math.Order;
 const Circuit = std.array_hash_map.Auto(Pos, void);
+
+const solver = @import("../solver.zig");
 
 const Pos = struct { u32, u32, u32 };
 
@@ -28,19 +27,11 @@ const Pair = struct {
     }
 };
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
     var pairs: std.ArrayList(Pair) = .empty;
-    defer pairs.deinit(bp.arena);
+    defer pairs.deinit(gpa);
     var boxes: std.ArrayList(Pos) = .empty;
-    defer boxes.deinit(bp.arena);
+    defer boxes.deinit(gpa);
 
     // Find closest pairs
     while (try input.takeDelimiter('\n')) |line| {
@@ -51,23 +42,28 @@ pub fn main(init: std.process.Init) !void {
                     endx = i;
                 } else {
                     break .{
-                        try std.fmt.parseUnsigned(u32, line[0..endx], 10),
-                        try std.fmt.parseUnsigned(u32, line[endx + 1 .. i], 10),
-                        try std.fmt.parseUnsigned(u32, line[i + 1 ..], 10),
+                        std.fmt.parseUnsigned(u32, line[0..endx], 10) catch return error.InvalidInput,
+                        std.fmt.parseUnsigned(u32, line[endx + 1 .. i], 10) catch return error.InvalidInput,
+                        std.fmt.parseUnsigned(u32, line[i + 1 ..], 10) catch return error.InvalidInput,
                     };
                 }
             }
         } else unreachable;
         for (boxes.items) |p| {
-            try pairs.append(bp.arena, .init(pos, p));
+            try pairs.append(gpa, .init(pos, p));
         }
-        try boxes.append(bp.arena, pos);
+        try boxes.append(gpa, pos);
     }
     std.sort.pdq(Pair, pairs.items, {}, Pair.lessThan);
 
     var circuits: std.ArrayList(Circuit) = .empty;
-    defer circuits.deinit(bp.arena);
-    const answer: u64 = for (pairs.items, 0..) |pair, j| {
+    defer {
+        for (circuits.items) |*circuit| circuit.deinit(gpa);
+        circuits.deinit(gpa);
+    }
+    var answer1: ?u64 = null;
+    var answer2: ?u64 = null;
+    for (pairs.items, 0..) |pair, j| {
         const ia: ?usize = for (circuits.items, 0..) |circuit, i| {
             if (circuit.contains(pair.a)) break i;
         } else null;
@@ -78,34 +74,36 @@ pub fn main(init: std.process.Init) !void {
         if (ia) |ca| {
             if (ib) |cb| {
                 if (ia != ib) {
-                    try circuits.items[ca].ensureUnusedCapacity(bp.arena, circuits.items[cb].entries.len);
-                    for (circuits.items[cb].keys()) |p| try circuits.items[ca].put(bp.arena, p, {});
-                    circuits.items[cb].deinit(bp.arena);
+                    try circuits.items[ca].ensureUnusedCapacity(gpa, circuits.items[cb].entries.len);
+                    for (circuits.items[cb].keys()) |p| try circuits.items[ca].put(gpa, p, {});
+                    circuits.items[cb].deinit(gpa);
                     _ = circuits.swapRemove(cb);
                 }
             } else {
-                try circuits.items[ca].put(bp.arena, pair.b, {});
+                try circuits.items[ca].put(gpa, pair.b, {});
             }
         } else if (ib) |cb| {
-            try circuits.items[cb].put(bp.arena, pair.a, {});
+            try circuits.items[cb].put(gpa, pair.a, {});
         } else {
             var circuit: Circuit = .empty;
-            try circuit.put(bp.arena, pair.a, {});
-            try circuit.put(bp.arena, pair.b, {});
-            try circuits.append(bp.arena, circuit);
+            try circuit.put(gpa, pair.a, {});
+            try circuit.put(gpa, pair.b, {});
+            try circuits.append(gpa, circuit);
         }
-        if (bp.part == .p1 and j == 1000) {
+        if (j == 1000) {
             std.sort.pdq(Circuit, circuits.items, {}, cmpCircuit);
-            break circuits.items[0].entries.len * circuits.items[1].entries.len * circuits.items[2].entries.len;
+            answer1 = circuits.items[0].entries.len * circuits.items[1].entries.len * circuits.items[2].entries.len;
         }
-        if (bp.part == .p2 and circuits.items.len == 1 and circuits.items[0].entries.len == boxes.items.len) {
-            break pair.a[0] * pair.b[0];
+        if (circuits.items.len == 1 and circuits.items[0].entries.len == boxes.items.len) {
+            answer2 = pair.a[0] * pair.b[0];
+            break;
         }
-    } else unreachable;
+    }
 
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    return .{ answer1, answer2 };
 }
+
+pub const solve = solver.intSolver(usize, solveInt);
 
 fn cmpCircuit(_: void, lhs: Circuit, rhs: Circuit) bool {
     return lhs.entries.len > rhs.entries.len;

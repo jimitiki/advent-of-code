@@ -1,26 +1,20 @@
 const std = @import("std");
 
-const lib = @import("lib");
+const solver = @import("../solver.zig");
 
 // TODO: Implement a faster sum of divisors algorithm
 
-pub fn main(init: std.process.Init) !void {
-    const arena = init.arena.allocator();
-    const args = try init.minimal.args.toSlice(arena);
-    defer arena.free(args);
-    const part = std.meta.stringToEnum(lib.Part, args[2]);
-    const target = try std.fmt.parseUnsigned(u32, args[3], 10);
-
-    var house: u32 = 1;
-    const sum_fn: *const fn (u32) u32 = if (part == .p1) sumPresents else sumPresentsModified;
-    while (sum_fn(house) < target) : (house += 1) {}
-
-    var stdout_buffer: [256]u8 = undefined;
-    var stdout_writer: std.Io.File.Writer = .init(.stdout(), init.io, &stdout_buffer);
-    var stdout = &stdout_writer.interface;
-    try stdout.print("{}\n", .{house});
-    try stdout.flush();
+fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+    const line = try input.takeDelimiter('\n') orelse return error.InvalidInput;
+    const target = std.fmt.parseUnsigned(u32, line, 10) catch return error.InvalidInput;
+    var answer1: u32 = 1;
+    while (sumPresents(answer1) < target) : (answer1 += 1) {}
+    var answer2: u32 = 1;
+    while (sumPresentsModified(answer2) < target) : (answer2 += 1) {}
+    return .{ answer1, answer2 };
 }
+
+pub const solve = solver.intSolver(u32, solveInt);
 
 fn sumPresents(house: u32) u32 {
     if (house == 1) {

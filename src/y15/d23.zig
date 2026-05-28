@@ -1,8 +1,7 @@
 const std = @import("std");
 
-const lib = @import("lib");
-const Boilerplate = lib.Boilerplate;
-const WordIterator = lib.parse.WordIterator;
+const solver = @import("../solver.zig");
+const WordIterator = @import("../parse.zig").WordIterator;
 
 const Op = enum {
     hlf,
@@ -26,53 +25,50 @@ const Instruction = union(Op) {
     jie: struct { Register, Offset },
     jio: struct { Register, Offset },
 
-    fn parse(string: []const u8) Instruction {
+    fn parse(string: []const u8) error{InvalidInput}!Instruction {
         var it: WordIterator = .{ .string = string, .omit_punctuation = true };
-        const op = std.meta.stringToEnum(Op, it.next().?).?;
-        const arg1 = it.next().?;
+        const opstr = it.next() orelse return error.InvalidInput;
+        const op = std.meta.stringToEnum(Op, opstr) orelse return error.InvalidInput;
+        const arg1 = it.next() orelse return error.InvalidInput;
         const arg2 = it.next();
         return switch (op) {
-            .hlf => .{ .hlf = parseRegister(arg1) },
-            .tpl => .{ .tpl = parseRegister(arg1) },
-            .inc => .{ .inc = parseRegister(arg1) },
-            .jmp => .{ .jmp = parseOffset(arg1) },
-            .jie => .{ .jie = .{ parseRegister(arg1), parseOffset(arg2.?) } },
-            .jio => .{ .jio = .{ parseRegister(arg1), parseOffset(arg2.?) } },
+            .hlf => .{ .hlf = try parseRegister(arg1) },
+            .tpl => .{ .tpl = try parseRegister(arg1) },
+            .inc => .{ .inc = try parseRegister(arg1) },
+            .jmp => .{ .jmp = try parseOffset(arg1) },
+            .jie => .{ .jie = .{ try parseRegister(arg1), try parseOffset(arg2.?) } },
+            .jio => .{ .jio = .{ try parseRegister(arg1), try parseOffset(arg2.?) } },
         };
     }
 
-    fn parseOffset(string: []const u8) Offset {
+    fn parseOffset(string: []const u8) error{InvalidInput}!Offset {
         const sign: Sign = if (string[0] == '-') .neg else .pos;
-        const absolute = std.fmt.parseUnsigned(usize, string[1..], 10) catch unreachable;
+        const absolute = std.fmt.parseUnsigned(usize, string[1..], 10) catch return error.InvalidInput;
         return .{ sign, absolute };
     }
 
-    fn parseRegister(string: []const u8) Register {
-        return std.meta.stringToEnum(Register, string).?;
+    fn parseRegister(string: []const u8) error{InvalidInput}!Register {
+        return std.meta.stringToEnum(Register, string) orelse error.InvalidInput;
     }
 };
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
     var program: std.ArrayList(Instruction) = .empty;
-    defer program.deinit(bp.arena);
+    defer program.deinit(gpa);
     while (try input.takeDelimiter('\n')) |line| {
-        try program.append(bp.arena, Instruction.parse(line));
+        program.append(gpa, try Instruction.parse(line)) catch unreachable;
     }
+    return .{ execute(program.items, 0, 0), execute(program.items, 1, 0) };
+}
+
+pub const solve = solver.intSolver(u64, solveInt);
+
+fn execute(program: []const Instruction, a: u64, b: u64) u64 {
+    var reg_a = a;
+    var reg_b = b;
     var pc: usize = 0;
-    var reg_a: u64 = 0;
-    var reg_b: u64 = 0;
-    if (bp.part == .p2) {
-        reg_a += 1;
-    }
-    while (pc < program.items.len) {
-        switch (program.items[pc]) {
+    while (pc < program.len) {
+        switch (program[pc]) {
             .hlf => |reg| {
                 getRegister(&reg_a, &reg_b, reg).* /= 2;
                 pc += 1;
@@ -102,11 +98,7 @@ pub fn main(init: std.process.Init) !void {
             },
         }
     }
-
-    // std.debug.print("{}\n", .{program});
-
-    try stdout.print("REGISTER A: {} | REGISTER B: {}\n", .{ reg_a, reg_b });
-    try stdout.flush();
+    return reg_b;
 }
 
 fn getRegister(a: *u64, b: *u64, tag: Register) *u64 {

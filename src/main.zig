@@ -38,7 +38,7 @@ fn runSolver(init: std.process.Init, answer_buf1: []u8, answer_buf2: []u8) !solv
     };
     defer input_file.close(init.io);
 
-    var read_buf: [1024]u8 = undefined;
+    var read_buf: [4096]u8 = undefined;
     var reader = input_file.reader(init.io, &read_buf);
 
     const solution = Solutions.get(year, day) catch std.debug.panic("Invalid year and/or day ({}, {})", .{ year, day });

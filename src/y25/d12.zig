@@ -1,26 +1,19 @@
 const std = @import("std");
 
-const Boilerplate = @import("lib").Boilerplate;
+const solver = @import("../solver.zig");
+
 const Shape = std.bit_set.IntegerBitSet(9);
 
-// TODO: Fix known-good computation (needs to see if 3x3 will fit, not, say, 1x9)
+// TODO: Fix computation of a definitely valid arrangement (needs to see if 3x3 will fit, not 1x9/9x1)
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
     var valid: usize = 0;
     var invalid: usize = 0;
     var unknown: usize = 0;
     var shape_mode = true;
     var counter: usize = 0;
     var shapes: std.ArrayList(Shape) = .empty;
-    defer shapes.deinit(bp.arena);
+    defer shapes.deinit(gpa);
     var shape: Shape = undefined;
     while (try input.takeDelimiter('\n')) |line| {
         if (shape_mode and line.len > 2 and line[2] == 'x') {
@@ -28,7 +21,7 @@ pub fn main(init: std.process.Init) !void {
         }
         if (shape_mode) {
             if (line.len == 0) {
-                try shapes.append(bp.arena, shape);
+                try shapes.append(gpa, shape);
             } else if (line[1] == ':') {
                 shape = .empty;
                 counter = 0;
@@ -41,14 +34,14 @@ pub fn main(init: std.process.Init) !void {
             continue;
         }
 
-        const width = try std.fmt.parseUnsigned(u16, line[0..2], 10);
-        const height = try std.fmt.parseUnsigned(u16, line[3..5], 10);
+        const width = std.fmt.parseUnsigned(u16, line[0..2], 10) catch return error.InvalidInput;
+        const height = std.fmt.parseUnsigned(u16, line[3..5], 10) catch return error.InvalidInput;
         const area = width * height;
-        var counts: []u8 = try bp.arena.alloc(u8, shapes.items.len);
-        defer bp.arena.free(counts);
+        var counts: []u8 = try gpa.alloc(u8, shapes.items.len);
+        defer gpa.free(counts);
         for (line[6..], 6..) |c, i| {
             if (c == ' ') {
-                counts[@divExact(i - 6, 3)] = try std.fmt.parseUnsigned(u8, line[i + 1 .. i + 3], 10);
+                counts[@divExact(i - 6, 3)] = std.fmt.parseUnsigned(u8, line[i + 1 .. i + 3], 10) catch return error.InvalidInput;
             }
         }
         var worst_case: u16 = 0;
@@ -65,8 +58,7 @@ pub fn main(init: std.process.Init) !void {
             unknown += 1;
         }
     }
-
-    try stdout.print("Known good: {} | Known bad: {} | Unknown: {}\n", .{ valid, invalid, unknown });
-    try stdout.print("Answer maybe equals: {}\n", .{valid + unknown});
-    try stdout.flush();
+    return .{ valid + unknown, null };
 }
+
+pub const solve = solver.intSolver(usize, solveInt);

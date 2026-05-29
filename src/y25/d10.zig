@@ -1,27 +1,13 @@
 const std = @import("std");
 
-const Boilerplate = @import("lib").Boilerplate;
+const solver = @import("../solver.zig");
 
 const BitSet = std.bit_set.IntegerBitSet(16);
 const Buttons = std.ArrayList(BitSet);
 
 // TODO: Use vectors for joltage computations
 // TODO: Stop testing extraneous button presses for part 1
-
-const ArrayHashContext = struct {
-    pub fn hash(self: @This(), a: []const u16) u64 {
-        _ = self;
-        var hasher = std.hash.Wyhash.init(0);
-        std.hash.autoHashStrat(&hasher, a, .Deep);
-        return hasher.final();
-    }
-    pub fn eql(self: @This(), a: []const u16, b: []const u16) bool {
-        _ = self;
-        return std.meta.eql(a, b);
-    }
-};
-const JoltsCache = std.HashMapUnmanaged([]const u16, usize, ArrayHashContext, 80);
-const BitSetCache = std.AutoHashMapUnmanaged(BitSet, usize);
+// TODO: Speed up: The current algorithm is bottlenecked by (de)allocations in minPressJolts. Memoization might also have a significant impact.
 
 const Combination = struct {
     const Self = @This();
@@ -68,16 +54,11 @@ const Combination = struct {
 };
 const ComboMap = std.AutoHashMapUnmanaged(BitSet, std.ArrayList(Combination));
 
-pub fn main(init: std.process.Init) !void {
-    var stdout_buffer: [256]u8 = undefined;
-    var read_buffer: [256]u8 = undefined;
-    var bp = try Boilerplate.init(init, &stdout_buffer, &read_buffer);
-    defer bp.deinit();
-
-    var stdout = &bp.stdout_writer.interface;
-    var input = &bp.input_reader.interface;
-    var answer: usize = 0;
-    while (try input.takeDelimiter('\n')) |line| {
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
+    var min_lights: ?usize = 0;
+    var min_jolts: ?usize = 0;
+    var line_no: u32 = 1;
+    while (try input.takeDelimiter('\n')) |line| : (line_no += 1) {
         if (line[0] == '#') continue;
         if (line[0] != '[') return error.InvalidInput;
         const light_cnt: usize = for (line[1..], 1..) |c, i| {
@@ -94,6 +75,7 @@ pub fn main(init: std.process.Init) !void {
         }
 
         var buttons: Buttons = .empty;
+        defer buttons.deinit(gpa);
         var start: usize = 0;
         var btn_set: BitSet = undefined;
         const idx: usize = for (line[light_cnt + 2 ..], light_cnt + 2..) |c, i| {
@@ -104,10 +86,10 @@ pub fn main(init: std.process.Init) !void {
                     btn_set = .initEmpty();
                 },
                 ',', ')' => {
-                    btn_set.set(try std.fmt.parseUnsigned(usize, line[start..i], 10));
+                    btn_set.set(std.fmt.parseUnsigned(usize, line[start..i], 10) catch return error.InvalidInput);
                     start = i + 1;
                     if (c == ')') {
-                        try buttons.append(bp.arena, btn_set);
+                        try buttons.append(gpa, btn_set);
                     }
                 },
                 else => {},
@@ -115,34 +97,54 @@ pub fn main(init: std.process.Init) !void {
         } else return error.InvalidInput;
 
         var jolts: std.ArrayList(u16) = .empty;
-        defer jolts.deinit(bp.arena);
+        defer jolts.deinit(gpa);
         start = idx + 1;
         for (line[idx..], idx..) |c, i| {
             if (c == '}' or c == ',') {
-                try jolts.append(bp.arena, try std.fmt.parseUnsigned(u16, line[start..i], 10));
+                try jolts.append(gpa, std.fmt.parseUnsigned(u16, line[start..i], 10) catch return error.InvalidInput);
                 start = i + 1;
             }
         }
-        if (bp.part == .p1) {
-            answer += try minPressLights(bp.arena, lights, buttons.items);
-        } else {
-            var combos: ComboMap = .empty;
-            defer combos.deinit(bp.arena);
-            for (0..std.math.pow(usize, 2, buttons.items.len)) |i| {
-                const combo: Combination = try .init(bp.arena, .{ .mask = @intCast(i) }, buttons.items, light_cnt);
-                const entry = try combos.getOrPutValue(bp.arena, combo.parity(), .empty);
-                try entry.value_ptr.append(bp.arena, combo);
+
+        if (min_lights) |p| {
+            if (try minPressLights(gpa, lights, buttons.items)) |p_add| {
+                min_lights = p + p_add;
+            } else {
+                min_lights = null;
             }
-            answer += try minPressJolts(bp.arena, jolts.items, combos, 0) orelse return error.Unsolvable;
+        }
+
+        var combos: ComboMap = .empty;
+        defer {
+            var it = combos.iterator();
+            while (it.next()) |entry| {
+                for (entry.value_ptr.items) |combo| combo.deinit(gpa);
+                entry.value_ptr.deinit(gpa);
+            }
+            combos.deinit(gpa);
+        }
+        for (0..std.math.pow(usize, 2, buttons.items.len)) |i| {
+            const combo: Combination = try .init(gpa, .{ .mask = @intCast(i) }, buttons.items, light_cnt);
+            const entry = try combos.getOrPutValue(gpa, combo.parity(), .empty);
+            try entry.value_ptr.append(gpa, combo);
+        }
+        if (min_jolts) |j| {
+            if (try minPressJolts(gpa, jolts.items, combos, 0)) |j_add| {
+                min_jolts = j + j_add;
+            } else {
+                min_jolts = null;
+            }
         }
     }
 
-    try stdout.print("{}\n", .{answer});
-    try stdout.flush();
+    return .{ min_lights, min_jolts };
 }
 
-fn minPressLights(alloc: std.mem.Allocator, expected: BitSet, buttons: []const BitSet) !u64 {
+pub const solve = solver.intSolver(usize, solveInt);
+
+fn minPressLights(alloc: std.mem.Allocator, expected: BitSet, buttons: []const BitSet) solver.Error!?u64 {
     var step_cnts: std.AutoHashMapUnmanaged(BitSet, usize) = .empty;
+    defer step_cnts.deinit(alloc);
     const State = struct { sequence: BitSet, step_cnt: usize };
     var queue: std.Deque(State) = .empty;
     defer queue.deinit(alloc);
@@ -161,14 +163,17 @@ fn minPressLights(alloc: std.mem.Allocator, expected: BitSet, buttons: []const B
     }
     if (step_cnts.get(expected)) |step_cnt| {
         return step_cnt;
-    } else @panic("Failed to find a solution");
+    } else {
+        return null;
+    }
 }
+
 fn minPressJolts(
     alloc: std.mem.Allocator,
     expected: []const u16,
     combos: ComboMap,
     depth: usize,
-) !?u64 {
+) solver.Error!?u64 {
     for (expected) |jolts| {
         if (jolts != 0) break;
     } else return 0;
@@ -181,9 +186,10 @@ fn minPressJolts(
     if (combos.get(parity_needed)) |cs| {
         var best: usize = std.math.maxInt(usize);
         var found_solution: bool = false;
+        const expected_next: []u16 = try alloc.alloc(u16, expected.len);
+        defer alloc.free(expected_next);
+
         test_combo: for (cs.items) |combo| {
-            const expected_next: []u16 = try alloc.alloc(u16, expected.len);
-            defer alloc.free(expected_next);
             @memset(expected_next, 0);
             for (combo.joltage, 0..) |j, i| {
                 if (expected_next[i] + j > expected[i]) continue :test_combo;

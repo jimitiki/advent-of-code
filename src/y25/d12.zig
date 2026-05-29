@@ -4,8 +4,6 @@ const solver = @import("../solver.zig");
 
 const Shape = std.bit_set.IntegerBitSet(9);
 
-// TODO: Fix computation of a definitely valid arrangement (needs to see if 3x3 will fit, not 1x9/9x1)
-
 fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
     var valid: usize = 0;
     var invalid: usize = 0;
@@ -44,13 +42,13 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
                 counts[@divExact(i - 6, 3)] = std.fmt.parseUnsigned(u8, line[i + 1 .. i + 3], 10) catch return error.InvalidInput;
             }
         }
-        var worst_case: u16 = 0;
+        var sum: u16 = 0;
         var best_case: u16 = 0;
         for (counts, shapes.items) |count, s| {
-            worst_case += @as(u16, count) * 9;
             best_case += @as(u16, count) * @as(u16, @intCast(s.count()));
+            sum += count;
         }
-        if (worst_case < area) {
+        if (sum <= (width / 3) * (height / 3)) {
             valid += 1;
         } else if (best_case > area) {
             invalid += 1;
@@ -58,7 +56,7 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
             unknown += 1;
         }
     }
-    return .{ valid + unknown, null };
+    return .{ if (unknown > 0) null else valid, null };
 }
 
 pub const solve = solver.intSolver(usize, solveInt);

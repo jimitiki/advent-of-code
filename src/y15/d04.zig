@@ -3,6 +3,7 @@ const Md5 = std.crypto.hash.Md5;
 const solver = @import("../solver.zig");
 
 // TODO: Re-implement MD5?
+// TODO: Apparently the input seed "cxsaadws" solves in under 500 hashes. Use it for unit tests
 
 fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
     const string = try input.takeDelimiter('\n') orelse return error.InvalidInput;

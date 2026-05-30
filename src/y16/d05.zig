@@ -5,38 +5,53 @@ const solver = @import("../solver.zig");
 
 pub fn solve(_: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []u8) solver.Error!struct { ?[]const u8, ?[]const u8 } {
     const seed = input.peekDelimiterExclusive('\n') catch return error.InvalidInput;
-    var pw: []u8 = buf1[0..8];
-    var char_idx: u3 = 0;
+    var pw1: []u8 = buf1[0..8];
+    @memset(pw1, '*');
+    var pw1_cnt: u4 = 0;
+
+    var pw2: []u8 = buf2[0..8];
+    @memset(pw2, '*');
+    var pw2_cnt: u4 = 0;
+
     var input_buf: [128]u8 = undefined;
     for (0..std.math.maxInt(usize)) |i| {
-        if (try getPasswordChar(&input_buf, seed, i)) |char| {
-            pw[char_idx] = char;
-            std.debug.print("{c}", .{char});
-            if (char_idx == pw.len - 1) {
-                break;
+        if (try getPasswordChars(&input_buf, seed, i)) |chars| {
+            if (pw1_cnt < pw1.len) {
+                pw1[pw1_cnt] = chars[0];
+                std.debug.print("First Door: {s} ({}/8)\n", .{ pw1, pw1_cnt });
+                pw1_cnt += 1;
             }
-            char_idx += 1;
+
+            const place = std.fmt.charToDigit(chars[0], 16) catch unreachable;
+            if (place < pw2.len and pw2[place] == '*') {
+                pw2[place] = chars[1];
+                pw2_cnt += 1;
+                std.debug.print("Second Door: {s} ({}/8)\n", .{ pw2, pw2_cnt });
+                if (pw2_cnt == pw2.len) {
+                    std.debug.print("{} hashes checked\n", .{i});
+                    break;
+                }
+            }
         }
     } else {
         return .{ null, null };
     }
     std.debug.print("\n", .{});
-    _ = buf2;
-    return .{ pw, null };
+    return .{ pw1, pw2 };
 }
 
-fn getPasswordChar(buf: []u8, seed: []const u8, index: usize) solver.Error!?u8 {
+fn getPasswordChars(buf: []u8, seed: []const u8, index: usize) solver.Error!?[2]u8 {
     const str = std.fmt.bufPrint(buf, "{s}{}", .{ seed, index }) catch @panic("Buffer for hash input is not long enough");
     var hex: [Md5.digest_length * 2]u8 = undefined;
     hashStr(str, &hex);
-    return if (isHashValid(&hex, 5)) hex[5] else null;
+    return if (isHashValid(&hex, 5)) .{ hex[5], hex[6] } else null;
 }
 
 test "get pw char" {
     var buf: [32]u8 = undefined;
-    try std.testing.expectEqual('1', try getPasswordChar(&buf, "abc", 3231929));
-    try std.testing.expectEqual('8', try getPasswordChar(&buf, "abc", 5017308));
-    try std.testing.expectEqual('f', try getPasswordChar(&buf, "abc", 5278568));
+    try std.testing.expectEqual(.{ '1', '5' }, try getPasswordChars(&buf, "abc", 3231929));
+    try std.testing.expectEqual(.{ '8', 'f' }, try getPasswordChars(&buf, "abc", 5017308));
+    try std.testing.expectEqual(.{ 'f', '9' }, try getPasswordChars(&buf, "abc", 5278568));
 }
 
 fn hashStr(str: []const u8, buf: *[Md5.digest_length * 2]u8) void {

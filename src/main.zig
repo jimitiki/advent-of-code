@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("solver.zig");
-const Solutions = @import("Solutions.zig");
+const solutions = @import("solutions.zig");
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buf: [256]u8 = undefined;
@@ -41,7 +41,7 @@ fn runSolver(init: std.process.Init, answer_buf1: []u8, answer_buf2: []u8) !solv
     var read_buf: [4096]u8 = undefined;
     var reader = input_file.reader(init.io, &read_buf);
 
-    const solution = Solutions.get(year, day) catch std.debug.panic("Invalid year and/or day ({}, {})", .{ year, day });
+    const solution = solutions.get(year, day) catch std.debug.panic("Invalid year and/or day ({}, {})", .{ year, day });
     return solution(init.gpa, &reader.interface, answer_buf1, answer_buf2);
 }
 

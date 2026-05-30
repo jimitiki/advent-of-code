@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
+const Counter = @import("../counter.zig").Counter(usize);
 const WordIterator = @import("../parse.zig").WordIterator;
 
 // TODO: Create a visualization
@@ -15,39 +16,6 @@ const Reindeer = struct {
         const remainder = @min(self.duration, time % (self.duration + self.rest));
         const dist_per_cycle = self.speed * self.duration;
         return cycles * dist_per_cycle + remainder * self.speed;
-    }
-};
-
-const Counter = struct {
-    backing: Backing,
-
-    const Self = @This();
-    const Backing = std.AutoHashMapUnmanaged(usize, u32);
-
-    pub fn init(allocator: std.mem.Allocator, reindeer: []const Reindeer) Self {
-        var backing: Backing = .empty;
-        for (reindeer, 0..) |_, i| {
-            backing.put(allocator, i, 0) catch unreachable;
-        }
-        return .{ .backing = backing };
-    }
-
-    pub fn add(self: *Self, item: usize) void {
-        const count = self.backing.getPtr(item).?;
-        count.* += 1;
-    }
-
-    pub fn max(self: Self) u32 {
-        var m: u32 = 0;
-        var it = self.backing.valueIterator();
-        while (it.next()) |count| {
-            m = @max(m, count.*);
-        }
-        return m;
-    }
-
-    pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
-        self.backing.deinit(allocator);
     }
 };
 
@@ -72,9 +40,12 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
     }
 
     const race_time = 2503;
-    var scoreboard: Counter = .init(gpa, reindeer.items);
+    var scoreboard: Counter = .empty;
     defer scoreboard.deinit(gpa);
-    return .{ maxDistance(reindeer.items, race_time), maxPoints(&scoreboard, reindeer.items, race_time) };
+    return .{
+        maxDistance(reindeer.items, race_time),
+        try maxPoints(gpa, &scoreboard, reindeer.items, race_time),
+    };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
@@ -87,12 +58,12 @@ fn maxDistance(reindeer: []Reindeer, time: u32) u32 {
     return max;
 }
 
-fn maxPoints(scoreboard: *Counter, reindeer: []Reindeer, time: u32) u32 {
+fn maxPoints(gpa: std.mem.Allocator, scoreboard: *Counter, reindeer: []Reindeer, time: u32) error{OutOfMemory}!u32 {
     for (1..time + 1) |t| {
         const max = maxDistance(reindeer, @truncate(t));
         for (reindeer, 0..) |r, i| {
-            if (r.distance(@truncate(t)) == max) scoreboard.add(i);
+            if (r.distance(@truncate(t)) == max) _ = try scoreboard.add(gpa, i);
         }
     }
-    return scoreboard.max();
+    return @intCast(scoreboard.max());
 }

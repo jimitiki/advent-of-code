@@ -65,5 +65,5 @@ fn maxPoints(gpa: std.mem.Allocator, scoreboard: *Counter, reindeer: []Reindeer,
             if (r.distance(@truncate(t)) == max) _ = try scoreboard.add(gpa, i);
         }
     }
-    return @intCast(scoreboard.max());
+    return @intCast(scoreboard.max()[1]);
 }

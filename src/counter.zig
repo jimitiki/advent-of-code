@@ -66,13 +66,19 @@ pub fn Counter(T: type) type {
             return self.map.keys()[0..@min(n, self.map.entries.len)];
         }
 
-        /// Returns the highest count in the counter
-        pub fn max(self: Self) usize {
+        /// Returns the entry with the hightest count in the counter
+        pub fn max(self: Self) struct { T, usize } {
             var max_val: usize = 0;
-            for (self.map.values()) |v| {
-                max_val = @max(v, max_val);
+            var max_key: T = undefined;
+            for (self.map.keys()) |k| {
+                const v = self.map.get(k).?;
+                if (v > max_val) {
+                    max_val = v;
+                    max_key = k;
+                }
             }
-            return max_val;
+            return .{ max_key, max_val };
+        }
         }
     };
 }

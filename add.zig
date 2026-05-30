@@ -96,20 +96,20 @@ pub fn main(init: std.process.Init) !void {
     var file_writer = solutions_file.writer(init.io, &buf);
     var writer = &file_writer.interface;
 
-    _ = try writer.write(text[0..reader.seek]);
+    _ = try writer.writeAll(text[0..reader.seek]);
     const expand_year = std.mem.eql(u8, "    &.{},\n", try reader.peekDelimiterInclusive('\n'));
     if (expand_year) _ = try reader.discardDelimiterInclusive('\n');
     if (!exists or expand_year) {
         if (!exists) {
             try writer.print("    // 20{}\n", .{year});
         }
-        _ = try writer.write("    &.{\n");
+        _ = try writer.writeAll("    &.{\n");
     }
     try writer.print("        @import(\"y{}/d{:0>2}.zig\").solve,\n", .{ year, day });
     if (!exists or expand_year) {
-        _ = try writer.write("    },\n");
+        _ = try writer.writeAll("    },\n");
     }
-    _ = try writer.write(text[reader.seek..]);
+    _ = try writer.writeAll(text[reader.seek..]);
     try writer.flush();
 
     var dir_buf: [16]u8 = undefined;
@@ -133,6 +133,25 @@ pub fn main(init: std.process.Init) !void {
             else => |e| return e,
         }
     }
+
+    const test_text = try dir.readFileAlloc(init.io, "src/test.zig", gpa, .unlimited);
+    var test_reader = std.Io.Reader.fixed(test_text);
+    while (true) : (_ = try test_reader.discardDelimiterInclusive('\n')) {
+        const line = try test_reader.peekDelimiterExclusive('\n');
+        if (line.len == 1 and line[0] == '}') break;
+        if (line.len < 24) continue;
+        if (year < try std.fmt.parseUnsigned(u8, line[18..20], 10)) break;
+        if (day < try std.fmt.parseUnsigned(u8, line[22..24], 10)) break;
+    }
+    const test_file = try dir.openFile(init.io, "src/test.zig", .{ .mode = .write_only });
+    defer test_file.close(init.io);
+    var testw = test_file.writer(init.io, &buf);
+    var test_writer = &testw.interface;
+    try test_writer.writeAll(test_text[0..test_reader.seek]);
+    try test_writer.print("    _ = @import(\"y{}/d{:0>2}.zig\");\n", .{ year, day });
+    try test_writer.writeAll(test_text[test_reader.seek..test_text.len]);
+    try test_writer.flush();
+
     std.debug.print("Done.\n", .{});
 }
 

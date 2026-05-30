@@ -48,18 +48,69 @@ const IPIterator = struct {
 };
 
 fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
-    var sum_valid: u32 = 0;
+    var sum_tls: u32 = 0;
     var sum_ssl: u32 = 0;
     while (try input.takeDelimiter('\n')) |ip| {
         if (supportsTLS(ip) catch return error.InvalidInput) {
-            sum_valid += 1;
+            sum_tls += 1;
+        }
+        if (supportsSSL(ip) catch return error.InvalidInput) {
+            sum_ssl += 1;
         }
     }
     _ = gpa;
-    return .{ sum_valid, null };
+    return .{ sum_tls, sum_ssl };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
+
+fn supportsSSL(ip: []const u8) error{InvalidIP}!bool {
+    var it: IPIterator = .{ .str = ip };
+    while (it.nextSupernet()) |supernet| {
+        if (supernet.len < 3) continue;
+        for (0..supernet.len - 2) |i| {
+            if (supernet[i] != supernet[i + 1] and supernet[i] == supernet[i + 2]) {
+                if (try hasBAB(ip, supernet[i .. i + 3])) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+test "ssl" {
+    try std.testing.expect(try supportsSSL("aba[bab]xyz"));
+    try std.testing.expect(!try supportsSSL("xyx[xyx]xyx"));
+    try std.testing.expect(try supportsSSL("aaa[kek]eke"));
+    try std.testing.expect(try supportsSSL("zazbz[bzb]cdb"));
+}
+
+fn hasBAB(ip: []const u8, aba: []const u8) error{InvalidIP}!bool {
+    std.debug.assert(aba.len == 3);
+    std.debug.assert(aba[0] == aba[2]);
+    std.debug.assert(aba[0] != aba[1]);
+    var it: IPIterator = .{ .str = ip };
+    while (try it.nextHypernet()) |hypernet| {
+        if (hypernet.len < 3) continue;
+        for (0..hypernet.len - 2) |i| {
+            const bab = hypernet[i .. i + 3];
+            if (bab[0] == aba[1] and bab[1] == aba[0] and bab[2] == bab[0]) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+test "bab" {
+    try std.testing.expect(try hasBAB("aba[bab]xyz", "aba"));
+    try std.testing.expect(!try hasBAB("aba[bab]xyz", "cbc"));
+    try std.testing.expect(!try hasBAB("aba[bab]xyz", "bab"));
+    try std.testing.expect(!try hasBAB("aba[aba]xyz", "aba"));
+    try std.testing.expect(!try hasBAB("aba[aaa]xyz", "aba"));
+    try std.testing.expect(!try hasBAB("aba[abc]xyz", "aba"));
+}
 
 fn supportsTLS(ip: []const u8) error{InvalidIP}!bool {
     var abba: bool = false;

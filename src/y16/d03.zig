@@ -4,17 +4,35 @@ const solver = @import("../solver.zig");
 const WordIterator = @import("../parse.zig").WordIterator;
 
 fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
-    var count: u32 = 0;
-    while (try input.takeDelimiter('\n')) |line| {
-        const l1, const l2, const l3 = try parseTriangle(line);
-        if (l1 + l2 > l3 and l1 + l3 > l2 and l2 + l3 > l1) {
-            count += 1;
+    var t1 = [_]u32{ 0, 0, 0 };
+    var t2 = [_]u32{ 0, 0, 0 };
+    var t3 = [_]u32{ 0, 0, 0 };
+    var count_h: u32 = 0;
+    var count_v: u32 = 0;
+    var i: u2 = 0;
+    while (try input.takeDelimiter('\n')) |line| : (i = (i + 1) % 3) {
+        const triangle = try parseTriangle(line);
+        if (validateTriangle(triangle)) {
+            count_h += 1;
+        }
+
+        t1[i] = triangle[0];
+        t2[i] = triangle[1];
+        t3[i] = triangle[2];
+        if (i == 2) {
+            if (validateTriangle(t1)) count_v += 1;
+            if (validateTriangle(t2)) count_v += 1;
+            if (validateTriangle(t3)) count_v += 1;
         }
     }
-    return .{ count, null };
+    return .{ count_h, count_v };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
+
+fn validateTriangle(edges: [3]u32) bool {
+    return edges[0] + edges[1] > edges[2] and edges[1] + edges[2] > edges[0] and edges[0] + edges[2] > edges[1];
+}
 
 fn parseTriangle(str: []const u8) error{InvalidInput}!struct { u32, u32, u32 } {
     var it = WordIterator.init(str);

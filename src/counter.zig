@@ -79,6 +79,19 @@ pub fn Counter(T: type) type {
             }
             return .{ max_key, max_val };
         }
+
+        /// Returns the entry with the lowest count in the counter
+        pub fn min(self: Self) struct { T, usize } {
+            var min_val: usize = std.math.maxInt(usize);
+            var min_key: T = undefined;
+            for (self.map.keys()) |k| {
+                const v = self.map.get(k).?;
+                if (v < min_val) {
+                    min_val = v;
+                    min_key = k;
+                }
+            }
+            return .{ min_key, min_val };
         }
     };
 }

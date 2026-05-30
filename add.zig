@@ -88,6 +88,7 @@ pub fn main(init: std.process.Init) !void {
         }
         return;
     };
+    std.debug.print("Adding solution for 20{}.{}\n", .{ year, day });
 
     const solutions_file = try dir.createFile(init.io, "src/solutions.zig", .{ .truncate = true });
     defer solutions_file.close(init.io);
@@ -132,6 +133,7 @@ pub fn main(init: std.process.Init) !void {
             else => |e| return e,
         }
     }
+    std.debug.print("Done.\n", .{});
 }
 
 fn findOpenDayAndYear(year: ?u8, day: ?u8, reader: *std.Io.Reader) error{ AlreadyExists, YearFull, Malformed }!struct { u8, u8, bool } {

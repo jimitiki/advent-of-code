@@ -2,6 +2,9 @@ const std = @import("std");
 
 const solver = @import("../solver.zig");
 
+// TODO: Implement part 2 by keeping a list of line segments and doing intersection checks. Compare
+//     memory usage (should be much less) and speed (probably a bit slower).
+
 const Move = struct {
     pub const Turn = enum { l, r };
 
@@ -36,22 +39,37 @@ const Direction = enum(u2) {
 };
 const Position = struct { x: i32, y: i32 };
 
-fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+    var visited: std.AutoHashMapUnmanaged(Position, void) = .empty;
+    defer visited.deinit(gpa);
+
     var direction: Direction = .n;
     var position: Position = .{ .x = 0, .y = 0 };
+    var first_revisited: ?Position = null;
     while (try input.takeDelimiter(',')) |step| {
         const move = try parseMove(step);
         direction = direction.turn(move.turn);
-        position = direction.walk(position, move.amount);
+        for (0..move.amount) |_| {
+            position = direction.walk(position, 1);
+            if (first_revisited) |_| {} else {
+                const result = try visited.getOrPut(gpa, position);
+                if (result.found_existing) {
+                    first_revisited = position;
+                }
+            }
+        }
     }
-    return .{ computeDistance(.{ .x = 0, .y = 0 }, position), null };
+    return .{
+        computeDistance(position),
+        if (first_revisited) |p| computeDistance(p) else null,
+    };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
 
-fn computeDistance(pos1: Position, pos2: Position) u32 {
-    const dist_x: u32 = @intCast(if (pos1.x > pos2.x) pos1.x - pos2.x else pos2.x - pos1.x);
-    const dist_y: u32 = @intCast(if (pos1.y > pos2.y) pos1.y - pos2.y else pos2.y - pos1.y);
+fn computeDistance(pos: Position) u32 {
+    const dist_x: u32 = @intCast(@abs(pos.x));
+    const dist_y: u32 = @intCast(@abs(pos.y));
 
     return dist_x + dist_y;
 }

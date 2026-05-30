@@ -26,16 +26,34 @@ const Room = struct {
             .chksum = str[str.len - 6 .. str.len - 1],
         };
     }
+
+    pub fn decrypt(self: Room, buf: []u8) []const u8 {
+        const offset: u8 = @intCast(self.sector % 26);
+        for (self.name, 0..) |char, i| {
+            if (char == '-') {
+                buf[i] = ' ';
+            } else {
+                buf[i] = (char - 'a' + offset) % 26 + 'a';
+            }
+        }
+        return buf[0..self.name.len];
+    }
 };
 
 fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
     var sum_valid: u32 = 0;
+    var obj_storage_sector: ?u32 = null;
+    var buf: [64]u8 = undefined;
     while (try input.takeDelimiter('\n')) |line| {
         const room = try Room.parse(line);
         if (!try room.validate(gpa)) {
             continue;
         }
         sum_valid += room.sector;
+        if (obj_storage_sector) |_| {} else {
+            if (std.mem.eql(u8, room.decrypt(&buf), "northpole object storage")) {
+                obj_storage_sector = room.sector;
+            }
         }
     }
 
@@ -100,6 +118,12 @@ test "validation" {
     try std.testing.expect(try room3.validate(std.testing.allocator));
     const room4: Room = .{ .name = "totally-real-room", .sector = 200, .chksum = "decoy" };
     try std.testing.expect(!try room4.validate(std.testing.allocator));
+}
+
+test "decrypt" {
+    var buf: [64]u8 = undefined;
+    const room: Room = .{ .name = "qzmt-zixmtkozy-ivhz", .sector = 343, .chksum = "" };
+    try std.testing.expectEqualSlices(u8, "very encrypted name", room.decrypt(&buf));
 }
 
 test "solve" {

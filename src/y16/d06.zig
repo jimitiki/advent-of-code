@@ -26,11 +26,11 @@ pub fn solve(gpa: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []
             _ = try counter.add(gpa, char);
         }
     }
-    for (counters, buf1[0..code_len]) |counter, *char| {
-        char.* = counter.max()[0];
+    for (counters, buf1[0..code_len], buf2[0..code_len]) |counter, *char1, *char2| {
+        char1.* = counter.max()[0];
+        char2.* = counter.min()[0];
     }
-    _ = buf2;
-    return .{ buf1[0..code_len], null };
+    return .{ buf1[0..code_len], buf2[0..code_len] };
 }
 
 test "solve" {
@@ -57,5 +57,5 @@ test "solve" {
     var buf2: [6]u8 = undefined;
     const actual = try solve(std.testing.allocator, &reader, &buf1, &buf2);
     try std.testing.expectEqualSlices(u8, "easter", actual[0].?);
-    try std.testing.expectEqual(null, actual[1]);
+    try std.testing.expectEqualSlices(u8, "advent", actual[1].?);
 }

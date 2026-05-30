@@ -32,6 +32,7 @@ const solutions: []const []const Solver = &.{
     // 2016
     &.{
         @import("y16/d01.zig").solve,
+        @import("y16/d02.zig").solve,
     },
     // 2017
     &.{},

@@ -30,8 +30,7 @@ fn rectBitMask(comptime T: type, width: T) error{InvalidInput}!T {
     if (width > bit_count) {
         return error.InvalidInput;
     }
-    const zero_mask = std.math.shl(T, 1, bit_count - width) -| 1;
-    return (@as(T, 1) <<| bit_count) ^ zero_mask;
+    return std.math.shl(T, ~@as(T, 0), bit_count - width);
 }
 
 test "rect" {

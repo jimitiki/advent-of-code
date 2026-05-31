@@ -119,3 +119,73 @@ test "rect bit mask" {
 
     try std.testing.expectError(error.InvalidInput, rectBitMask(u7, 8));
 }
+
+fn rotateRow(comptime T: type, screen: []T, row: usize, amount: usize) error{InvalidInput}!void {
+    if (row >= screen.len) {
+        return error.InvalidInput;
+    }
+    screen[row] = std.math.rotr(T, screen[row], amount);
+}
+
+test "rotate row" {
+    {
+        var screen = [_]u7{
+            0b1010000,
+            0b1110000,
+            0b0100000,
+        };
+        const expected = [_]u7{
+            0b0000101,
+            0b1110000,
+            0b0100000,
+        };
+        try rotateRow(u7, &screen, 0, 4);
+        try std.testing.expectEqual(expected, screen);
+    }
+    {
+        var screen = [_]u7{
+            0b1100011,
+            0b0011100,
+            0b1110011,
+        };
+        const expected = [_]u7{
+            0b1100011,
+            0b1000011,
+            0b1110011,
+        };
+        try rotateRow(u7, &screen, 1, 3);
+        try std.testing.expectEqual(expected, screen);
+    }
+    {
+        var screen = [_]u7{
+            0b1100011,
+            0b0011100,
+            0b1110011,
+        };
+        const expected = [_]u7{
+            0b1100011,
+            0b1000011,
+            0b1110011,
+        };
+        try rotateRow(u7, &screen, 1, 10);
+        try std.testing.expectEqual(expected, screen);
+    }
+    {
+        var screen = [_]u7{
+            0b1100011,
+            0b0011100,
+            0b1110011,
+        };
+        const expected = [_]u7{
+            0b1100011,
+            0b0011100,
+            0b1110011,
+        };
+        try rotateRow(u7, &screen, 1, 0);
+        try std.testing.expectEqual(expected, screen);
+    }
+    {
+        var screen = [_]u7{0} ** 3;
+        try std.testing.expectError(error.InvalidInput, rotateRow(u7, &screen, 3, 0));
+    }
+}

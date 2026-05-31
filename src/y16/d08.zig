@@ -2,13 +2,149 @@ const std = @import("std");
 
 const solver = @import("../solver.zig");
 
+const Rotation = enum { column, row };
+
+const Operation = union(enum) {
+    rect: struct { usize, usize },
+    rotate: struct { Rotation, usize, usize },
+};
+
 fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
-    _ = gpa;
-    _ = input;
-    return .{ null, null };
+    var screen = [_]u50{0} ** 6;
+    while (try input.takeDelimiter('\n')) |instruction| {
+        try execute(u50, &screen, gpa, instruction);
+    }
+    var pixels_on: u32 = 0;
+    for (screen) |row| {
+        for (0..50) |shift_offset| {
+            if (row & std.math.shl(u50, 1, shift_offset) != 0) {
+                pixels_on += 1;
+            }
+        }
+    }
+    return .{ pixels_on, null };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
+
+fn execute(comptime T: type, screen: []T, gpa: std.mem.Allocator, instruction: []const u8) solver.Error!void {
+    const operation = try parseOperation(instruction);
+    switch (operation) {
+        .rect => |dim| try rect(T, screen, dim[0], dim[1]),
+        .rotate => |rot| {
+            switch (rot[0]) {
+                .column => try rotateColumn(T, screen, gpa, rot[1], rot[2]),
+                .row => try rotateRow(T, screen, rot[1], rot[2]),
+            }
+        },
+    }
+}
+
+test "execute" {
+    const gpa = std.testing.allocator;
+    var screen = [_]u7{0} ** 3;
+    try execute(u7, &screen, gpa, "rect 3x2");
+    try std.testing.expectEqual([_]u7{
+        0b1110000,
+        0b1110000,
+        0b0000000,
+    }, screen);
+    try execute(u7, &screen, gpa, "rotate column x=1 by 1");
+    try std.testing.expectEqual([_]u7{
+        0b1010000,
+        0b1110000,
+        0b0100000,
+    }, screen);
+    try execute(u7, &screen, gpa, "rotate row y=0 by 4");
+    try std.testing.expectEqual([_]u7{
+        0b0000101,
+        0b1110000,
+        0b0100000,
+    }, screen);
+    try execute(u7, &screen, gpa, "rotate column x=1 by 1");
+    try std.testing.expectEqual([_]u7{
+        0b0100101,
+        0b1010000,
+        0b0100000,
+    }, screen);
+}
+
+fn parseOperation(str: []const u8) error{InvalidInput}!Operation {
+    if (str.len < 7) {
+        return error.InvalidInput;
+    } else if (std.mem.eql(u8, str[0..5], "rect ")) {
+        return .{ .rect = try parseRect(str[5..]) };
+    } else if (std.mem.eql(u8, str[0..7], "rotate ")) {
+        return .{ .rotate = try parseRotate(str[7..]) };
+    } else {
+        return error.InvalidInput;
+    }
+}
+
+fn parseRect(str: []const u8) error{InvalidInput}!struct { usize, usize } {
+    for (str, 0..) |char, i| {
+        if (char != 'x') {
+            continue;
+        }
+        return .{
+            std.fmt.parseUnsigned(usize, str[0..i], 10) catch return error.InvalidInput,
+            std.fmt.parseUnsigned(usize, str[i + 1 ..], 10) catch return error.InvalidInput,
+        };
+    }
+    return error.InvalidInput;
+}
+
+fn parseRotate(str: []const u8) error{InvalidInput}!struct { Rotation, usize, usize } {
+    const rotation: Rotation, const params = gettype: {
+        if (str.len < 9) {
+            return error.InvalidInput;
+        } else if (std.mem.eql(u8, str[0..6], "row y=")) {
+            break :gettype .{ .row, str[6..] };
+        } else if (std.mem.eql(u8, str[0..9], "column x=")) {
+            break :gettype .{ .column, str[9..] };
+        } else {
+            return error.InvalidInput;
+        }
+    };
+    const entry, const idx = for (params, 0..) |char, i| {
+        if (char == ' ') {
+            break .{
+                std.fmt.parseUnsigned(usize, params[0..i], 10) catch return error.InvalidInput,
+                i + 4,
+            };
+        }
+    } else return error.InvalidInput;
+    return .{
+        rotation,
+        entry,
+        std.fmt.parseUnsigned(usize, params[idx..], 10) catch return error.InvalidInput,
+    };
+}
+
+test "parse" {
+    try std.testing.expectError(error.InvalidInput, parseOperation(""));
+    try std.testing.expectError(error.InvalidInput, parseOperation("rec 73x49"));
+    try std.testing.expectError(error.InvalidInput, parseOperation("rotste row y=1 by 1"));
+    try std.testing.expectError(error.InvalidInput, parseOperation("rotate row x=1 by 1"));
+    try std.testing.expectError(error.InvalidInput, parseOperation("rotate column y=1 by 1"));
+    try std.testing.expectError(error.InvalidInput, parseOperation("rotate column x=1 by "));
+    {
+        const expected: Operation = .{ .rect = .{ 3, 2 } };
+        try std.testing.expectEqual(expected, try parseOperation("rect 3x2"));
+    }
+    {
+        const expected: Operation = .{ .rect = .{ 20, 358 } };
+        try std.testing.expectEqual(expected, try parseOperation("rect 20x358"));
+    }
+    {
+        const expected: Operation = .{ .rotate = .{ .column, 0, 1 } };
+        try std.testing.expectEqual(expected, try parseOperation("rotate column x=0 by 1"));
+    }
+    {
+        const expected: Operation = .{ .rotate = .{ .row, 86, 989 } };
+        try std.testing.expectEqual(expected, try parseOperation("rotate row y=86 by 989"));
+    }
+}
 
 fn rect(comptime T: type, screen: []T, width: usize, height: usize) error{InvalidInput}!void {
     if (height > screen.len) {

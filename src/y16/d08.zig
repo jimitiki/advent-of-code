@@ -9,23 +9,33 @@ const Operation = union(enum) {
     rotate: struct { Rotation, usize, usize },
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+// TODO: Make an animation
+
+pub fn solve(gpa: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []u8) solver.Error!solver.Result {
+    _ = buf2;
     var screen = [_]u50{0} ** 6;
     while (try input.takeDelimiter('\n')) |instruction| {
         try execute(u50, &screen, gpa, instruction);
     }
+
     var pixels_on: u32 = 0;
     for (screen) |row| {
         for (0..50) |shift_offset| {
-            if (row & std.math.shl(u50, 1, shift_offset) != 0) {
+            if (row & std.math.shl(u50, 1, 50 - shift_offset) != 0) {
                 pixels_on += 1;
+                std.debug.print("█", .{});
+            } else {
+                std.debug.print(" ", .{});
             }
         }
+        std.debug.print("\n", .{});
     }
-    return .{ pixels_on, null };
-}
 
-pub const solve = solver.intSolver(u32, solveInt);
+    return .{
+        std.fmt.bufPrint(buf1, "{}", .{pixels_on}) catch unreachable,
+        "see console output",
+    };
+}
 
 fn execute(comptime T: type, screen: []T, gpa: std.mem.Allocator, instruction: []const u8) solver.Error!void {
     const operation = try parseOperation(instruction);

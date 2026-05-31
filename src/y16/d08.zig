@@ -189,3 +189,83 @@ test "rotate row" {
         try std.testing.expectError(error.InvalidInput, rotateRow(u7, &screen, 3, 0));
     }
 }
+
+fn rotateColumn(
+    comptime T: type,
+    screen: []T,
+    gpa: std.mem.Allocator,
+    col: usize,
+    amount: usize,
+) error{ InvalidInput, OutOfMemory }!void {
+    const bit_count: T = @typeInfo(T).int.bits;
+    if (col >= bit_count) {
+        return error.InvalidInput;
+    }
+
+    var rotated: std.DynamicBitSetUnmanaged = try .initEmpty(gpa, screen.len);
+    defer rotated.deinit(gpa);
+
+    const bit_mask = std.math.shl(T, 1, bit_count - col - 1);
+    for (screen, 0..) |row, i| {
+        if (row & bit_mask != 0) {
+            rotated.set((i + amount) % screen.len);
+        }
+    }
+    for (screen, 0..) |*row, i| {
+        if (rotated.isSet(i)) {
+            row.* |= bit_mask;
+        } else {
+            row.* &= ~bit_mask;
+        }
+    }
+}
+
+test "rotate column" {
+    const gpa = std.testing.allocator;
+    {
+        var screen = [_]u7{
+            0b1110000,
+            0b1110000,
+            0b0000000,
+        };
+        const expected = [_]u7{
+            0b1010000,
+            0b1110000,
+            0b0100000,
+        };
+        try rotateColumn(u7, &screen, gpa, 1, 1);
+        try std.testing.expectEqual(expected, screen);
+    }
+    {
+        var screen = [_]u7{
+            0b1110000,
+            0b1110000,
+            0b0000000,
+        };
+        const expected = [_]u7{
+            0b1010000,
+            0b1110000,
+            0b0100000,
+        };
+        try rotateColumn(u7, &screen, gpa, 1, 13);
+        try std.testing.expectEqual(expected, screen);
+    }
+    {
+        var screen = [_]u7{
+            0b0000101,
+            0b1110000,
+            0b0100000,
+        };
+        const expected = [_]u7{
+            0b0100101,
+            0b1010000,
+            0b0100000,
+        };
+        try rotateColumn(u7, &screen, gpa, 1, 1);
+        try std.testing.expectEqual(expected, screen);
+    }
+    {
+        var screen = [_]u7{0} ** 3;
+        try std.testing.expectError(error.InvalidInput, rotateColumn(u7, &screen, gpa, 10, 0));
+    }
+}

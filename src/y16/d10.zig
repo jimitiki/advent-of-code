@@ -36,7 +36,10 @@ fn solveInt(gpa: Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?
     while (try input.takeDelimiter('\n')) |instruction| {
         try parseInstruction(gpa, &inputs, &outputs, &bots, instruction);
     }
-    return .{ try findIntersection(inputs, &bots, 61, 17), null };
+    return .{
+        try findIntersection(inputs, &bots, 61, 17),
+        try computeOutput(&bots, outputs, 0) * try computeOutput(&bots, outputs, 1) * try computeOutput(&bots, outputs, 2),
+    };
 }
 
 fn parseInstruction(
@@ -156,6 +159,18 @@ fn computeBotValue(bots: *Bots, source: Source, bot_id: u16) solver.Error!u16 {
             } else {
                 return src_bot.value_low.?;
             }
+        },
+    }
+}
+
+fn computeOutput(bots: *Bots, outputs: Outputs, output: u16) solver.Error!u16 {
+    var bot = bots.get(outputs.get(output).?).?;
+    try computeBotValues(bots, &bot);
+    switch (bot.dest_high.?) {
+        .output => return bot.value_high.?,
+        else => switch (bot.dest_low.?) {
+            .output => return bot.value_low.?,
+            else => unreachable,
         },
     }
 }

@@ -6,4 +6,5 @@ test "test all" {
     _ = @import("y16/d08.zig");
     _ = @import("y16/d09.zig");
     _ = @import("y16/d10.zig");
+    _ = @import("y16/d11.zig");
 }

@@ -1,0 +1,154 @@
+const std = @import("std");
+const Allocator = std.mem.Allocator;
+
+const solver = @import("../solver.zig");
+const WordIterator = @import("../parse.zig").WordIterator;
+
+const State = struct {
+    ev: u2,
+    devs: []const u2,
+    cidx: usize,
+    hash: u64,
+
+    pub fn init(ev: u2, devs: []const u2) State {
+        return .{
+            .ev = ev,
+            .devs = devs,
+            .cidx = @divExact(devs.len, 2),
+            .hash = std.hash.Wyhash.hash(ev, @ptrCast(devs)),
+        };
+    }
+
+    pub fn valid(self: State) bool {
+        for (self.devs[0..self.cidx], 0..) |floor, i| {
+            if (floor == self.devs[i + self.cidx]) continue;
+            for (self.devs[self.cidx..]) |f| {
+                if (floor == f) return false;
+            }
+        }
+        return true;
+    }
+
+    pub fn finished(self: State) bool {
+        for (self.devs) |floor| if (floor != 3) return false;
+        return true;
+    }
+};
+
+fn compare(_: void, lhs: struct { State, u32 }, rhs: struct { State, u32 }) std.math.Order {
+    return std.math.order(lhs[1], rhs[1]);
+}
+const Queue = std.PriorityQueue(struct { State, u32 }, void, compare);
+const Context = struct {
+    pub fn hash(_: @This(), state: State) u64 {
+        return state.hash;
+    }
+
+    pub fn eql(_: @This(), a: State, b: State) bool {
+        return a.ev == b.ev and std.mem.eql(u2, a.devs, b.devs);
+    }
+};
+fn StateMap(comptime V: type) type {
+    return std.HashMapUnmanaged(State, V, Context, 80);
+}
+
+fn solveInt(gpa: Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+    var chips: std.StringHashMapUnmanaged(u2) = .empty;
+    defer chips.deinit(gpa);
+    var rtgs: std.StringHashMapUnmanaged(u2) = .empty;
+    defer rtgs.deinit(gpa);
+
+    var i: u2 = 0;
+    while (try input.takeDelimiter('\n')) |line| : (i += 1) {
+        var it: WordIterator = .init(line);
+        for (0..4) |_| _ = it.next();
+        while (try parseElement(&it)) |result| {
+            if (result[1]) {
+                try chips.put(gpa, result[0], i);
+            } else {
+                try rtgs.put(gpa, result[0], i);
+            }
+        }
+        if (i == 3) break;
+    }
+    const devices = try gpa.alloc(u2, chips.size * 2);
+    defer gpa.free(devices);
+    var it = chips.iterator();
+    var idx: usize = 0;
+    while (it.next()) |entry| : (idx += 1) {
+        devices[idx] = entry.value_ptr.*;
+        devices[idx + chips.size] = rtgs.get(entry.key_ptr.*).?;
+    }
+
+    const state: State = .init(0, devices);
+    return .{ try minSteps(gpa, state), null };
+}
+
+fn parseElement(it: *WordIterator) error{InvalidInput}!?struct { []const u8, bool } {
+    const hint = it.next() orelse return null;
+    if (std.mem.eql(u8, "nothing", hint)) return null;
+    if (std.mem.eql(u8, "and", hint)) _ = it.next();
+    const element = it.next() orelse return error.InvalidInput;
+    _ = it.next();
+    if (element.len > 11 and std.mem.eql(u8, "-compatible", element[element.len - 11 ..])) {
+        return .{ element[0 .. element.len - 11], true };
+    } else {
+        return .{ element, false };
+    }
+}
+
+pub const solve = solver.intSolver(u32, solveInt);
+
+fn minSteps(gpa: Allocator, start: State) error{OutOfMemory}!?u32 {
+    var predecessors: StateMap(State) = .empty;
+    defer {
+        var it = predecessors.keyIterator();
+        while (it.next()) |s| gpa.free(s.devs);
+        predecessors.deinit(gpa);
+    }
+    var queue: Queue = .empty;
+    defer queue.deinit(gpa);
+    var minima: StateMap(u32) = .empty;
+    defer minima.deinit(gpa);
+    const dev_buf = try gpa.alloc(u2, start.devs.len);
+    defer gpa.free(dev_buf);
+
+    try queue.push(gpa, .{ start, 0 });
+    while (queue.pop()) |entry| {
+        const state, const dist = entry;
+        if (state.finished()) {
+            return dist;
+        }
+        const new_dist = dist + 1;
+        for ([_]bool{ true, false }) |up| {
+            if (up and state.ev == 3) continue;
+            if (!up and state.ev == 0) continue;
+
+            const new_floor = if (up) state.ev + 1 else state.ev - 1;
+            for (state.devs, 0..) |a, i| {
+                if (a != state.ev) continue;
+                for (state.devs[i..], i..) |b, j| {
+                    if (b != state.ev) continue;
+
+                    @memcpy(dev_buf, state.devs);
+                    dev_buf[i] = new_floor;
+                    if (i != j) dev_buf[j] = new_floor;
+                    const candidate: State = .init(new_floor, dev_buf);
+                    if (!candidate.valid()) continue;
+                    const allocated = predecessors.getKey(candidate) orelse try cloneState(gpa, candidate);
+                    if (new_dist < minima.get(allocated) orelse std.math.maxInt(u32)) {
+                        try predecessors.put(gpa, allocated, state);
+                        try minima.put(gpa, allocated, new_dist);
+                        try queue.push(gpa, .{ allocated, new_dist });
+                    }
+                }
+            }
+        }
+    } else return null;
+}
+
+fn cloneState(gpa: Allocator, original: State) error{OutOfMemory}!State {
+    const devices = try gpa.alloc(u2, original.devs.len);
+    @memcpy(devices, original.devs);
+    return .{ .ev = original.ev, .devs = devices, .cidx = original.cidx, .hash = original.hash };
+}

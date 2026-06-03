@@ -19,7 +19,10 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
     }
     var registers = [_]i64{0} ** 4;
     execute(&registers, program.items);
-    return .{ registers[0], null };
+    const p1 = registers[0];
+    registers = [_]i64{ 0, 0, 1, 0 };
+    execute(&registers, program.items);
+    return .{ p1, registers[0] };
 }
 
 pub const solve = solver.intSolver(i64, solveInt);

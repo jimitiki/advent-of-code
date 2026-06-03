@@ -22,24 +22,6 @@ fn PosMap(comptime V: type) type {
     return std.AutoHashMapUnmanaged(Pos, V);
 }
 
-const Dir = enum {
-    u,
-    d,
-    l,
-    r,
-
-    pub const dirs = [4]Dir{ .u, .d, .l, .r };
-
-    fn move(self: Dir, pos: Pos) ?Pos {
-        return switch (self) {
-            .u => if (pos.y > 0) .init(pos.x, pos.y - 1) else null,
-            .d => .init(pos.x, pos.y + 1),
-            .l => if (pos.x > 0) .init(pos.x - 1, pos.y) else null,
-            .r => .init(pos.x + 1, pos.y),
-        };
-    }
-};
-
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     const s = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
     const seed = std.fmt.parseInt(usize, s, 10) catch return error.InvalidInput;
@@ -66,6 +48,7 @@ fn aStar(
     defer minima.deinit(gpa);
     var queue: Queue = .empty;
     defer queue.deinit(gpa);
+    var pos_buf: [4]Pos = undefined;
 
     try queue.push(gpa, .{ start, distance(start, goal) });
     try minima.put(gpa, start, 0);
@@ -84,9 +67,7 @@ fn aStar(
         }
 
         const new_dist = dist + 1;
-        for (Dir.dirs) |dir| {
-            const next = dir.move(cur) orelse continue;
-            if (getSquare(next.x, next.y, seed)) continue;
+        for (generateNext(&pos_buf, cur, seed)) |next| {
             if (new_dist < minima.get(next) orelse std.math.maxInt(usize)) {
                 try predecessors.put(gpa, next, cur);
                 try minima.put(gpa, next, new_dist);
@@ -96,8 +77,29 @@ fn aStar(
     } else return null;
 }
 
-test "solve" {
+test "a*" {
     try std.testing.expectEqual(11, try aStar(std.testing.allocator, 10, .init(1, 1), .init(7, 4), null));
+}
+
+fn generateNext(buf: *[4]Pos, start: Pos, seed: usize) []Pos {
+    var i: usize = 0;
+    if (start.y > 0 and !getSquare(start.x, start.y - 1, seed)) {
+        buf[i] = .init(start.x, start.y - 1);
+        i += 1;
+    }
+    if (start.x > 0 and !getSquare(start.x - 1, start.y, seed)) {
+        buf[i] = .init(start.x - 1, start.y);
+        i += 1;
+    }
+    if (!getSquare(start.x, start.y + 1, seed)) {
+        buf[i] = .init(start.x, start.y + 1);
+        i += 1;
+    }
+    if (!getSquare(start.x + 1, start.y, seed)) {
+        buf[i] = .init(start.x + 1, start.y);
+        i += 1;
+    }
+    return buf[0..i];
 }
 
 fn getSquare(x: usize, y: usize, seed: usize) bool {

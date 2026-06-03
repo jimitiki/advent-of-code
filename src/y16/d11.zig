@@ -10,11 +10,27 @@ const State = struct {
     cidx: usize,
     hash: u64,
 
-    pub fn init(ev: u2, devs: []const u2) State {
+    const SortContext = struct {
+        rtgs: []u2,
+        chips: []u2,
+
+        pub fn swap(self: @This(), a: usize, b: usize) void {
+            std.mem.swap(u2, &self.chips[a], &self.chips[b]);
+            std.mem.swap(u2, &self.rtgs[a], &self.rtgs[b]);
+        }
+
+        pub fn lessThan(self: @This(), a: usize, b: usize) bool {
+            return self.chips[a] < self.chips[b] or self.chips[a] == self.chips[b] and self.rtgs[a] < self.rtgs[b];
+        }
+    };
+
+    pub fn init(ev: u2, devs: []u2) State {
+        const cidx = @divExact(devs.len, 2);
+        std.sort.pdqContext(0, cidx, State.SortContext{ .rtgs = devs[0..cidx], .chips = devs[cidx..] });
         return .{
             .ev = ev,
             .devs = devs,
-            .cidx = @divExact(devs.len, 2),
+            .cidx = cidx,
             .hash = std.hash.Wyhash.hash(ev, @ptrCast(devs)),
         };
     }

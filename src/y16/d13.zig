@@ -30,7 +30,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     defer path.deinit(tools.gpa);
     const p1 = try aStar(tools.gpa, seed, .init(1, 1), .init(31, 39), &path);
     drawPath(tools.stdout, path.items, seed) catch {};
-    return .{ p1, null };
+    return .{ p1, try scan(tools.gpa, seed, .init(1, 1), 50) };
 }
 
 pub const solve = solver.intSolver(usize, solveInt);
@@ -79,6 +79,29 @@ fn aStar(
 
 test "a*" {
     try std.testing.expectEqual(11, try aStar(std.testing.allocator, 10, .init(1, 1), .init(7, 4), null));
+}
+
+fn scan(gpa: std.mem.Allocator, seed: usize, start: Pos, limit: usize) error{OutOfMemory}!usize {
+    var minima: PosMap(usize) = .empty;
+    defer minima.deinit(gpa);
+    var queue: Queue = .empty;
+    defer queue.deinit(gpa);
+    var pos_buf: [4]Pos = undefined;
+
+    try minima.put(gpa, start, 0);
+    try queue.push(gpa, .{ start, 0 });
+    while (queue.pop()) |entry| {
+        if (entry[1] == limit) continue;
+        const cur, const dist = entry;
+        const new_dist = dist + 1;
+        for (generateNext(&pos_buf, cur, seed)) |next| {
+            if (new_dist < minima.get(next) orelse std.math.maxInt(usize)) {
+                try minima.put(gpa, next, new_dist);
+                try queue.push(gpa, .{ next, new_dist });
+            }
+        }
+    }
+    return minima.size;
 }
 
 fn generateNext(buf: *[4]Pos, start: Pos, seed: usize) []Pos {

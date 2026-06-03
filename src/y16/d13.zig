@@ -10,10 +10,14 @@ const Pos = struct {
         return .{ .x = x, .y = y };
     }
 };
+
 fn compare(_: void, a: struct { Pos, usize }, b: struct { Pos, usize }) std.math.Order {
     return std.math.order(a[1], b[1]);
 }
+
 const Queue = std.PriorityQueue(struct { Pos, usize }, void, compare);
+const Path = std.ArrayList(Pos);
+
 fn PosMap(comptime V: type) type {
     return std.AutoHashMapUnmanaged(Pos, V);
 }
@@ -39,13 +43,23 @@ const Dir = enum {
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     const s = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
     const seed = std.fmt.parseInt(usize, s, 10) catch return error.InvalidInput;
-    return .{
-        try minSteps(tools.gpa, seed, .init(1, 1), .init(31, 39)),
-        null,
-    };
+
+    var path: std.ArrayList(Pos) = .empty;
+    defer path.deinit(tools.gpa);
+    const p1 = try aStar(tools.gpa, seed, .init(1, 1), .init(31, 39), &path);
+    drawPath(tools.stdout, path.items, seed) catch {};
+    return .{ p1, null };
 }
 
-fn minSteps(gpa: std.mem.Allocator, seed: usize, start: Pos, goal: Pos) error{OutOfMemory}!?usize {
+pub const solve = solver.intSolver(usize, solveInt);
+
+fn aStar(
+    gpa: std.mem.Allocator,
+    seed: usize,
+    start: Pos,
+    goal: Pos,
+    path: ?*std.ArrayList(Pos),
+) error{OutOfMemory}!?usize {
     var predecessors: PosMap(Pos) = .empty;
     defer predecessors.deinit(gpa);
     var minima: PosMap(usize) = .empty;
@@ -59,7 +73,14 @@ fn minSteps(gpa: std.mem.Allocator, seed: usize, start: Pos, goal: Pos) error{Ou
         const cur, _ = entry;
         const dist = minima.get(cur).?;
         if (cur.x == goal.x and cur.y == goal.y) {
-            return minima.get(cur).?;
+            if (path) |steps| {
+                var s = cur;
+                try steps.append(gpa, cur);
+                while (predecessors.get(s)) |p| : (s = p) {
+                    try steps.append(gpa, p);
+                }
+            }
+            return dist;
         }
 
         const new_dist = dist + 1;
@@ -76,7 +97,7 @@ fn minSteps(gpa: std.mem.Allocator, seed: usize, start: Pos, goal: Pos) error{Ou
 }
 
 test "solve" {
-    try std.testing.expectEqual(11, try minSteps(std.testing.allocator, 10, .init(1, 1), .init(7, 4)));
+    try std.testing.expectEqual(11, try aStar(std.testing.allocator, 10, .init(1, 1), .init(7, 4), null));
 }
 
 fn getSquare(x: usize, y: usize, seed: usize) bool {
@@ -103,4 +124,71 @@ fn distance(a: Pos, b: Pos) usize {
     return std.math.sqrt(x * x + y * y);
 }
 
-pub const solve = solver.intSolver(usize, solveInt);
+fn drawPath(writer: *std.Io.Writer, path: []Pos, seed: usize) solver.Error!void {
+    var xmax: usize = 1;
+    var ymax: usize = 1;
+    for (path) |pos| {
+        xmax = @max(xmax, pos.x);
+        ymax = @max(ymax, pos.y);
+    }
+    xmax += 3;
+    ymax += 3;
+
+    try writer.writeAll("   ");
+    for (0..xmax) |x| {
+        if (x % 2 == 0) {
+            try writer.print("{: >2}", .{x});
+        } else {
+            try writer.writeAll("  ");
+        }
+    }
+    try writer.writeAll("\n");
+
+    try writer.writeAll("  ▗");
+    for (0..xmax) |_| try writer.writeAll("▄▄");
+    try writer.writeAll("▖\n");
+
+    for (0..ymax) |y| {
+        if (y % 2 == 0) {
+            try writer.print("{: >2}▐", .{y});
+        } else {
+            try writer.writeAll("  ▐");
+        }
+        for (0..xmax) |x| {
+            for (path, 0..) |pos, i| {
+                if (pos.x != x or pos.y != y) continue;
+                if (i == 0) {
+                    try writer.writeAll("▓▓");
+                } else if (i == path.len - 1) {
+                    try writer.writeAll("▓▓");
+                } else {
+                    try writer.writeAll("▒▒");
+                }
+                break;
+            } else if (getSquare(x, y, seed)) {
+                try writer.writeAll("██");
+            } else {
+                try writer.writeAll("  ");
+            }
+        }
+        if (getSquare(xmax, y, seed)) {
+            try writer.writeAll("▌\n");
+        } else {
+            try writer.writeAll("┊\n");
+        }
+    }
+
+    try writer.print("  ▝", .{});
+    for (0..xmax) |x| {
+        if (getSquare(x, ymax, seed)) {
+            try writer.print("▀▀", .{});
+        } else {
+            try writer.print("┉┉", .{});
+        }
+    }
+    if (getSquare(xmax, ymax, seed)) {
+        try writer.print("▘\n", .{});
+    } else {
+        try writer.print("┘\n", .{});
+    }
+}

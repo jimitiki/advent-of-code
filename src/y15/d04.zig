@@ -1,6 +1,8 @@
 const std = @import("std");
 const Md5 = std.crypto.hash.Md5;
+
 const solver = @import("../solver.zig");
+const hashIndex = @import("../hash.zig").hashIndex;
 
 // TODO: Re-implement MD5?
 // TODO: Apparently the input seed "cxsaadws" solves in under 500 hashes. Use it for unit tests
@@ -20,12 +22,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
 pub const solve = solver.intSolver(u32, solveInt);
 
 fn checkHash(buf: []u8, prefix: []const u8, suffix: u32, zero_cnt: usize) !bool {
-    const input = std.fmt.bufPrint(buf, "{s}{}", .{ prefix, suffix }) catch unreachable;
-    var digest: [Md5.digest_length]u8 = undefined;
-    Md5.hash(input, &digest, .{});
     var hex: [Md5.digest_length * 2]u8 = undefined;
-    for (digest, 0..) |byte, i| {
-        _ = std.fmt.bufPrint(hex[i * 2 .. i * 2 + 2], "{x:0>2}", .{byte}) catch unreachable;
-    }
+    hashIndex(prefix, suffix, buf, &hex) catch unreachable;
     return std.mem.allEqual(u8, hex[0..zero_cnt], '0');
 }

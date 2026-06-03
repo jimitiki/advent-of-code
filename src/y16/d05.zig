@@ -19,9 +19,9 @@ pub fn solve(tools: solver.Tools) solver.Error!struct { ?[]const u8, ?[]const u8
         if (try getPasswordChars(&input_buf, seed, i)) |chars| {
             if (pw1_cnt < pw1.len) {
                 pw1[pw1_cnt] = chars[0];
+                pw1_cnt += 1;
                 try stdout.print("First Door: {s} ({}/8)\n", .{ pw1, pw1_cnt });
                 try stdout.flush();
-                pw1_cnt += 1;
             }
 
             const place = std.fmt.charToDigit(chars[0], 16) catch unreachable;

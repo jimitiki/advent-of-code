@@ -162,21 +162,21 @@ const Circuit = struct {
     }
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u16, ?u16 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     var gates: std.ArrayList(Gate) = .empty;
-    defer gates.deinit(gpa);
-    while (try input.takeDelimiter('\n')) |line| {
-        gates.append(gpa, try parseGate(line)) catch unreachable;
+    defer gates.deinit(tools.gpa);
+    while (try tools.input.takeDelimiter('\n')) |line| {
+        gates.append(tools.gpa, try parseGate(line)) catch unreachable;
     }
-    var circuit1: Circuit = .init(gpa, gates.items);
-    defer circuit1.deinit(gpa);
-    circuit1.resolve(gpa);
+    var circuit1: Circuit = .init(tools.gpa, gates.items);
+    defer circuit1.deinit(tools.gpa);
+    circuit1.resolve(tools.gpa);
     const answer1 = circuit1.getWireSignal('a') orelse return .{ null, null };
 
-    var circuit2: Circuit = .init(gpa, gates.items);
-    defer circuit2.deinit(gpa);
+    var circuit2: Circuit = .init(tools.gpa, gates.items);
+    defer circuit2.deinit(tools.gpa);
     circuit2.setWire('b', answer1);
-    circuit2.resolve(gpa);
+    circuit2.resolve(tools.gpa);
     const answer2 = circuit2.getWireSignal('a');
     return .{ answer1, answer2 };
 }

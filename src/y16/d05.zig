@@ -3,13 +3,14 @@ const Md5 = std.crypto.hash.Md5;
 
 const solver = @import("../solver.zig");
 
-pub fn solve(_: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []u8) solver.Error!struct { ?[]const u8, ?[]const u8 } {
-    const seed = input.peekDelimiterExclusive('\n') catch return error.InvalidInput;
-    var pw1: []u8 = buf1[0..8];
+pub fn solve(tools: solver.Tools) solver.Error!struct { ?[]const u8, ?[]const u8 } {
+    const stdout = tools.stdout;
+    const seed = tools.input.peekDelimiterExclusive('\n') catch return error.InvalidInput;
+    var pw1: []u8 = tools.p1buf[0..8];
     @memset(pw1, '*');
     var pw1_cnt: u4 = 0;
 
-    var pw2: []u8 = buf2[0..8];
+    var pw2: []u8 = tools.p2buf[0..8];
     @memset(pw2, '*');
     var pw2_cnt: u4 = 0;
 
@@ -18,7 +19,8 @@ pub fn solve(_: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []u8
         if (try getPasswordChars(&input_buf, seed, i)) |chars| {
             if (pw1_cnt < pw1.len) {
                 pw1[pw1_cnt] = chars[0];
-                std.debug.print("First Door: {s} ({}/8)\n", .{ pw1, pw1_cnt });
+                try stdout.print("First Door: {s} ({}/8)\n", .{ pw1, pw1_cnt });
+                try stdout.flush();
                 pw1_cnt += 1;
             }
 
@@ -26,9 +28,11 @@ pub fn solve(_: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []u8
             if (place < pw2.len and pw2[place] == '*') {
                 pw2[place] = chars[1];
                 pw2_cnt += 1;
-                std.debug.print("Second Door: {s} ({}/8)\n", .{ pw2, pw2_cnt });
+                try stdout.print("Second Door: {s} ({}/8)\n", .{ pw2, pw2_cnt });
+                try stdout.flush();
                 if (pw2_cnt == pw2.len) {
-                    std.debug.print("{} hashes checked\n", .{i});
+                    try stdout.print("{} hashes checked\n", .{i});
+                    try stdout.flush();
                     break;
                 }
             }
@@ -36,7 +40,7 @@ pub fn solve(_: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []u8
     } else {
         return .{ null, null };
     }
-    std.debug.print("\n", .{});
+    try stdout.writeByte('\n');
     return .{ pw1, pw2 };
 }
 

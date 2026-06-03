@@ -2,9 +2,10 @@ const std = @import("std");
 
 const solver = @import("../solver.zig");
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
-    _ = gpa;
-    _ = input;
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    while (try tools.input.takeDelimiter('\n')) {
+        continue;
+    }
     return .{ null, null };
 }
 

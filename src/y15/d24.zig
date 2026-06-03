@@ -7,21 +7,21 @@ const Result = struct { usize, u64 };
 
 // TODO: Ensure that packages can be grouped correctly when the number of groups is more than 3
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     var weights: std.ArrayList(u64) = .empty;
-    defer weights.deinit(gpa);
+    defer weights.deinit(tools.gpa);
     var total_weight: u64 = 0;
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         const weight = std.fmt.parseUnsigned(u64, line, 10) catch return error.InvalidInput;
         total_weight += weight;
-        weights.append(gpa, weight) catch unreachable;
+        weights.append(tools.gpa, weight) catch unreachable;
     }
 
     std.sort.pdq(u64, weights.items, {}, weighsMore);
     var unused: WeightList = .empty;
-    defer unused.deinit(gpa);
+    defer unused.deinit(tools.gpa);
     _, const answer1 = optimizePackages(
-        gpa,
+        tools.gpa,
         @divExact(total_weight, 3),
         weights.items,
         &unused,
@@ -31,7 +31,7 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
         1,
     ) orelse .{ void, null };
     _, const answer2 = optimizePackages(
-        gpa,
+        tools.gpa,
         @divExact(total_weight, 4),
         weights.items,
         &unused,

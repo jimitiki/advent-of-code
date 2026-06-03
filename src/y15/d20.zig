@@ -4,8 +4,8 @@ const solver = @import("../solver.zig");
 
 // TODO: Implement a faster sum of divisors algorithm
 
-fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
-    const line = try input.takeDelimiter('\n') orelse return error.InvalidInput;
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    const line = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
     const target = std.fmt.parseUnsigned(u32, line, 10) catch return error.InvalidInput;
     var answer1: u32 = 1;
     while (sumPresents(answer1) < target) : (answer1 += 1) {}

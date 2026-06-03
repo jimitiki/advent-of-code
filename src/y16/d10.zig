@@ -25,16 +25,16 @@ const Inputs = std.AutoHashMapUnmanaged(u16, u16);
 const Outputs = std.AutoHashMapUnmanaged(u16, u16);
 const Bots = std.AutoHashMapUnmanaged(u16, Bot);
 
-fn solveInt(gpa: Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var inputs: Inputs = .empty;
-    defer inputs.deinit(gpa);
+    defer inputs.deinit(tools.gpa);
     var outputs: Outputs = .empty;
-    defer outputs.deinit(gpa);
+    defer outputs.deinit(tools.gpa);
     var bots: Bots = .empty;
-    defer bots.deinit(gpa);
+    defer bots.deinit(tools.gpa);
 
-    while (try input.takeDelimiter('\n')) |instruction| {
-        try parseInstruction(gpa, &inputs, &outputs, &bots, instruction);
+    while (try tools.input.takeDelimiter('\n')) |instruction| {
+        try parseInstruction(tools.gpa, &inputs, &outputs, &bots, instruction);
     }
     return .{
         try findIntersection(inputs, &bots, 61, 17),

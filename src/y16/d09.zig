@@ -2,9 +2,8 @@ const std = @import("std");
 
 const solver = @import("../solver.zig");
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
-    const len_v1, const len_v2 = try computeDecompressedLength(input, std.math.maxInt(usize));
-    _ = gpa;
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+    const len_v1, const len_v2 = try computeDecompressedLength(tools.input, std.math.maxInt(usize));
     return .{ len_v1, len_v2 };
 }
 

@@ -13,10 +13,10 @@ const Instruction = union(Action) {
 };
 const Position = struct { x: usize, y: usize };
 
-fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var lights1: [1000][1000]u8 = .{.{0} ** 1000} ** 1000;
     var lights2: [1000][1000]u8 = .{.{0} ** 1000} ** 1000;
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         var it: WordIterator = .init(line);
         const action: Action = std.meta.stringToEnum(Action, it.next().?) orelse return error.InvalidInput;
         const inst: Instruction = switch (action) {

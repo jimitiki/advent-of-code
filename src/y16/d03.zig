@@ -3,14 +3,14 @@ const std = @import("std");
 const solver = @import("../solver.zig");
 const WordIterator = @import("../parse.zig").WordIterator;
 
-fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var t1 = [_]u32{ 0, 0, 0 };
     var t2 = [_]u32{ 0, 0, 0 };
     var t3 = [_]u32{ 0, 0, 0 };
     var count_h: u32 = 0;
     var count_v: u32 = 0;
     var i: u2 = 0;
-    while (try input.takeDelimiter('\n')) |line| : (i = (i + 1) % 3) {
+    while (try tools.input.takeDelimiter('\n')) |line| : (i = (i + 1) % 3) {
         const triangle = try parseTriangle(line);
         if (validateTriangle(triangle)) {
             count_h += 1;

@@ -11,12 +11,13 @@ const Range = struct {
     }
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
+    const gpa = tools.gpa;
 
     //Read ID ranges from file
     var ranges_raw: std.ArrayList(Range) = .empty;
     defer ranges_raw.deinit(gpa);
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         if (line.len == 0) break;
         var split_point: usize = 0;
         while (line[split_point] != '-') : (split_point += 1) {}
@@ -43,7 +44,7 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
 
     // Find which input IDs are valid
     var answer1: u64 = 0;
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         const id = std.fmt.parseInt(u64, line, 10) catch return error.InvalidInput;
         for (ranges.items) |range| {
             if (id >= range.start and id <= range.end) {

@@ -5,8 +5,8 @@ const WordIterator = @import("../parse.zig").WordIterator;
 
 // TODO: Use `modpow`?
 
-fn solveInt(_: std.mem.Allocator, reader: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
-    const line = (try reader.takeDelimiter('\n')) orelse return error.InvalidInput;
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
+    const line = (try tools.input.takeDelimiter('\n')) orelse return error.InvalidInput;
     var it: WordIterator = .{ .string = line, .omit_punctuation = true, .reverse = true, .index = line.len - 1 };
     const col = std.fmt.parseUnsigned(
         u64,

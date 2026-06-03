@@ -68,14 +68,15 @@ fn StateMap(comptime V: type) type {
     return std.HashMapUnmanaged(State, V, Context, 80);
 }
 
-fn solveInt(gpa: Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    const gpa = tools.gpa;
     var chips: std.StringHashMapUnmanaged(u2) = .empty;
     defer chips.deinit(gpa);
     var rtgs: std.StringHashMapUnmanaged(u2) = .empty;
     defer rtgs.deinit(gpa);
 
     var i: u2 = 0;
-    while (try input.takeDelimiter('\n')) |line| : (i += 1) {
+    while (try tools.input.takeDelimiter('\n')) |line| : (i += 1) {
         var it: WordIterator = .init(line);
         for (0..4) |_| _ = it.next();
         while (try parseElement(&it)) |result| {

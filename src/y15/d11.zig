@@ -1,13 +1,13 @@
 const std = @import("std");
 const solver = @import("../solver.zig");
 
-pub fn solve(gpa: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []u8) solver.Error!solver.Result {
-    const old = try input.takeDelimiter('\n') orelse return error.InvalidInput;
-    const pw: []u8 = gpa.alloc(u8, old.len) catch unreachable;
+pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
+    const old = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
+    const pw: []u8 = tools.gpa.alloc(u8, old.len) catch unreachable;
     @memcpy(pw, old);
-    defer gpa.free(pw);
-    const answer1 = nextValidPassword(pw, buf1) orelse return .{ null, null };
-    return .{ answer1, nextValidPassword(pw, buf2) };
+    defer tools.gpa.free(pw);
+    const answer1 = nextValidPassword(pw, tools.p1buf) orelse return .{ null, null };
+    return .{ answer1, nextValidPassword(pw, tools.p2buf) };
 }
 
 fn nextValidPassword(pw: []u8, buf: []u8) ?[]const u8 {

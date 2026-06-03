@@ -39,20 +39,20 @@ const Direction = enum(u2) {
 };
 const Position = struct { x: i32, y: i32 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var visited: std.AutoHashMapUnmanaged(Position, void) = .empty;
-    defer visited.deinit(gpa);
+    defer visited.deinit(tools.gpa);
 
     var direction: Direction = .n;
     var position: Position = .{ .x = 0, .y = 0 };
     var first_revisited: ?Position = null;
-    while (try input.takeDelimiter(',')) |step| {
+    while (try tools.input.takeDelimiter(',')) |step| {
         const move = try parseMove(step);
         direction = direction.turn(move.turn);
         for (0..move.amount) |_| {
             position = direction.walk(position, 1);
             if (first_revisited) |_| {} else {
-                const result = try visited.getOrPut(gpa, position);
+                const result = try visited.getOrPut(tools.gpa, position);
                 if (result.found_existing) {
                     first_revisited = position;
                 }

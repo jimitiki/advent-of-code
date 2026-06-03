@@ -19,10 +19,10 @@ const Reindeer = struct {
     }
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var reindeer: std.ArrayList(Reindeer) = .empty;
-    defer reindeer.deinit(gpa);
-    while (try input.takeDelimiter('\n')) |line| {
+    defer reindeer.deinit(tools.gpa);
+    while (try tools.input.takeDelimiter('\n')) |line| {
         var it: WordIterator = .init(line);
         for (0..3) |_| {
             _ = it.next();
@@ -36,15 +36,15 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
             _ = it.next();
         }
         const rest = std.fmt.parseUnsigned(u32, it.next().?, 10) catch return error.InvalidInput;
-        reindeer.append(gpa, .{ .speed = speed, .duration = duration, .rest = rest }) catch unreachable;
+        reindeer.append(tools.gpa, .{ .speed = speed, .duration = duration, .rest = rest }) catch unreachable;
     }
 
     const race_time = 2503;
     var scoreboard: Counter = .empty;
-    defer scoreboard.deinit(gpa);
+    defer scoreboard.deinit(tools.gpa);
     return .{
         maxDistance(reindeer.items, race_time),
-        try maxPoints(gpa, &scoreboard, reindeer.items, race_time),
+        try maxPoints(tools.gpa, &scoreboard, reindeer.items, race_time),
     };
 }
 

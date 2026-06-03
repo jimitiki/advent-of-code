@@ -26,29 +26,29 @@ const AtomIterator = struct {
     }
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var molecules: MoleculeSet = .empty;
     defer {
         var it = molecules.keyIterator();
-        while (it.next()) |m| gpa.free(m.*);
-        molecules.deinit(gpa);
+        while (it.next()) |m| tools.gpa.free(m.*);
+        molecules.deinit(tools.gpa);
     }
     var rules: RuleTable = .empty;
     defer {
         var it = rules.iterator();
         while (it.next()) |entry| {
-            entry.value_ptr.deinit(gpa);
+            entry.value_ptr.deinit(tools.gpa);
         }
-        rules.deinit(gpa);
+        rules.deinit(tools.gpa);
     }
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         if (line.len == 0) break;
         const in, const out = parseRule(line);
-        addRule(gpa, &rules, in, out);
+        addRule(tools.gpa, &rules, in, out);
     }
 
-    const molecule = try input.takeDelimiter('\n') orelse return error.InvalidInput;
-    const answer1 = calibrate(gpa, rules, molecule);
+    const molecule = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
+    const answer1 = calibrate(tools.gpa, rules, molecule);
 
     var it: AtomIterator = .{ .string = molecule };
     var total: u32 = 0;

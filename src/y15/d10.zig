@@ -3,19 +3,19 @@ const solver = @import("../solver.zig");
 
 // TODO: Use "elements": https://en.wikipedia.org/wiki/Look-and-say_sequence#Cosmological_decay
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
-    const seed = try input.takeDelimiter('\n') orelse return error.InvalidInput;
-    var buf_cur: []u8 = gpa.alloc(u8, seed.len) catch unreachable;
-    defer gpa.free(buf_cur);
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    const seed = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
+    var buf_cur: []u8 = tools.gpa.alloc(u8, seed.len) catch unreachable;
+    defer tools.gpa.free(buf_cur);
     for (seed, 0..) |char, i| {
         buf_cur[i] = char - 48;
     }
     var sequence: []const u8 = buf_cur;
     var answer1: u32 = 0;
     for (0..50) |i| {
-        const buf_next: []u8 = gpa.alloc(u8, sequence.len * 2) catch unreachable;
+        const buf_next: []u8 = tools.gpa.alloc(u8, sequence.len * 2) catch unreachable;
         const next_sequence: []const u8 = lookSay(sequence, buf_next);
-        gpa.free(buf_cur);
+        tools.gpa.free(buf_cur);
         buf_cur = buf_next;
         sequence = next_sequence;
         if (i == 40) {

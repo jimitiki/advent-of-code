@@ -5,14 +5,14 @@ const AutoArrayHashMap = std.array_hash_map.Auto;
 
 const solver = @import("../solver.zig");
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     var answer1: u64 = 0;
     var answer2: u64 = 0;
     var invalid_ids: AutoArrayHashMap(u64, void) = .empty;
-    defer invalid_ids.deinit(gpa);
-    while (try input.takeDelimiter(',')) |range| {
+    defer invalid_ids.deinit(tools.gpa);
+    while (try tools.input.takeDelimiter(',')) |range| {
         var lengths: AutoArrayHashMap(usize, void) = .empty;
-        defer lengths.deinit(gpa);
+        defer lengths.deinit(tools.gpa);
         const split_point = find(range, '-') orelse return error.InvalidInput;
         var end = range.len;
         while (range[end - 1] == '\n' or range[end - 1] == ' ') {
@@ -22,12 +22,12 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
             for (lengths.keys()) |l| {
                 if (seq_len % l == 0) continue :outer_loop;
             }
-            const sum = try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end], seq_len, &invalid_ids, gpa);
+            const sum = try sumInvalidIds(range[0..split_point], range[split_point + 1 .. end], seq_len, &invalid_ids, tools.gpa);
             answer2 += sum;
             if (seq_len == 2) {
                 answer1 += sum;
             }
-            lengths.put(gpa, seq_len, {}) catch unreachable;
+            lengths.put(tools.gpa, seq_len, {}) catch unreachable;
         }
     }
     return .{ answer1, answer2 };

@@ -11,11 +11,10 @@ const Operation = union(enum) {
 
 // TODO: Make an animation
 
-pub fn solve(gpa: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []u8) solver.Error!solver.Result {
-    _ = buf2;
+pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
     var screen = [_]u50{0} ** 6;
-    while (try input.takeDelimiter('\n')) |instruction| {
-        try execute(u50, &screen, gpa, instruction);
+    while (try tools.input.takeDelimiter('\n')) |instruction| {
+        try execute(u50, &screen, tools.gpa, instruction);
     }
 
     var pixels_on: u32 = 0;
@@ -23,16 +22,17 @@ pub fn solve(gpa: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []
         for (0..50) |shift_offset| {
             if (row & std.math.shl(u50, 1, 50 - shift_offset) != 0) {
                 pixels_on += 1;
-                std.debug.print("█", .{});
+                try tools.stdout.writeAll("█");
             } else {
-                std.debug.print(" ", .{});
+                try tools.stdout.writeByte(' ');
             }
         }
-        std.debug.print("\n", .{});
+        try tools.stdout.writeByte('\n');
     }
+    try tools.stdout.flush();
 
     return .{
-        std.fmt.bufPrint(buf1, "{}", .{pixels_on}) catch unreachable,
+        std.fmt.bufPrint(tools.p1buf, "{}", .{pixels_on}) catch unreachable,
         "see console output",
     };
 }

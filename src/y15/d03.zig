@@ -7,26 +7,26 @@ const HouseSet = std.AutoHashMapUnmanaged(House, void);
 
 // TODO: Create a visualization
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var visited_p1: HouseSet = .empty;
     var visited_p2: HouseSet = .empty;
-    defer visited_p1.deinit(gpa);
-    defer visited_p2.deinit(gpa);
+    defer visited_p1.deinit(tools.gpa);
+    defer visited_p2.deinit(tools.gpa);
     var santa1: House = .{};
     var santa2: House = .{};
     var robosanta: House = .{};
 
     while (true) {
-        visited_p1.put(gpa, santa1, {}) catch unreachable;
-        visited_p2.put(gpa, santa2, {}) catch unreachable;
-        if (input.takeByte()) |char| {
+        visited_p1.put(tools.gpa, santa1, {}) catch unreachable;
+        visited_p2.put(tools.gpa, santa2, {}) catch unreachable;
+        if (tools.input.takeByte()) |char| {
             if (char == '\n') break;
             santa1 = try move(santa1, char);
             santa2 = try move(santa2, char);
         } else |_| break;
-        visited_p1.put(gpa, santa1, {}) catch unreachable;
-        visited_p2.put(gpa, robosanta, {}) catch unreachable;
-        if (input.takeByte()) |char| {
+        visited_p1.put(tools.gpa, santa1, {}) catch unreachable;
+        visited_p2.put(tools.gpa, robosanta, {}) catch unreachable;
+        if (tools.input.takeByte()) |char| {
             if (char == '\n') break;
             santa1 = try move(santa1, char);
             robosanta = try move(robosanta, char);

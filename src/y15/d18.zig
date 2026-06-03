@@ -6,10 +6,10 @@ const Row = std.bit_set.ArrayBitSet(usize, 102);
 
 // TODO: Create a visualization
 
-fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var grid = [_]Row{.empty} ** 102;
     var i: usize = 1;
-    while (try input.takeDelimiter('\n')) |line| : (i += 1) {
+    while (try tools.input.takeDelimiter('\n')) |line| : (i += 1) {
         grid[i] = parseRow(line);
     }
     return .{ run(grid, false), run(grid, true) };

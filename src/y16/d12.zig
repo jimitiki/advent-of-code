@@ -11,11 +11,11 @@ const Instruction = union(Opcode) {
     jnz: struct { Operand, i64 },
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?i64, ?i64 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
     var program: std.ArrayList(Instruction) = .empty;
-    defer program.deinit(gpa);
-    while (try input.takeDelimiter('\n')) |line| {
-        try program.append(gpa, try parseInstruction(line));
+    defer program.deinit(tools.gpa);
+    while (try tools.input.takeDelimiter('\n')) |line| {
+        try program.append(tools.gpa, try parseInstruction(line));
     }
     var registers = [_]i64{0} ** 4;
     execute(&registers, program.items);

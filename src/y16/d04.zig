@@ -40,13 +40,13 @@ const Room = struct {
     }
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var sum_valid: u32 = 0;
     var obj_storage_sector: ?u32 = null;
     var buf: [64]u8 = undefined;
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         const room = try Room.parse(line);
-        if (!try room.validate(gpa)) {
+        if (!try room.validate(tools.gpa)) {
             continue;
         }
         sum_valid += room.sector;
@@ -127,7 +127,9 @@ test "decrypt" {
 }
 
 test "solve" {
+    const t = @import("../test.zig");
     const input = "aaaaa-bbb-z-y-x-123[abxyz]\na-b-c-d-e-f-g-h-987[abcde]\nnot-a-real-room-404[oarel]\ntotally-real-room-200[decoy]";
-    var reader = std.Io.Reader.fixed(input);
-    try std.testing.expectEqual(.{ 1514, null }, solveInt(std.testing.allocator, &reader));
+    var tools = try t.initTools(input);
+    defer t.deinitTools(&tools);
+    try std.testing.expectEqual(.{ 1514, null }, solveInt(tools));
 }

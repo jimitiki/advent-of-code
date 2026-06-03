@@ -6,14 +6,15 @@ const solver = @import("../solver.zig");
 
 // TODO: Create a visualization
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?i64, ?i64 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
+    const gpa = tools.gpa;
     var width: usize = 0;
     var rows: ArrayList(BitSet) = try .initCapacity(gpa, 3);
     defer {
         for (rows.items) |*row| row.deinit(gpa);
         rows.deinit(gpa);
     }
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         if (width == 0) {
             width = line.len;
             try rows.append(gpa, try .initEmpty(gpa, width));

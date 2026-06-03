@@ -1,3 +1,33 @@
+const std = @import("std");
+const solver = @import("solver.zig");
+
+pub fn initTools(text: []const u8) !solver.Tools {
+    const allocator = std.testing.allocator;
+    var buf = try allocator.alloc(u8, 64);
+    const reader = try allocator.create(std.Io.Reader);
+    const writer = try allocator.create(std.Io.Writer);
+    reader.* = std.Io.Reader.fixed(text);
+    writer.* = std.Io.Writer.fixed(buf[0..64]);
+
+    return .{
+        .gpa = allocator,
+        .input = reader,
+        .stdout = writer,
+        .p1buf = try allocator.alloc(u8, 32),
+        .p2buf = try allocator.alloc(u8, 32),
+    };
+}
+
+pub fn deinitTools(tools: *solver.Tools) void {
+    const allocator = std.testing.allocator;
+    allocator.free(tools.stdout.buffer);
+    // allocator.free(tools.stdout.buffer);
+    allocator.free(tools.p1buf);
+    allocator.free(tools.p2buf);
+    allocator.destroy(tools.stdout);
+    allocator.destroy(tools.input);
+}
+
 test "test all" {
     _ = @import("y16/d04.zig");
     _ = @import("y16/d05.zig");

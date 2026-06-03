@@ -11,15 +11,15 @@ const Ingredient = struct {
     texture: i64,
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?i64, ?i64 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
     var ingredients: std.ArrayList(Ingredient) = .empty;
-    defer ingredients.deinit(gpa);
-    while (try input.takeDelimiter('\n')) |line| {
-        ingredients.append(gpa, try parseIngredient(line)) catch unreachable;
+    defer ingredients.deinit(tools.gpa);
+    while (try tools.input.takeDelimiter('\n')) |line| {
+        ingredients.append(tools.gpa, try parseIngredient(line)) catch unreachable;
     }
 
-    const quantities = gpa.alloc(u8, ingredients.items.len) catch unreachable;
-    defer gpa.free(quantities);
+    const quantities = tools.gpa.alloc(u8, ingredients.items.len) catch unreachable;
+    defer tools.gpa.free(quantities);
     return .{
         maxScore(ingredients.items, quantities, 0, 0, null),
         maxScore(ingredients.items, quantities, 0, 0, 500),

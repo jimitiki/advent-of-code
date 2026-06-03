@@ -10,7 +10,7 @@ pub fn main(init: std.process.Init) !void {
 
     var answer_buf: [64]u8 = undefined;
     const start = std.Io.Clock.real.now(init.io);
-    if (runSolver(init, answer_buf[0..32], answer_buf[32..])) |result| {
+    if (runSolver(init, writer, answer_buf[0..32], answer_buf[32..])) |result| {
         const elapsed = start.durationTo(std.Io.Clock.real.now(init.io));
         if (result[0]) |answer| {
             try writer.print("Part 1: {s}\n", .{answer});
@@ -29,7 +29,7 @@ pub fn main(init: std.process.Init) !void {
     try writer.flush();
 }
 
-fn runSolver(init: std.process.Init, answer_buf1: []u8, answer_buf2: []u8) !solver.Result {
+fn runSolver(init: std.process.Init, stdout: *std.Io.Writer, answer_buf1: []u8, answer_buf2: []u8) !solver.Result {
     const allocator = init.arena.allocator();
     const args = init.minimal.args.toSlice(allocator) catch std.debug.panic("Failed to read arguments", .{});
     const year = std.fmt.parseUnsigned(u8, args[2], 10) catch std.debug.panic("Invalid year argument {s}", .{args[2]});
@@ -45,7 +45,13 @@ fn runSolver(init: std.process.Init, answer_buf1: []u8, answer_buf2: []u8) !solv
     var reader = input_file.reader(init.io, &read_buf);
 
     const solution = solutions.get(year, day) catch std.debug.panic("Invalid year and/or day ({}, {})", .{ year, day });
-    return solution(init.gpa, &reader.interface, answer_buf1, answer_buf2);
+    return solution(.{
+        .gpa = init.gpa,
+        .input = &reader.interface,
+        .stdout = stdout,
+        .p1buf = answer_buf1,
+        .p2buf = answer_buf2,
+    });
 }
 
 fn inputFilePath(allocator: std.mem.Allocator, args: []const [:0]const u8) []const u8 {

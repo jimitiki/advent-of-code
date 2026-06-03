@@ -52,11 +52,11 @@ const Instruction = union(Op) {
     }
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u64, ?u64 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     var program: std.ArrayList(Instruction) = .empty;
-    defer program.deinit(gpa);
-    while (try input.takeDelimiter('\n')) |line| {
-        program.append(gpa, try Instruction.parse(line)) catch unreachable;
+    defer program.deinit(tools.gpa);
+    while (try tools.input.takeDelimiter('\n')) |line| {
+        program.append(tools.gpa, try Instruction.parse(line)) catch unreachable;
     }
     return .{ execute(program.items, 0, 0), execute(program.items, 1, 0) };
 }

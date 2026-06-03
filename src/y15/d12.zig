@@ -2,8 +2,8 @@ const std = @import("std");
 
 const solver = @import("../solver.zig");
 
-fn solveInt(gpa: std.mem.Allocator, reader: *std.Io.Reader) solver.Error!struct { ?i64, ?i64 } {
-    const answer = try sumNumbers(gpa, reader);
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
+    const answer = try sumNumbers(tools.gpa, tools.input);
     return .{ answer[0], answer[1] };
 }
 

@@ -8,14 +8,15 @@ const PathCache = std.AutoArrayHashMapUnmanaged(u32, struct { usize, u2 });
 const dac = convertDevName("dac");
 const fft = convertDevName("fft");
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+    const gpa = tools.gpa;
     var devices: DevMap = .empty;
     defer {
         var it = devices.valueIterator();
         while (it.next()) |d| d.deinit(gpa);
         devices.deinit(gpa);
     }
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         var outputs: std.ArrayList(u32) = .empty;
         for (line[5..], 5..) |c, i| {
             if (c == ' ') {

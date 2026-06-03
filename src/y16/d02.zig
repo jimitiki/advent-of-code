@@ -16,17 +16,17 @@ const keypad_p2 = [_][5]?u8{
     [_]?u8{ null, null, 'D', null, null },
 };
 
-pub fn solve(gpa: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []u8) solver.Error!struct { ?[]const u8, ?[]const u8 } {
+pub fn solve(tools: solver.Tools) solver.Error!struct { ?[]const u8, ?[]const u8 } {
     var keys_p1: std.ArrayList(u8) = .empty;
-    defer keys_p1.deinit(gpa);
+    defer keys_p1.deinit(tools.gpa);
     var keys_p2: std.ArrayList(u8) = .empty;
-    defer keys_p2.deinit(gpa);
+    defer keys_p2.deinit(tools.gpa);
 
     var row_p1: u2 = 1;
     var col_p1: u2 = 1;
     var row_p2: u3 = 2;
     var col_p2: u3 = 0;
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         for (line) |char| {
             switch (char) {
                 'U' => {
@@ -48,12 +48,12 @@ pub fn solve(gpa: std.mem.Allocator, input: *std.Io.Reader, buf1: []u8, buf2: []
                 else => return error.InvalidInput,
             }
         }
-        try keys_p1.append(gpa, keypad_p1[row_p1][col_p1]);
-        try keys_p2.append(gpa, keypad_p2[row_p2][col_p2].?);
+        try keys_p1.append(tools.gpa, keypad_p1[row_p1][col_p1]);
+        try keys_p2.append(tools.gpa, keypad_p2[row_p2][col_p2].?);
     }
-    const code_p1 = buf1[0..keys_p1.items.len];
+    const code_p1 = tools.p1buf[0..keys_p1.items.len];
     @memcpy(code_p1, keys_p1.items);
-    const code_p2 = buf2[0..keys_p2.items.len];
+    const code_p2 = tools.p2buf[0..keys_p2.items.len];
     @memcpy(code_p2, keys_p2.items);
     return .{ code_p1, code_p2 };
 }

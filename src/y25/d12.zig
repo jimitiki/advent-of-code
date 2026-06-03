@@ -4,22 +4,22 @@ const solver = @import("../solver.zig");
 
 const Shape = std.bit_set.IntegerBitSet(9);
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var valid: usize = 0;
     var invalid: usize = 0;
     var unknown: usize = 0;
     var shape_mode = true;
     var counter: usize = 0;
     var shapes: std.ArrayList(Shape) = .empty;
-    defer shapes.deinit(gpa);
+    defer shapes.deinit(tools.gpa);
     var shape: Shape = undefined;
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         if (shape_mode and line.len > 2 and line[2] == 'x') {
             shape_mode = false;
         }
         if (shape_mode) {
             if (line.len == 0) {
-                try shapes.append(gpa, shape);
+                try shapes.append(tools.gpa, shape);
             } else if (line[1] == ':') {
                 shape = .empty;
                 counter = 0;
@@ -35,8 +35,8 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
         const width = std.fmt.parseUnsigned(u16, line[0..2], 10) catch return error.InvalidInput;
         const height = std.fmt.parseUnsigned(u16, line[3..5], 10) catch return error.InvalidInput;
         const area = width * height;
-        var counts: []u8 = try gpa.alloc(u8, shapes.items.len);
-        defer gpa.free(counts);
+        var counts: []u8 = try tools.gpa.alloc(u8, shapes.items.len);
+        defer tools.gpa.free(counts);
         for (line[6..], 6..) |c, i| {
             if (c == ' ') {
                 counts[@divExact(i - 6, 3)] = std.fmt.parseUnsigned(u8, line[i + 1 .. i + 3], 10) catch return error.InvalidInput;

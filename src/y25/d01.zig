@@ -3,11 +3,11 @@ const assert = std.debug.assert;
 
 const solver = @import("../solver.zig");
 
-fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var dial: u8 = 50;
     var pwd1: u32 = 0;
     var pwd2: u32 = 0;
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         const dir = line[0];
         const mag = std.fmt.parseInt(u16, line[1..line.len], 10) catch return error.InvalidInput;
         const change: i32 = if (dir == 'L') -@as(i32, mag) else if (dir == 'R') mag else unreachable;

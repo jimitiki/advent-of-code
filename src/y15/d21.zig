@@ -62,11 +62,11 @@ const Fighter = struct {
     }
 };
 
-fn solveInt(_: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const boss: Fighter = .{
-        .hp = try parseBossStat(try input.takeDelimiter('\n')),
-        .damage = try parseBossStat(try input.takeDelimiter('\n')),
-        .armor = try parseBossStat(try input.takeDelimiter('\n')),
+        .hp = try parseBossStat(try tools.input.takeDelimiter('\n')),
+        .damage = try parseBossStat(try tools.input.takeDelimiter('\n')),
+        .armor = try parseBossStat(try tools.input.takeDelimiter('\n')),
     };
 
     return .{ minCost(boss), maxCost(boss) };

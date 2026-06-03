@@ -27,14 +27,15 @@ const Pair = struct {
     }
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+    const gpa = tools.gpa;
     var pairs: std.ArrayList(Pair) = .empty;
     defer pairs.deinit(gpa);
     var boxes: std.ArrayList(Pos) = .empty;
     defer boxes.deinit(gpa);
 
     // Find closest pairs
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         var endx: usize = 0;
         const pos: Pos = for (line, 0..) |c, i| {
             if (c == ',') {

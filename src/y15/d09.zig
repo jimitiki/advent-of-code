@@ -4,7 +4,8 @@ const EdgeMap = std.StringArrayHashMapUnmanaged(u16);
 const Graph = std.StringArrayHashMapUnmanaged(EdgeMap);
 const WordIterator = @import("../parse.zig").WordIterator;
 const solver = @import("../solver.zig");
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    const gpa = tools.gpa;
     var graph: Graph = .empty;
     defer {
         var it = graph.iterator();
@@ -21,7 +22,7 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
         }
         names.deinit(gpa);
     }
-    while (try input.takeDelimiter('\n')) |line| {
+    while (try tools.input.takeDelimiter('\n')) |line| {
         const start, const end, const dist = try parseEdge(line);
         const start_name = getName(gpa, &names, start);
         const end_name = getName(gpa, &names, end);
@@ -29,21 +30,8 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
         addEdge(gpa, &graph, end_name, start_name, dist);
     }
     const start = graph.keys()[0];
-    const shortest_path: u32 = shortestPath(
-        gpa,
-        graph,
-        std.math.maxInt(u32),
-        .empty,
-        start,
-        0,
-    );
-    const longest_path: u32 = longestPath(
-        gpa,
-        graph,
-        .empty,
-        start,
-        0,
-    );
+    const shortest_path: u32 = shortestPath(gpa, graph, std.math.maxInt(u32), .empty, start, 0);
+    const longest_path: u32 = longestPath(gpa, graph, .empty, start, 0);
     return .{ shortest_path, longest_path };
 }
 

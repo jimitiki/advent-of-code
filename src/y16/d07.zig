@@ -47,10 +47,10 @@ const IPIterator = struct {
     }
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var sum_tls: u32 = 0;
     var sum_ssl: u32 = 0;
-    while (try input.takeDelimiter('\n')) |ip| {
+    while (try tools.input.takeDelimiter('\n')) |ip| {
         if (supportsTLS(ip) catch return error.InvalidInput) {
             sum_tls += 1;
         }
@@ -58,7 +58,6 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
             sum_ssl += 1;
         }
     }
-    _ = gpa;
     return .{ sum_tls, sum_ssl };
 }
 

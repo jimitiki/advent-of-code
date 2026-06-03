@@ -36,11 +36,11 @@ const Dir = enum {
     }
 };
 
-fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct { ?usize, ?usize } {
-    const s = try input.takeDelimiter('\n') orelse return error.InvalidInput;
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+    const s = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
     const seed = std.fmt.parseInt(usize, s, 10) catch return error.InvalidInput;
     return .{
-        try minSteps(gpa, seed, .init(1, 1), .init(31, 39)),
+        try minSteps(tools.gpa, seed, .init(1, 1), .init(31, 39)),
         null,
     };
 }

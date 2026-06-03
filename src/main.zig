@@ -9,7 +9,9 @@ pub fn main(init: std.process.Init) !void {
     var writer = &stdout.interface;
 
     var answer_buf: [64]u8 = undefined;
+    const start = std.Io.Clock.real.now(init.io);
     if (runSolver(init, answer_buf[0..32], answer_buf[32..])) |result| {
+        const elapsed = start.durationTo(std.Io.Clock.real.now(init.io));
         if (result[0]) |answer| {
             try writer.print("Part 1: {s}\n", .{answer});
         } else {
@@ -20,6 +22,7 @@ pub fn main(init: std.process.Init) !void {
         } else {
             try writer.print("Part 2: No Answer\n", .{});
         }
+        try writer.print("Elapsed time: {}.{:0>6} seconds\n", .{ elapsed.toSeconds(), @abs(elapsed.toMicroseconds()) % 1000000 });
     } else |err| {
         try writer.print("Error while running solver: {}\n", .{err});
     }

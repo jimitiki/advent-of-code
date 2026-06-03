@@ -1,6 +1,20 @@
 const std = @import("std");
 const solver = @import("solver.zig");
 
+test "test all" {
+    _ = @import("y16/d04.zig");
+    _ = @import("y16/d05.zig");
+    _ = @import("y16/d06.zig");
+    _ = @import("y16/d07.zig");
+    _ = @import("y16/d08.zig");
+    _ = @import("y16/d09.zig");
+    _ = @import("y16/d10.zig");
+    _ = @import("y16/d11.zig");
+    _ = @import("y16/d12.zig");
+    _ = @import("y16/d13.zig");
+    _ = @import("y16/d14.zig");
+}
+
 pub fn initTools(text: []const u8) !solver.Tools {
     const allocator = std.testing.allocator;
     var buf = try allocator.alloc(u8, 64);
@@ -26,17 +40,4 @@ pub fn deinitTools(tools: *solver.Tools) void {
     allocator.free(tools.p2buf);
     allocator.destroy(tools.stdout);
     allocator.destroy(tools.input);
-}
-
-test "test all" {
-    _ = @import("y16/d04.zig");
-    _ = @import("y16/d05.zig");
-    _ = @import("y16/d06.zig");
-    _ = @import("y16/d07.zig");
-    _ = @import("y16/d08.zig");
-    _ = @import("y16/d09.zig");
-    _ = @import("y16/d10.zig");
-    _ = @import("y16/d11.zig");
-    _ = @import("y16/d12.zig");
-    _ = @import("y16/d13.zig");
 }

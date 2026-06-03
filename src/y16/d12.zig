@@ -18,9 +18,16 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
         try program.append(gpa, try parseInstruction(line));
     }
     var registers = [_]i64{0} ** 4;
+    execute(&registers, program.items);
+    return .{ registers[0], null };
+}
+
+pub const solve = solver.intSolver(i64, solveInt);
+
+fn execute(registers: *[4]i64, program: []const Instruction) void {
     var pc: usize = 0;
-    while (pc < program.items.len) {
-        const instruction = program.items[pc];
+    while (pc < program.len) {
+        const instruction = program[pc];
         switch (instruction) {
             .cpy => |operands| {
                 registers[operands[1]] = getValue(registers, operands[0]);
@@ -43,30 +50,27 @@ fn solveInt(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!struct {
             },
         }
     }
-    return .{ registers[0], null };
 }
 
-pub const solve = solver.intSolver(i64, solveInt);
-
-test "program" {
-    const text =
-        \\cpy 41 a
-        \\inc a
-        \\inc a
-        \\dec a
-        \\jnz a 2
-        \\dec a
-        \\
-    ;
-    var input = std.Io.Reader.fixed(text);
-    try std.testing.expectEqual(.{ 42, null }, solveInt(std.testing.allocator, &input));
-}
-
-fn getValue(registers: [4]i64, operand: Operand) i64 {
+fn getValue(registers: *const [4]i64, operand: Operand) i64 {
     return switch (operand) {
         .int => |v| v,
         .reg => |r| registers[r],
     };
+}
+
+test "program" {
+    const program: []const Instruction = &.{
+        .{ .cpy = .{ .{ .int = 41 }, 0 } },
+        .{ .inc = 0 },
+        .{ .inc = 0 },
+        .{ .dec = 0 },
+        .{ .jnz = .{ .{ .reg = 0 }, 2 } },
+        .{ .dec = 0 },
+    };
+    var registers = [_]i64{0} ** 4;
+    execute(&registers, program);
+    try std.testing.expectEqual(registers[0], 42);
 }
 
 fn parseInstruction(str: []const u8) error{InvalidInput}!Instruction {

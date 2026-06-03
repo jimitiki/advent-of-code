@@ -29,8 +29,13 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var path: std.ArrayList(Pos) = .empty;
     defer path.deinit(tools.gpa);
     const p1 = try aStar(tools.gpa, seed, .init(1, 1), .init(31, 39), &path);
-    drawPath(tools.stdout, path.items, seed) catch {};
-    return .{ p1, try scan(tools.gpa, seed, .init(1, 1), 50) };
+
+    var visited: PosMap(usize) = .empty;
+    defer visited.deinit(tools.gpa);
+    const p2 = try scan(tools.gpa, &visited, seed, .init(1, 1), 50);
+
+    drawMaze(tools.stdout, path.items, visited, seed) catch {};
+    return .{ p1, p2 };
 }
 
 pub const solve = solver.intSolver(usize, solveInt);
@@ -81,27 +86,25 @@ test "a*" {
     try std.testing.expectEqual(11, try aStar(std.testing.allocator, 10, .init(1, 1), .init(7, 4), null));
 }
 
-fn scan(gpa: std.mem.Allocator, seed: usize, start: Pos, limit: usize) error{OutOfMemory}!usize {
-    var minima: PosMap(usize) = .empty;
-    defer minima.deinit(gpa);
+fn scan(gpa: std.mem.Allocator, visited: *PosMap(usize), seed: usize, start: Pos, limit: usize) error{OutOfMemory}!usize {
     var queue: Queue = .empty;
     defer queue.deinit(gpa);
     var pos_buf: [4]Pos = undefined;
 
-    try minima.put(gpa, start, 0);
+    try visited.put(gpa, start, 0);
     try queue.push(gpa, .{ start, 0 });
     while (queue.pop()) |entry| {
         if (entry[1] == limit) continue;
         const cur, const dist = entry;
         const new_dist = dist + 1;
         for (generateNext(&pos_buf, cur, seed)) |next| {
-            if (new_dist < minima.get(next) orelse std.math.maxInt(usize)) {
-                try minima.put(gpa, next, new_dist);
+            if (new_dist < visited.get(next) orelse std.math.maxInt(usize)) {
+                try visited.put(gpa, next, new_dist);
                 try queue.push(gpa, .{ next, new_dist });
             }
         }
     }
-    return minima.size;
+    return visited.size;
 }
 
 fn generateNext(buf: *[4]Pos, start: Pos, seed: usize) []Pos {
@@ -149,17 +152,110 @@ fn distance(a: Pos, b: Pos) usize {
     return std.math.sqrt(x * x + y * y);
 }
 
-fn drawPath(writer: *std.Io.Writer, path: []Pos, seed: usize) solver.Error!void {
-    var xmax: usize = 1;
-    var ymax: usize = 1;
+fn drawMaze(writer: *std.Io.Writer, path: []const Pos, visited: PosMap(usize), seed: usize) error{WriteFailed}!void {
+    var xmax1: usize = 4;
+    var ymax1: usize = 4;
     for (path) |pos| {
-        xmax = @max(xmax, pos.x);
-        ymax = @max(ymax, pos.y);
+        xmax1 = @max(xmax1, pos.x + 3);
+        ymax1 = @max(ymax1, pos.y + 3);
     }
-    xmax += 3;
-    ymax += 3;
 
+    var xmax2: usize = 4;
+    var ymax2: usize = 4;
+    var it = visited.keyIterator();
+    while (it.next()) |pos| {
+        xmax2 = @max(xmax2, pos.x + 3);
+        ymax2 = @max(ymax2, pos.y + 3);
+    }
+
+    const gap = 8;
+    try drawTop(writer, xmax1, xmax2, gap);
+
+    for (0..@max(ymax1, ymax2) + 1) |y| {
+        if (y < ymax1) {
+            try drawYAxis(writer, y, gap);
+            try drawPathRow(writer, path, seed, xmax1, y);
+            try drawRightEdge(writer, seed, xmax1, y);
+        } else if (y == ymax1) {
+            try drawBottom(writer, seed, xmax1, y, gap);
+        } else {
+            for (0..xmax1 + gap + 3) |_| try writer.writeAll(" ");
+        }
+        if (y < ymax2) {
+            try drawYAxis(writer, y, gap);
+            try drawScanRow(writer, visited, seed, xmax2, y);
+            try drawRightEdge(writer, seed, xmax2, y);
+        } else if (y == ymax2) {
+            try drawBottom(writer, seed, xmax2, y, gap);
+        }
+        try writer.writeAll("\n");
+    }
+    try writer.flush();
+}
+
+fn drawTop(writer: *std.Io.Writer, xmax1: usize, xmax2: usize, gap: usize) error{WriteFailed}!void {
+    for (0..gap) |_| try writer.writeAll(" ");
     try writer.writeAll("   ");
+    try drawXLabels(writer, xmax1);
+    for (0..gap) |_| try writer.writeAll(" ");
+    try writer.writeAll("   ");
+    try drawXLabels(writer, xmax2);
+    try writer.writeAll("\n");
+
+    for (0..gap) |_| try writer.writeAll(" ");
+    try writer.writeAll("  ▗");
+    for (0..xmax1) |_| try writer.writeAll("▄▄");
+    try writer.writeAll("▖");
+    for (0..gap) |_| try writer.writeAll(" ");
+    try writer.writeAll("  ▗");
+    for (0..xmax2) |_| try writer.writeAll("▄▄");
+    try writer.writeAll("▖\n");
+}
+
+fn drawPathRow(writer: *std.Io.Writer, path: []const Pos, seed: usize, xmax: usize, y: usize) error{WriteFailed}!void {
+    for (0..xmax) |x| {
+        for (path, 0..) |pos, i| {
+            if (pos.x != x or pos.y != y) continue;
+            if (i == 0) {
+                try writer.writeAll("▓▓");
+            } else if (i == path.len - 1) {
+                try writer.writeAll("▓▓");
+            } else {
+                try writer.writeAll("▒▒");
+            }
+            break;
+        } else try drawTile(writer, seed, x, y);
+    }
+}
+
+fn drawScanRow(writer: *std.Io.Writer, visited: PosMap(usize), seed: usize, xmax: usize, y: usize) error{WriteFailed}!void {
+    for (0..xmax) |x| {
+        if (x == 1 and y == 1) {
+            try writer.writeAll("▓▓");
+        } else if (visited.contains(.init(x, y))) {
+            try writer.writeAll("▒▒");
+        } else try drawTile(writer, seed, x, y);
+    }
+}
+
+fn drawBottom(writer: *std.Io.Writer, seed: usize, xmax: usize, y: usize, gap: usize) error{WriteFailed}!void {
+    for (0..gap) |_| try writer.writeAll(" ");
+    try writer.print("  ▝", .{});
+    for (0..xmax) |x| {
+        if (getSquare(x, y, seed)) {
+            try writer.print("▀▀", .{});
+        } else {
+            try writer.print("┉┉", .{});
+        }
+    }
+    if (getSquare(xmax, y, seed)) {
+        try writer.print("▘", .{});
+    } else {
+        try writer.print("┘", .{});
+    }
+}
+
+fn drawXLabels(writer: *std.Io.Writer, xmax: usize) error{WriteFailed}!void {
     for (0..xmax) |x| {
         if (x % 2 == 0) {
             try writer.print("{: >2}", .{x});
@@ -167,53 +263,29 @@ fn drawPath(writer: *std.Io.Writer, path: []Pos, seed: usize) solver.Error!void 
             try writer.writeAll("  ");
         }
     }
-    try writer.writeAll("\n");
+}
 
-    try writer.writeAll("  ▗");
-    for (0..xmax) |_| try writer.writeAll("▄▄");
-    try writer.writeAll("▖\n");
-
-    for (0..ymax) |y| {
-        if (y % 2 == 0) {
-            try writer.print("{: >2}▐", .{y});
-        } else {
-            try writer.writeAll("  ▐");
-        }
-        for (0..xmax) |x| {
-            for (path, 0..) |pos, i| {
-                if (pos.x != x or pos.y != y) continue;
-                if (i == 0) {
-                    try writer.writeAll("▓▓");
-                } else if (i == path.len - 1) {
-                    try writer.writeAll("▓▓");
-                } else {
-                    try writer.writeAll("▒▒");
-                }
-                break;
-            } else if (getSquare(x, y, seed)) {
-                try writer.writeAll("██");
-            } else {
-                try writer.writeAll("  ");
-            }
-        }
-        if (getSquare(xmax, y, seed)) {
-            try writer.writeAll("▌\n");
-        } else {
-            try writer.writeAll("┊\n");
-        }
-    }
-
-    try writer.print("  ▝", .{});
-    for (0..xmax) |x| {
-        if (getSquare(x, ymax, seed)) {
-            try writer.print("▀▀", .{});
-        } else {
-            try writer.print("┉┉", .{});
-        }
-    }
-    if (getSquare(xmax, ymax, seed)) {
-        try writer.print("▘\n", .{});
+fn drawYAxis(writer: *std.Io.Writer, y: usize, gap: usize) error{WriteFailed}!void {
+    for (0..gap) |_| try writer.writeAll(" ");
+    if (y % 2 == 0) {
+        try writer.print("{: >2}▐", .{y});
     } else {
-        try writer.print("┘\n", .{});
+        try writer.writeAll("  ▐");
+    }
+}
+
+fn drawTile(writer: *std.Io.Writer, seed: usize, x: usize, y: usize) error{WriteFailed}!void {
+    if (getSquare(x, y, seed)) {
+        try writer.writeAll("██");
+    } else {
+        try writer.writeAll("  ");
+    }
+}
+
+fn drawRightEdge(writer: *std.Io.Writer, seed: usize, x: usize, y: usize) error{WriteFailed}!void {
+    if (getSquare(x, y, seed)) {
+        try writer.writeAll("▌");
+    } else {
+        try writer.writeAll("┊");
     }
 }

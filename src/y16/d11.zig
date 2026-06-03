@@ -71,17 +71,25 @@ fn solveInt(gpa: Allocator, input: *std.Io.Reader) solver.Error!struct { ?u32, ?
         }
         if (i == 3) break;
     }
-    const devices = try gpa.alloc(u2, chips.size * 2);
-    defer gpa.free(devices);
+    const devices_p1 = try gpa.alloc(u2, chips.size * 2);
+    defer gpa.free(devices_p1);
+    @memset(devices_p1, 0);
     var it = chips.iterator();
     var idx: usize = 0;
     while (it.next()) |entry| : (idx += 1) {
-        devices[idx] = entry.value_ptr.*;
-        devices[idx + chips.size] = rtgs.get(entry.key_ptr.*).?;
+        devices_p1[idx] = entry.value_ptr.*;
+        devices_p1[idx + chips.size] = rtgs.get(entry.key_ptr.*).?;
     }
+    const state_p1: State = .init(0, devices_p1);
 
-    const state: State = .init(0, devices);
-    return .{ try minSteps(gpa, state), null };
+    const devices_p2 = try gpa.alloc(u2, devices_p1.len + 4);
+    defer gpa.free(devices_p2);
+    @memset(devices_p2, 0);
+    @memcpy(devices_p2[0..state_p1.cidx], devices_p1[0..state_p1.cidx]);
+    @memcpy(devices_p2[state_p1.cidx + 2 .. devices_p2.len - 2], devices_p1[state_p1.cidx..]);
+    const state_p2: State = .init(0, devices_p2);
+
+    return .{ try minSteps(gpa, state_p1), try minSteps(gpa, state_p2) };
 }
 
 fn parseElement(it: *WordIterator) error{InvalidInput}!?struct { []const u8, bool } {

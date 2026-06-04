@@ -37,7 +37,14 @@ fn parseDisc(str: []const u8) error{InvalidInput}!Disc {
     };
 }
 
-fn calculateTime(discs: []Disc) usize {
+fn calculateTime(discs: []Disc) ?usize {
+    for (discs, 0..) |a, i| {
+        for (discs[i..], i..) |b, j| {
+            if (a.holes == b.holes and (a.start + i) % a.holes != (b.start + j) % b.holes) {
+                return null;
+            }
+        }
+    }
     var t: usize = 0;
     while (true) : (t += 1) {
         for (discs, 1..) |d, n| {

@@ -1,0 +1,57 @@
+const std = @import("std");
+
+const solver = @import("../solver.zig");
+
+pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
+    const str = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
+    var max_size = str.len;
+    while (max_size < 272) : (max_size = max_size * 2 + 1) {}
+    const buf = try tools.gpa.alloc(u8, max_size);
+    defer tools.gpa.free(buf);
+
+    const chksum = computeChksum(buf, 272, str);
+    @memcpy(tools.p1buf[0..chksum.len], chksum);
+    return .{ tools.p1buf[0..chksum.len], null };
+}
+
+fn computeChksum(buf: []u8, disk_size: usize, input: []const u8) []const u8 {
+    var bits = generateData(buf, disk_size, input);
+    while (bits.len % 2 == 0) {
+        const chksum = bits[0..@divExact(bits.len, 2)];
+        for (0..chksum.len) |i| {
+            chksum[i] = if (bits[i * 2] == bits[i * 2 + 1]) '1' else '0';
+        }
+        bits = chksum;
+    }
+    return bits;
+}
+
+test "chksum" {
+    var buf: [23]u8 = undefined;
+    try std.testing.expectEqualSlices(u8, "01100", computeChksum(&buf, 20, "10000"));
+}
+
+fn generateData(buf: []u8, disk_size: usize, original: []const u8) []u8 {
+    @memcpy(buf[0..original.len], original);
+    var size = original.len;
+    var new_size = size * 2 + 1;
+    while (size < disk_size) : ({
+        size = new_size;
+        new_size = new_size * 2 + 1;
+    }) {
+        buf[size] = '0';
+        for (buf[0..size], 0..) |bit, i| {
+            buf[new_size - 1 - i] = if (bit == '1') '0' else '1';
+        }
+    }
+    return buf[0..disk_size];
+}
+
+test "generate" {
+    var buf: [25]u8 = undefined;
+    try std.testing.expectEqualSlices(u8, "100", generateData(&buf, 3, "1"));
+    try std.testing.expectEqualSlices(u8, "001", generateData(&buf, 3, "0"));
+    try std.testing.expectEqualSlices(u8, "11111000000", generateData(&buf, 11, "11111"));
+    try std.testing.expectEqualSlices(u8, "1111000010100101011110000", generateData(&buf, 25, "111100001010"));
+    try std.testing.expectEqualSlices(u8, "10000011110010000111", generateData(&buf, 20, "10000"));
+}

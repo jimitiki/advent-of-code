@@ -12,6 +12,8 @@ const Disc = struct {
     }
 };
 
+// TODO: Optimize further. Chinese Remainder Theorem?
+
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var discs: std.ArrayList(Disc) = .empty;
     defer discs.deinit(tools.gpa);
@@ -46,7 +48,14 @@ fn calculateTime(discs: []Disc) ?usize {
         }
     }
     var t: usize = 0;
-    while (true) : (t += 1) {
+    var step: u8 = 1;
+    for (discs, 1..) |disc, i| {
+        if (disc.holes > step) {
+            step = disc.holes;
+            t = disc.holes - (disc.start + i) % disc.holes;
+        }
+    }
+    while (true) : (t += step) {
         for (discs, 1..) |d, n| {
             if (d.position(t + n) != 0) break;
         } else return t;

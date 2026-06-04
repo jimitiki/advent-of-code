@@ -18,7 +18,9 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     while (try tools.input.takeDelimiter('\n')) |line| {
         try discs.append(tools.gpa, try parseDisc(line));
     }
-    return .{ calculateTime(discs.items), null };
+    const p1 = calculateTime(discs.items);
+    try discs.append(tools.gpa, .{ .holes = 11, .start = 0 });
+    return .{ p1, calculateTime(discs.items) };
 }
 
 pub const solve = solver.intSolver(usize, solveInt);

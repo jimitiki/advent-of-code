@@ -4,7 +4,7 @@ const solver = @import("../solver.zig");
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const elf_count = std.fmt.parseUnsigned(u32, try tools.takeOneLine(), 10) catch return error.InvalidInput;
-    return .{ takeLeft(elf_count), try takeAcross(tools.gpa, elf_count) };
+    return .{ takeLeft(elf_count), takeAcross(elf_count) };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
@@ -30,24 +30,19 @@ const Elf = struct {
     next: *Elf,
 };
 
-fn takeAcross(gpa: std.mem.Allocator, elf_count: u32) error{OutOfMemory}!u32 {
-    const elves = try gpa.alloc(Elf, elf_count);
-    defer gpa.free(elves);
-    for (elves, 0..) |*elf, i| {
-        elf.num = @intCast(i + 1);
-        elf.prev = &elves[(i + elf_count - 1) % elf_count];
-        elf.next = &elves[(i + 1) % elf_count];
+fn takeAcross(elf_count: u32) u32 {
+    var pow3_low: u32 = 1;
+    var pow3_high: u32 = pow3_low * 3;
+    while (pow3_high <= elf_count) : ({
+        pow3_low = pow3_high;
+        pow3_high = pow3_low * 3;
+    }) {}
+
+    if (elf_count == pow3_low) {
+        return pow3_low;
+    } else if (elf_count > pow3_low * 2) {
+        return pow3_low + (elf_count - pow3_low * 2) * 2;
+    } else {
+        return elf_count - pow3_low;
     }
-    var target = &elves[elf_count / 2];
-    var left = elf_count;
-    while (left > 1) : (left -= 1) {
-        target.prev.next = target.next;
-        target.next.prev = target.prev;
-        if (left & 1 == 0) {
-            target = target.next;
-        } else {
-            target = target.next.next;
-        }
-    }
-    return target.num;
 }

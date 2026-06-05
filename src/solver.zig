@@ -10,6 +10,13 @@ pub const Tools = struct {
     stdout: *std.Io.Writer,
     p1buf: []u8,
     p2buf: []u8,
+
+    /// Reads the next line from the input stream, which is presumed to have only one line of
+    /// useful data. If there is no line, `error.InvalidInput` is returned. Other read errors
+    /// returned by the `Reader` itself are propagated.
+    pub fn takeOneLine(self: Tools) error{ InvalidInput, ReadFailed, StreamTooLong }![]const u8 {
+        return try self.input.takeDelimiter('\n') orelse error.InvalidInput;
+    }
 };
 pub const Solver = *const fn (Tools) Error!Result;
 pub fn intSolver(comptime T: type, comptime solveFn: fn (Tools) Error!struct { ?T, ?T }) Solver {

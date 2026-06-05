@@ -5,17 +5,19 @@ const solver = @import("../solver.zig");
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     const first_row = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
-    var start: BitSet = try .initEmpty(tools.gpa, first_row.len);
-    defer start.deinit(tools.gpa);
+    var p1start: BitSet = try .initEmpty(tools.gpa, first_row.len);
+    defer p1start.deinit(tools.gpa);
     for (first_row, 0..) |char, i| {
         switch (char) {
-            '.' => start.set(i),
+            '.' => p1start.set(i),
             '^' => {},
             else => return error.InvalidInput,
         }
     }
 
-    return .{ countSafeTiles(&start, 40), null };
+    var p2start: BitSet = try p1start.clone(tools.gpa);
+    defer p2start.deinit(tools.gpa);
+    return .{ countSafeTiles(&p1start, 40), countSafeTiles(&p2start, 400000) };
 }
 
 pub const solve = solver.intSolver(usize, solveInt);
@@ -23,11 +25,9 @@ pub const solve = solver.intSolver(usize, solveInt);
 fn countSafeTiles(row: *BitSet, row_count: usize) usize {
     var count: usize = 0;
     var i: u32 = 0;
-    while (i < row_count) : ({
-        i += 1;
-        generateRow(row);
-    }) {
+    while (i < row_count) : (i += 1) {
         count += row.count();
+        generateRow(row);
     }
     return count;
 }

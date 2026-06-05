@@ -43,7 +43,14 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     }
 
     const first_range = merged.items[0];
-    return .{ if (first_range.start > 0) 0 else first_range.end + 1, null };
+    var allowed: u32 = first_range.start + (std.math.maxInt(u32) - merged.items[merged.items.len - 1].end);
+    for (merged.items[0 .. merged.items.len - 1], merged.items[1..]) |a, b| {
+        allowed += b.start - a.end - 1;
+    }
+    return .{
+        if (first_range.start > 0) 0 else first_range.end + 1,
+        allowed,
+    };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);

@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const splitWords = @import("../parse.zig").splitWords;
+const Parser = @import("../parse.zig").Parser;
 const solver = @import("../solver.zig");
 
 // TODO: Evaluate signal with "lazy recursion". Check the wires needed, if they haven't been evaluated yet, evaluate them, etc.
@@ -184,37 +184,40 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
 pub const solve = solver.intSolver(u16, solveInt);
 
 fn parseGate(string: []const u8) solver.Error!Gate {
-    var buf: [5][]const u8 = undefined;
-    const words: [][]const u8 = if (try splitWords(&buf, string)) |w| w else return error.InvalidInput;
-
-    if (std.mem.eql(u8, words[0], "NOT")) {
+    var parser: Parser = .init(string, .{});
+    const first = try parser.take();
+    if (std.mem.eql(u8, first, "NOT")) {
+        const input = try parseInput(try parser.take());
+        try parser.skip();
         return .{
-            .inputs = .{ .NOT = try parseInput(words[1]) },
-            .output = try parseWire(words[3]),
+            .inputs = .{ .NOT = input },
+            .output = try parseWire(try parser.take()),
         };
-    } else if (std.mem.eql(u8, words[1], "->")) {
-        return .{
-            .inputs = .{ .SIGNAL = try parseInput(words[0]) },
-            .output = try parseWire(words[2]),
-        };
-    } else if (std.meta.stringToEnum(GateType, words[1])) |gate_type| {
-        const input1 = try parseInput(words[0]);
-        const inputs: Inputs = switch (gate_type) {
-            .AND => .{ .AND = .{ input1, try parseInput(words[2]) } },
-            .OR => .{ .OR = .{ input1, try parseInput(words[2]) } },
-            .LSHIFT => .{ .LSHIFT = .{ input1, std.fmt.parseInt(u4, words[2], 10) catch return error.InvalidInput } },
-            .RSHIFT => .{ .RSHIFT = .{ input1, std.fmt.parseInt(u4, words[2], 10) catch return error.InvalidInput } },
-            else => return error.InvalidInput,
-        };
-        return .{ .inputs = inputs, .output = try parseWire(words[4]) };
-    } else {
-        return error.InvalidInput;
     }
+
+    const input1 = try parseInput(first);
+    if (parser.takeToken("->")) |_| {
+        return .{
+            .inputs = .{ .SIGNAL = input1 },
+            .output = try parseWire(try parser.take()),
+        };
+    } else |_| {}
+
+    const gate_type = try parser.takeEnum(GateType);
+    const inputs: Inputs = switch (gate_type) {
+        .AND => .{ .AND = .{ input1, try parseInput(try parser.take()) } },
+        .OR => .{ .OR = .{ input1, try parseInput(try parser.take()) } },
+        .LSHIFT => .{ .LSHIFT = .{ input1, try parser.takeInt(u4) } },
+        .RSHIFT => .{ .RSHIFT = .{ input1, try parser.takeInt(u4) } },
+        else => return error.InvalidToken,
+    };
+    try parser.skip();
+    return .{ .inputs = inputs, .output = try parseWire(try parser.take()) };
 }
 
 fn parseInput(string: []const u8) solver.Error!Input {
     if (string[0] >= '0' and string[0] <= '9') {
-        return .{ .signal = std.fmt.parseInt(u16, string, 10) catch return error.InvalidInput };
+        return .{ .signal = std.fmt.parseInt(u16, string, 10) catch return error.InvalidToken };
     } else {
         return .{ .wire_id = try parseWire(string) };
     }

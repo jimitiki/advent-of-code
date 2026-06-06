@@ -1,17 +1,81 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
+const WordIterator = @import("../parse.zig").WordIterator;
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+const Operation = enum { move, reverse, rotate, swap };
+const Dir = enum { l, r };
+
+pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
+    var buf: [8]u8 = undefined;
+    @memcpy(&buf, "abcdefgh");
+    const pw = buf[0..];
     while (try tools.input.takeDelimiter('\n')) |line| {
-        _ = line;
+        var it: WordIterator = .init(line);
+        const op = std.meta.stringToEnum(Operation, it.next() orelse return error.InvalidInput) orelse return error.InvalidInput;
+        switch (op) {
+            .move => {
+                _ = it.next();
+                const a, const b = try parsePositions(&it);
+                move(pw, a, b);
+            },
+            .reverse => {
+                _ = it.next();
+                const a, const b = try parsePositions(&it);
+                reverse(pw, a, b);
+            },
+            .rotate => {
+                const mode = it.next() orelse return error.InvalidInput;
+                if (std.mem.eql(u8, mode, "based")) {
+                    for (0..4) |_| _ = it.next();
+                    const char = it.next() orelse return error.InvalidInput;
+                    if (char.len != 1) return error.InvalidInput;
+                    rotateAtLetter(pw, char[0]);
+                } else {
+                    const n = try parseInt(it.next() orelse return error.InvalidInput);
+                    if (std.mem.eql(u8, mode, "left")) {
+                        rotate(pw, n, .l);
+                    } else if (std.mem.eql(u8, mode, "right")) {
+                        rotate(pw, n, .r);
+                    } else {
+                        return error.InvalidInput;
+                    }
+                }
+            },
+            .swap => {
+                const mode = it.next() orelse return error.InvalidInput;
+                if (std.mem.eql(u8, mode, "position")) {
+                    const a, const b = try parsePositions(&it);
+                    swap(pw, a, b);
+                } else if (std.mem.eql(u8, mode, "letter")) {
+                    const a = it.next() orelse return error.InvalidInput;
+                    _ = it.next();
+                    _ = it.next();
+                    const b = it.next() orelse return error.InvalidInput;
+                    if (a.len != 1 or b.len != 1) {
+                        return error.InvalidInput;
+                    } else {
+                        swapLetters(pw, a[0], b[0]);
+                    }
+                }
+            },
+        }
     }
-    return .{ null, null };
+    @memcpy(tools.p2buf[0..pw.len], pw);
+    return .{ tools.p2buf[0..pw.len], null };
 }
 
-pub const solve = solver.intSolver(u32, solveInt);
+fn parsePositions(it: *WordIterator) error{InvalidInput}!struct { usize, usize } {
+    const a = try parseInt(it.next() orelse return error.InvalidInput);
+    _ = it.next();
+    const maybe = it.next() orelse return error.InvalidInput;
+    const b = if (it.next()) |pos| try parseInt(pos) else try parseInt(maybe);
+    return .{ a, b };
+}
 
-const Dir = enum { l, r };
+fn parseInt(str: []const u8) error{InvalidInput}!usize {
+    return std.fmt.parseUnsigned(usize, str, 10) catch return error.InvalidInput;
+}
 
 fn swap(pw: []u8, a: usize, b: usize) void {
     const temp = pw[a];

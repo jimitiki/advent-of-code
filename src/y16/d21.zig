@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const Parser = @import("../parse.zig").Parser;
+const Parser = @import("../Parser.zig");
 
 const Action = enum { move, reverse, rotate, swap };
 const Dir = enum {

@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const Parser = @import("../parse.zig").Parser;
+const Parser = @import("../Parser.zig");
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var t1 = [_]u32{ 0, 0, 0 };

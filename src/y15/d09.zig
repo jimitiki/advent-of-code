@@ -2,7 +2,7 @@ const std = @import("std");
 const NameSet = std.StringHashMapUnmanaged(void);
 const EdgeMap = std.StringArrayHashMapUnmanaged(u16);
 const Graph = std.StringArrayHashMapUnmanaged(EdgeMap);
-const Parser = @import("../parse.zig").Parser;
+const Parser = @import("../Parser.zig");
 const solver = @import("../solver.zig");
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {

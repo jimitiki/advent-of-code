@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const Parser = @import("../parse.zig").Parser;
+const Parser = @import("../Parser.zig");
 const solver = @import("../solver.zig");
 
 // TODO: Evaluate signal with "lazy recursion". Check the wires needed, if they haven't been evaluated yet, evaluate them, etc.

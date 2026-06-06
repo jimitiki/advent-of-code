@@ -1,24 +1,17 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
 // TODO: Use `modpow`?
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     const line = (try tools.input.takeDelimiter('\n')) orelse return error.InvalidInput;
-    var it: WordIterator = .{ .string = line, .omit_punctuation = true, .reverse = true, .index = line.len - 1 };
-    const col = std.fmt.parseUnsigned(
-        u64,
-        it.next() orelse return error.InvalidInput,
-        10,
-    ) catch return error.InvalidInput;
-    _ = it.next();
-    const row = std.fmt.parseUnsigned(
-        u64,
-        it.next() orelse return error.InvalidInput,
-        10,
-    ) catch return error.InvalidInput;
+    var parser: Parser = .init(line, .{});
+    try parser.skipMany(15);
+    const col = try parser.takeInt(u64);
+    try parser.skip();
+    const row = try parser.takeInt(u64);
 
     var code: u64 = 20151125;
     compute: for (2..row + col) |i| {

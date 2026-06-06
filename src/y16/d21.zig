@@ -44,7 +44,7 @@ pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
 }
 
 fn parseOperation(str: []const u8) Parser.Error!Operation {
-    var parser: Parser = .init(str);
+    var parser: Parser = .init(str, .{});
     const op = try parser.takeEnum(Action);
     switch (op) {
         .move => {

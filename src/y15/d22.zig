@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
+const Parser = @import("../parse.zig").Parser;
 
 // TODO: Stop relying on a global mutable variable
 // TODO: Improve handling of hard mode so that the initial HP doesn't have to be set to 49 for
@@ -19,8 +20,8 @@ const Spell = enum { magic_missile, drain, shield, poison, recharge };
 const spells = [_]Spell{ .magic_missile, .drain, .shield, .poison, .recharge };
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    const boss_hp = try parseBossStat(try tools.input.takeDelimiter('\n'));
-    const boss_atk = try parseBossStat(try tools.input.takeDelimiter('\n'));
+    const boss_hp = try parseBossStat(try tools.input.takeDelimiter('\n') orelse return error.InvalidInput);
+    const boss_atk = try parseBossStat(try tools.input.takeDelimiter('\n') orelse return error.InvalidInput);
 
     const answer1 = minMana(boss_atk, boss_hp, .{ .hp = 50, .mana = 500 }, 0, false, 0);
     min_spent = std.math.maxInt(u32);
@@ -30,16 +31,11 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
 
 pub const solve = solver.intSolver(u32, solveInt);
 
-fn parseBossStat(input: ?[]const u8) error{InvalidInput}!u32 {
-    if (input) |string| {
-        return for (string[0 .. string.len - 2], 0..) |char, i| {
-            if (char == ':') {
-                break std.fmt.parseUnsigned(u32, string[i + 2 ..], 10) catch error.InvalidInput;
-            }
-        } else error.InvalidInput;
-    } else {
-        return error.InvalidInput;
-    }
+fn parseBossStat(input: []const u8) Parser.Error!u32 {
+    var parser: Parser = .init(input, .{});
+    var stat_name = try parser.take();
+    while (stat_name[stat_name.len - 1] != ':') : (stat_name = try parser.take()) {}
+    return parser.takeInt(u32);
 }
 
 var min_spent: u32 = std.math.maxInt(u32);

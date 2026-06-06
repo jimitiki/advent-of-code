@@ -2,13 +2,15 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 
 const solver = @import("../solver.zig");
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
-const Source = union(enum) {
-    input: u16,
+const SourceType = enum { value, bot };
+const DestinationType = enum { output, bot };
+const Source = union(SourceType) {
+    value: u16,
     bot: u16,
 };
-const Destination = union(enum) {
+const Destination = union(DestinationType) {
     output: u16,
     bot: u16,
 };
@@ -49,23 +51,23 @@ fn parseInstruction(
     bots: *Bots,
     instruction: []const u8,
 ) solver.Error!void {
-    var it: WordIterator = .init(instruction);
-    const kind = it.next() orelse return error.InvalidInput;
-    if (std.mem.eql(u8, kind, "value")) {
-        const value = try parseInt(it.next().?);
-        for (0..3) |_| _ = it.next();
-        const bot_id = try parseInt(it.next().?);
-        try addSource(gpa, bots, bot_id, .{ .input = value });
-        try inputs.putNoClobber(gpa, value, bot_id);
-    } else if (std.mem.eql(u8, kind, "bot")) {
-        const bot_id = try parseInt(it.next().?);
-        for (0..3) |_| _ = it.next();
-        const low = try parseOutput(it.next().?, it.next().?);
-        for (0..3) |_| _ = it.next();
-        const high = try parseOutput(it.next().?, it.next().?);
-        try addBot(gpa, outputs, bots, bot_id, low, high);
-    } else {
-        return error.InvalidInput;
+    var parser: Parser = .init(instruction, .{});
+    switch (try parser.takeEnum(SourceType)) {
+        .value => {
+            const value = try parser.takeInt(u16);
+            try parser.skipMany(3);
+            const bot_id = try parser.takeInt(u16);
+            try addSource(gpa, bots, bot_id, .{ .value = value });
+            try inputs.putNoClobber(gpa, value, bot_id);
+        },
+        .bot => {
+            const bot_id = try parser.takeInt(u16);
+            try parser.skipMany(3);
+            const low = try parseOutput(&parser);
+            try parser.skipMany(3);
+            const high = try parseOutput(&parser);
+            try addBot(gpa, outputs, bots, bot_id, low, high);
+        },
     }
 }
 
@@ -110,15 +112,11 @@ fn addDestination(gpa: Allocator, outputs: *Outputs, bots: *Bots, bot_id: u16, d
     }
 }
 
-fn parseOutput(kind: []const u8, id: []const u8) error{InvalidInput}!Destination {
-    const out_id = try parseInt(id);
-    if (std.mem.eql(u8, kind, "bot")) {
-        return .{ .bot = out_id };
-    } else if (std.mem.eql(u8, kind, "output")) {
-        return .{ .output = out_id };
-    } else {
-        return error.InvalidInput;
-    }
+fn parseOutput(parser: *Parser) Parser.Error!Destination {
+    return switch (try parser.takeEnum(DestinationType)) {
+        .bot => .{ .bot = try parser.takeInt(u16) },
+        .output => .{ .output = try parser.takeInt(u16) },
+    };
 }
 
 fn parseInt(str: []const u8) error{InvalidInput}!u16 {
@@ -150,7 +148,7 @@ fn computeBotValues(bots: *Bots, bot: *Bot) solver.Error!void {
 
 fn computeBotValue(bots: *Bots, source: Source, bot_id: u16) solver.Error!u16 {
     switch (source) {
-        .input => |value| return value,
+        .value => |value| return value,
         .bot => |src_bot_id| {
             const src_bot = bots.getPtr(src_bot_id).?;
             try computeBotValues(bots, src_bot);

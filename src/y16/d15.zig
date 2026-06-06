@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
 const Disc = struct {
     holes: u8,
@@ -27,16 +27,13 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
 
 pub const solve = solver.intSolver(usize, solveInt);
 
-fn parseDisc(str: []const u8) error{InvalidInput}!Disc {
-    var it: WordIterator = .init(str);
-    for (0..3) |_| _ = it.next();
-    const holes = it.next() orelse return error.InvalidInput;
-    for (0..7) |_| _ = it.next();
-    const start = it.next() orelse return error.InvalidInput;
-    return .{
-        .holes = std.fmt.parseUnsigned(u8, holes, 10) catch return error.InvalidInput,
-        .start = std.fmt.parseUnsigned(u8, start[0 .. start.len - 1], 10) catch return error.InvalidInput,
-    };
+fn parseDisc(str: []const u8) Parser.Error!Disc {
+    var parser: Parser = .init(str, .{});
+    try parser.skipMany(3);
+    const holes = try parser.takeInt(u8);
+    try parser.skipMany(7);
+    const start = try parser.takeInt(u8);
+    return .{ .holes = holes, .start = start };
 }
 
 fn calculateTime(discs: []Disc) ?usize {

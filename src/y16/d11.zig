@@ -2,7 +2,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 
 const solver = @import("../solver.zig");
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
 const State = struct {
     ev: u2,
@@ -77,9 +77,9 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
 
     var i: u2 = 0;
     while (try tools.input.takeDelimiter('\n')) |line| : (i += 1) {
-        var it: WordIterator = .init(line);
-        for (0..4) |_| _ = it.next();
-        while (try parseElement(&it)) |result| {
+        var parser: Parser = .init(line, .{});
+        try parser.skipMany(4);
+        while (try parseElement(&parser)) |result| {
             if (result[1]) {
                 try chips.put(gpa, result[0], i);
             } else {
@@ -109,12 +109,12 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     return .{ try minSteps(gpa, state_p1), try minSteps(gpa, state_p2) };
 }
 
-fn parseElement(it: *WordIterator) error{InvalidInput}!?struct { []const u8, bool } {
-    const hint = it.next() orelse return null;
+fn parseElement(parser: *Parser) Parser.Error!?struct { []const u8, bool } {
+    const hint = parser.take() catch return null;
     if (std.mem.eql(u8, "nothing", hint)) return null;
-    if (std.mem.eql(u8, "and", hint)) _ = it.next();
-    const element = it.next() orelse return error.InvalidInput;
-    _ = it.next();
+    if (std.mem.eql(u8, "and", hint)) try parser.skip();
+    const element = try parser.take();
+    try parser.skip();
     if (element.len > 11 and std.mem.eql(u8, "-compatible", element[element.len - 11 ..])) {
         return .{ element[0 .. element.len - 11], true };
     } else {

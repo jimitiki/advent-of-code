@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
 // TODO: Generalize the algorithm so that it could work for any combination of "gear slots"
 
@@ -64,9 +64,9 @@ const Fighter = struct {
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const boss: Fighter = .{
-        .hp = try parseBossStat(try tools.input.takeDelimiter('\n')),
-        .damage = try parseBossStat(try tools.input.takeDelimiter('\n')),
-        .armor = try parseBossStat(try tools.input.takeDelimiter('\n')),
+        .hp = try parseBossStat(try tools.input.takeDelimiter('\n') orelse return error.InvalidInput),
+        .damage = try parseBossStat(try tools.input.takeDelimiter('\n') orelse return error.InvalidInput),
+        .armor = try parseBossStat(try tools.input.takeDelimiter('\n') orelse return error.InvalidInput),
     };
 
     return .{ minCost(boss), maxCost(boss) };
@@ -74,16 +74,11 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
 
 pub const solve = solver.intSolver(u32, solveInt);
 
-fn parseBossStat(input: ?[]const u8) error{InvalidInput}!u32 {
-    if (input) |string| {
-        return for (string[0 .. string.len - 2], 0..) |char, i| {
-            if (char == ':') {
-                break std.fmt.parseUnsigned(u32, string[i + 2 ..], 10) catch error.InvalidInput;
-            }
-        } else error.InvalidInput;
-    } else {
-        return error.InvalidInput;
-    }
+fn parseBossStat(input: []const u8) Parser.Error!u32 {
+    var parser: Parser = .init(input, .{});
+    var stat_name = try parser.take();
+    while (stat_name[stat_name.len - 1] != ':') : (stat_name = try parser.take()) {}
+    return parser.takeInt(u32);
 }
 
 fn minCost(boss: Fighter) u32 {

@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
 const MoleculeSet = std.StringHashMapUnmanaged(void);
 const RuleTable = std.StringHashMapUnmanaged(std.ArrayList([]const u8));
@@ -43,7 +43,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     }
     while (try tools.input.takeDelimiter('\n')) |line| {
         if (line.len == 0) break;
-        const in, const out = parseRule(line);
+        const in, const out = try parseRule(line);
         addRule(tools.gpa, &rules, in, out);
     }
 
@@ -71,11 +71,11 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
 
 pub const solve = solver.intSolver(u32, solveInt);
 
-fn parseRule(string: []const u8) struct { []const u8, []const u8 } {
-    var it: WordIterator = .{ .string = string };
-    const start = it.next().?;
-    _ = it.next();
-    return .{ start, it.next().? };
+fn parseRule(string: []const u8) Parser.Error!struct { []const u8, []const u8 } {
+    var parser: Parser = .init(string, .{});
+    const start = try parser.take();
+    try parser.skipToken("=>");
+    return .{ start, try parser.take() };
 }
 
 fn calibrate(allocator: std.mem.Allocator, rules: RuleTable, molecule: []const u8) u32 {

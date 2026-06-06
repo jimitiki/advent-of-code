@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
 const Op = enum {
     hlf,
@@ -25,30 +25,23 @@ const Instruction = union(Op) {
     jie: struct { Register, Offset },
     jio: struct { Register, Offset },
 
-    fn parse(string: []const u8) error{InvalidInput}!Instruction {
-        var it: WordIterator = .{ .string = string, .omit_punctuation = true };
-        const opstr = it.next() orelse return error.InvalidInput;
-        const op = std.meta.stringToEnum(Op, opstr) orelse return error.InvalidInput;
-        const arg1 = it.next() orelse return error.InvalidInput;
-        const arg2 = it.next();
+    fn parse(string: []const u8) Parser.Error!Instruction {
+        var parser: Parser = .init(string, .{});
+        const op = try parser.takeEnum(Op);
         return switch (op) {
-            .hlf => .{ .hlf = try parseRegister(arg1) },
-            .tpl => .{ .tpl = try parseRegister(arg1) },
-            .inc => .{ .inc = try parseRegister(arg1) },
-            .jmp => .{ .jmp = try parseOffset(arg1) },
-            .jie => .{ .jie = .{ try parseRegister(arg1), try parseOffset(arg2.?) } },
-            .jio => .{ .jio = .{ try parseRegister(arg1), try parseOffset(arg2.?) } },
+            .hlf => .{ .hlf = try parser.takeEnum(Register) },
+            .tpl => .{ .tpl = try parser.takeEnum(Register) },
+            .inc => .{ .inc = try parser.takeEnum(Register) },
+            .jmp => .{ .jmp = try parseOffset(&parser) },
+            .jie => .{ .jie = .{ try parser.takeEnum(Register), try parseOffset(&parser) } },
+            .jio => .{ .jio = .{ try parser.takeEnum(Register), try parseOffset(&parser) } },
         };
     }
 
-    fn parseOffset(string: []const u8) error{InvalidInput}!Offset {
-        const sign: Sign = if (string[0] == '-') .neg else .pos;
-        const absolute = std.fmt.parseUnsigned(usize, string[1..], 10) catch return error.InvalidInput;
-        return .{ sign, absolute };
-    }
-
-    fn parseRegister(string: []const u8) error{InvalidInput}!Register {
-        return std.meta.stringToEnum(Register, string) orelse error.InvalidInput;
+    fn parseOffset(parser: *Parser) Parser.Error!Offset {
+        const offset = try parser.takeInt(isize);
+        const sign: Sign = if (offset > 0) .pos else .neg;
+        return .{ sign, @abs(offset) };
     }
 };
 

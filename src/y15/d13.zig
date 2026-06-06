@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
 const NameSet = std.StringArrayHashMapUnmanaged(void);
 const HappinessTable = std.StringHashMapUnmanaged(i16);
@@ -27,13 +27,13 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?i16, ?i16 } {
         relatives.deinit(gpa);
     }
     while (try tools.input.takeDelimiter('\n')) |line| {
-        var it = WordIterator.init(line[0 .. line.len - 1]);
-        const name1 = it.next().?;
-        _ = it.next().?;
-        const mod = it.next().?;
-        const points = std.fmt.parseInt(i16, it.next().?, 10) catch return error.InvalidInput;
-        for (0..6) |_| _ = it.next().?;
-        const name2 = it.next().?;
+        var parser = Parser.init(line, .{});
+        const name1 = try parser.take();
+        try parser.skip();
+        const mod = try parser.take();
+        const points = try parser.takeInt(i16);
+        try parser.skipMany(6);
+        const name2 = try parser.take();
 
         const rel1 = addName(gpa, &names, name1);
         const rel2 = addName(gpa, &names, name2);

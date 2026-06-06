@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var t1 = [_]u32{ 0, 0, 0 };
@@ -34,15 +34,10 @@ fn validateTriangle(edges: [3]u32) bool {
     return edges[0] + edges[1] > edges[2] and edges[1] + edges[2] > edges[0] and edges[0] + edges[2] > edges[1];
 }
 
-fn parseTriangle(str: []const u8) error{InvalidInput}!struct { u32, u32, u32 } {
-    var it = WordIterator.init(str);
-    const l1 = try parseLength(&it);
-    const l2 = try parseLength(&it);
-    const l3 = try parseLength(&it);
+fn parseTriangle(str: []const u8) Parser.Error!struct { u32, u32, u32 } {
+    var parser = Parser.init(str, .{});
+    const l1 = try parser.takeInt(u32);
+    const l2 = try parser.takeInt(u32);
+    const l3 = try parser.takeInt(u32);
     return .{ l1, l2, l3 };
-}
-
-fn parseLength(it: *WordIterator) error{InvalidInput}!u32 {
-    const word = it.next() orelse return error.InvalidInput;
-    return std.fmt.parseUnsigned(u32, word, 10) catch error.InvalidInput;
 }

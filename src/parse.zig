@@ -82,26 +82,31 @@ pub fn splitWords(buf: [][]const u8, string: []const u8) error{TooManyWords}!?[]
 }
 
 pub const Parser = struct {
+    pub const Options = struct {
+        skip_punctuation: bool = true,
+    };
+
     buf: []const u8,
     index: usize = 0,
+    options: Options = .{},
 
     const Self = @This();
 
     pub const TakeError = error{EndOfBuffer};
     pub const Error = TakeError || error{InvalidToken};
 
-    pub fn init(buf: []const u8) Self {
-        return .{ .buf = buf };
+    pub fn init(buf: []const u8, options: Options) Self {
+        return .{ .buf = buf, .options = options };
     }
 
     pub fn peek(self: *Self) ?[]const u8 {
-        while (self.index < self.buf.len and isWhitespace(self.buf[self.index])) : (self.index += 1) {}
+        while (self.index < self.buf.len and self.isDelimiter(self.buf[self.index])) : (self.index += 1) {}
         if (self.index >= self.buf.len) {
             return null;
         }
 
         var end = self.index;
-        while (end < self.buf.len and !isWhitespace(self.buf[end])) : (end += 1) {}
+        while (end < self.buf.len and !self.isDelimiter(self.buf[end])) : (end += 1) {}
         return self.buf[self.index..end];
     }
 
@@ -144,16 +149,17 @@ pub const Parser = struct {
     }
 
     pub fn skipToken(self: *Self, token: []const u8) Self.Error!void {
-        _ = self.takeToken(token);
+        _ = try self.takeToken(token);
     }
 
     pub fn skipMany(self: *Self, amount: usize) Self.Error!void {
         for (0..amount) |_| try self.skip();
     }
 
-    fn isWhitespace(char: u8) bool {
+    fn isDelimiter(self: *Self, char: u8) bool {
         return switch (char) {
             ' ', '\t', '\n' => true,
+            '.', ',' => self.options.skip_punctuation,
             else => false,
         };
     }

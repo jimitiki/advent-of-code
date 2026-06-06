@@ -1,7 +1,6 @@
 const std = @import("std");
 const solver = @import("../solver.zig");
-const parse = @import("../parse.zig");
-const WordIterator = parse.WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
 // TODO: Create a visualization
 
@@ -17,15 +16,21 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var lights1: [1000][1000]u8 = .{.{0} ** 1000} ** 1000;
     var lights2: [1000][1000]u8 = .{.{0} ** 1000} ** 1000;
     while (try tools.input.takeDelimiter('\n')) |line| {
-        var it: WordIterator = .init(line);
-        const action: Action = std.meta.stringToEnum(Action, it.next().?) orelse return error.InvalidInput;
+        var parser: Parser = .init(line, .{});
+        const action = try parser.takeEnum(Action);
         const inst: Instruction = switch (action) {
             .toggle => .{ .toggle = {} },
-            .turn => .{ .turn = std.meta.stringToEnum(State, it.next().?) orelse return error.InvalidInput },
+            .turn => .{ .turn = try parser.takeEnum(State) },
         };
-        const start = try parsePosition(it.next().?);
-        _ = it.next();
-        const end = try parsePosition(it.next().?);
+        const start: Position = .{
+            .x = try parser.takeInt(usize),
+            .y = try parser.takeInt(usize),
+        };
+        try parser.skip();
+        const end: Position = .{
+            .x = try parser.takeInt(usize),
+            .y = try parser.takeInt(usize),
+        };
         for (lights1[start.y .. end.y + 1]) |*row| {
             for (row[start.x .. end.x + 1]) |*light| {
                 light.* = switch (inst) {

@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
 const Ingredient = struct {
     calories: i64,
@@ -28,21 +28,21 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
 
 pub const solve = solver.intSolver(i64, solveInt);
 
-fn parseIngredient(string: []const u8) error{InvalidInput}!Ingredient {
-    var it: WordIterator = .{ .string = string, .omit_punctuation = true };
-    _ = it.next();
+fn parseIngredient(string: []const u8) Parser.Error!Ingredient {
+    var parser: Parser = .init(string, .{});
+    try parser.skip();
     return .{
-        .capacity = try parseProperty(&it),
-        .durability = try parseProperty(&it),
-        .flavor = try parseProperty(&it),
-        .texture = try parseProperty(&it),
-        .calories = try parseProperty(&it),
+        .capacity = try parseProperty(&parser),
+        .durability = try parseProperty(&parser),
+        .flavor = try parseProperty(&parser),
+        .texture = try parseProperty(&parser),
+        .calories = try parseProperty(&parser),
     };
 }
 
-fn parseProperty(it: *WordIterator) error{InvalidInput}!i64 {
-    _ = it.next();
-    return std.fmt.parseInt(i64, it.next().?, 10) catch error.InvalidInput;
+fn parseProperty(parser: *Parser) Parser.Error!i64 {
+    try parser.skip();
+    return parser.takeInt(i64);
 }
 
 fn maxScore(ingredients: []const Ingredient, quantities: []u8, count: usize, amount_used: usize, calorie_target: ?i64) i64 {

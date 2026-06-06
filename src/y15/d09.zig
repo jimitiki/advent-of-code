@@ -2,8 +2,9 @@ const std = @import("std");
 const NameSet = std.StringHashMapUnmanaged(void);
 const EdgeMap = std.StringArrayHashMapUnmanaged(u16);
 const Graph = std.StringArrayHashMapUnmanaged(EdgeMap);
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 const solver = @import("../solver.zig");
+
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
     var graph: Graph = .empty;
@@ -37,14 +38,13 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
 
 pub const solve = solver.intSolver(u32, solveInt);
 
-fn parseEdge(string: []const u8) error{InvalidInput}!struct { []const u8, []const u8, u16 } {
-    var it: WordIterator = .init(string);
-    const start = it.next() orelse return error.InvalidInput;
-    _ = it.next() orelse return error.InvalidInput;
-    const end = it.next() orelse return error.InvalidInput;
-    _ = it.next() orelse return error.InvalidInput;
-    const dist = it.next() orelse return error.InvalidInput;
-    const distance = std.fmt.parseUnsigned(u16, dist, 10) catch return error.InvalidInput;
+fn parseEdge(string: []const u8) Parser.Error!struct { []const u8, []const u8, u16 } {
+    var parser: Parser = .init(string, .{});
+    const start = try parser.take();
+    try parser.skip();
+    const end = try parser.take();
+    try parser.skip();
+    const distance = try parser.takeInt(u16);
     return .{ start, end, distance };
 }
 

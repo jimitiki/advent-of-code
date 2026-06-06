@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const WordIterator = @import("../parse.zig").WordIterator;
+const Parser = @import("../parse.zig").Parser;
 
 const Sue = std.StringArrayHashMapUnmanaged(u8);
 
@@ -29,24 +29,20 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
 
 pub const solve = solver.intSolver(usize, solveInt);
 
-fn parseSue(allocator: std.mem.Allocator, string: []const u8) !Sue {
-    var it: WordIterator = .{ .string = string, .omit_punctuation = true };
-    for (0..2) |_| _ = it.next();
+fn parseSue(allocator: std.mem.Allocator, string: []const u8) Parser.Error!Sue {
+    var parser: Parser = .init(string, .{});
+    try parser.skipMany(2);
     var sue: Sue = .empty;
     errdefer sue.deinit(allocator);
-    while (try parseProperty(&it)) |property| {
+    while (try parseProperty(&parser)) |property| {
         sue.put(allocator, property[0], property[1]) catch unreachable;
     }
     return sue;
 }
 
-fn parseProperty(it: *WordIterator) error{InvalidInput}!?struct { []const u8, u8 } {
-    if (it.next()) |name| {
-        const value = std.fmt.parseUnsigned(u8, it.next().?, 10) catch return error.InvalidInput;
-        return .{ name[0 .. name.len - 1], value };
-    } else {
-        return null;
-    }
+fn parseProperty(parser: *Parser) Parser.Error!?struct { []const u8, u8 } {
+    const name = parser.take() catch return null;
+    return .{ name[0 .. name.len - 1], try parser.takeInt(u8) };
 }
 
 fn isMatch(lhs: Sue, rhs: Sue, use_ranges: bool) bool {

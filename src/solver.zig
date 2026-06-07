@@ -3,7 +3,7 @@ const std = @import("std");
 const Parser = @import("Parser.zig");
 
 pub const Result = struct { ?[]const u8, ?[]const u8 };
-pub const Error = Parser.Error || error{ InvalidInput, OutOfMemory, ReadFailed, StreamTooLong, TooManyWords, WriteFailed };
+pub const Error = Parser.Error || error{ InvalidInput, OutOfMemory, ReadFailed, StreamTooLong, WriteFailed };
 
 pub const InputType = enum { reader, file };
 pub const Tools = struct {

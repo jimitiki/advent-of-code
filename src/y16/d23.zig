@@ -13,16 +13,23 @@ const Instruction = union(Opcode) {
     nop: void,
 };
 
+// TODO: Speed up part 2
+
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
-    var program: std.ArrayList(Instruction) = .empty;
-    defer program.deinit(tools.gpa);
+    var program1: std.ArrayList(Instruction) = .empty;
+    defer program1.deinit(tools.gpa);
     while (try tools.input.takeDelimiter('\n')) |line| {
-        try program.append(tools.gpa, try parseInstruction(line));
+        try program1.append(tools.gpa, try parseInstruction(line));
     }
+    var program2 = try program1.clone(tools.gpa);
+    defer program2.deinit(tools.gpa);
+
     var registers = [_]i64{ 7, 0, 0, 0 };
-    execute(&registers, program.items);
+    execute(&registers, program1.items);
     const p1 = registers[0];
-    return .{ p1, null };
+    registers = [_]i64{ 12, 0, 0, 0 };
+    execute(&registers, program2.items);
+    return .{ p1, registers[0] };
 }
 
 pub const solve = solver.intSolver(i64, solveInt);
@@ -108,7 +115,6 @@ fn parseInstruction(str: []const u8) error{InvalidInput}!Instruction {
             } else return error.InvalidInput;
         },
         .tgl => {
-            std.debug.print("{s} | [{s}]\n", .{ str, str[4..] });
             return .{ .tgl = try parseOperand(str[4..]) };
         },
         .nop => unreachable,

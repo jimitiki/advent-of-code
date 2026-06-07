@@ -20,6 +20,7 @@ test "test all" {
     _ = @import("y16/d19.zig");
     _ = @import("y16/d20.zig");
     _ = @import("y16/d21.zig");
+    _ = @import("y16/d22.zig");
 }
 
 pub fn initTools(text: []const u8) !solver.Tools {

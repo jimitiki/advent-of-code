@@ -24,6 +24,7 @@ test "test all" {
     _ = @import("y16/d22.zig");
     _ = @import("y16/d23.zig");
     _ = @import("y16/d24.zig");
+    _ = @import("y16/d25.zig");
 }
 
 pub fn initTools(text: []const u8) !solver.Tools {

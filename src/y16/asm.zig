@@ -115,46 +115,50 @@ pub const Interpreter = struct {
     pub fn execute(self: *Self) void {
         if (!self.loaded) return;
         while (self.pc < self.program.len) {
-            const instruction = self.program[self.pc];
-            switch (instruction) {
-                .cpy => |operands| {
-                    self.setOperand(operands[1], self.getOperand(operands[0]));
+            self.step();
+        }
+    }
+
+    pub fn step(self: *Self) void {
+        const instruction = self.program[self.pc];
+        switch (instruction) {
+            .cpy => |operands| {
+                self.setOperand(operands[1], self.getOperand(operands[0]));
+                self.pc += 1;
+            },
+            .dec => |operand| {
+                switch (operand) {
+                    .register => |register| self.registers[@intFromEnum(register)] -= 1,
+                    else => {},
+                }
+                self.pc += 1;
+            },
+            .inc => |operand| {
+                switch (operand) {
+                    .register => |register| self.registers[@intFromEnum(register)] += 1,
+                    else => {},
+                }
+                self.pc += 1;
+            },
+            .jnz => |operands| {
+                if (self.getOperand(operands[0]) != 0) {
+                    self.pc = self.getOffset(operands[1]);
+                } else {
                     self.pc += 1;
-                },
-                .dec => |operand| {
-                    switch (operand) {
-                        .register => |register| self.registers[@intFromEnum(register)] -= 1,
-                        else => {},
-                    }
-                    self.pc += 1;
-                },
-                .inc => |operand| {
-                    switch (operand) {
-                        .register => |register| self.registers[@intFromEnum(register)] += 1,
-                        else => {},
-                    }
-                    self.pc += 1;
-                },
-                .jnz => |operands| {
-                    if (self.getOperand(operands[0]) != 0) {
-                        self.pc = self.getOffset(operands[1]);
-                    } else {
-                        self.pc += 1;
-                    }
-                },
-                .tgl => |operand| {
-                    const idx: usize = self.getOffset(operand);
-                    if (idx > 0 and idx < self.program.len) {
-                        self.program[idx] = switch (self.program[idx]) {
-                            .tgl, .dec => |op| .{ .inc = op },
-                            .inc => |op| .{ .dec = op },
-                            .cpy => |ops| .{ .jnz = ops },
-                            .jnz => |ops| .{ .cpy = ops },
-                        };
-                    }
-                    self.pc += 1;
-                },
-            }
+                }
+            },
+            .tgl => |operand| {
+                const idx: usize = self.getOffset(operand);
+                if (idx > 0 and idx < self.program.len) {
+                    self.program[idx] = switch (self.program[idx]) {
+                        .tgl, .dec, .out => |op| .{ .inc = op },
+                        .inc => |op| .{ .dec = op },
+                        .cpy => |ops| .{ .jnz = ops },
+                        .jnz => |ops| .{ .cpy = ops },
+                    };
+                }
+                self.pc += 1;
+            },
         }
     }
 };

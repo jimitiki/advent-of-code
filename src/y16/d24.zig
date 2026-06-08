@@ -11,6 +11,24 @@ const PointMap = std.array_hash_map.Auto(Position, u8);
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
+    var distances = try precomputeDistances(gpa, tools.input);
+    defer {
+        for (distances.values()) |*d| d.deinit(gpa);
+        distances.deinit(gpa);
+    }
+    const path_buf = try gpa.alloc(u8, distances.entries.len);
+    defer gpa.free(path_buf);
+    path_buf[0] = '0';
+
+    return .{
+        shortestPath(distances, path_buf, std.math.maxInt(u16), path_buf[0..1], 0, false),
+        shortestPath(distances, path_buf, std.math.maxInt(u16), path_buf[0..1], 0, true),
+    };
+}
+
+pub const solve = solver.intSolver(u32, solveInt);
+
+fn precomputeDistances(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!TileMap(TileMap(u16)) {
     var layout: std.ArrayList(BitSet) = .empty;
     defer {
         for (layout.items) |*bitset| bitset.deinit(gpa);
@@ -19,9 +37,9 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var points: PointMap = .empty;
     defer points.deinit(gpa);
 
-    const width = (tools.input.peekDelimiterExclusive('\n') catch return error.InvalidInput).len;
+    const width = (input.peekDelimiterExclusive('\n') catch return error.InvalidInput).len;
     var y: usize = 0;
-    while (try tools.input.takeDelimiter('\n')) |line| : (y += 1) {
+    while (try input.takeDelimiter('\n')) |line| : (y += 1) {
         var row: BitSet = try .initEmpty(gpa, width);
         for (line, 0..) |tile, x| {
             switch (tile) {
@@ -33,29 +51,8 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
         }
         try layout.append(gpa, row);
     }
-
-    var distances: TileMap(TileMap(u16)) = try cacheShortest(gpa, layout.items, points);
-    defer {
-        for (distances.values()) |*d| d.deinit(gpa);
-        distances.deinit(gpa);
-    }
-    for (distances.keys(), distances.values()) |t1, map| {
-        std.debug.print("{c} ->\n", .{t1});
-        for (map.keys(), map.values()) |t2, dist| {
-            std.debug.print("    {c}: {}\n", .{ t2, dist });
-        }
-    }
-    const path_buf = try gpa.alloc(u8, distances.entries.len);
-    path_buf[0] = '0';
-    defer gpa.free(path_buf);
-
-    return .{
-        shortestPath(distances, path_buf, std.math.maxInt(u16), path_buf[0..1], 0, false),
-        shortestPath(distances, path_buf, std.math.maxInt(u16), path_buf[0..1], 0, true),
-    };
+    return try cacheShortest(gpa, layout.items, points);
 }
-
-pub const solve = solver.intSolver(u32, solveInt);
 
 fn cacheShortest(gpa: std.mem.Allocator, layout: []const BitSet, points: PointMap) error{OutOfMemory}!TileMap(TileMap(u16)) {
     var distances: TileMap(TileMap(u16)) = .empty;

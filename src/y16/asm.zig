@@ -128,6 +128,14 @@ pub const Interpreter = struct {
         }
     }
 
+    pub fn executeUntil(self: *Self, n: usize) void {
+        if (!self.loaded) return;
+        if (self.pc >= self.program.len) return;
+        while (self.pc != n and self.pc < self.program.len) {
+            self.step();
+        }
+    }
+
     pub fn step(self: *Self) void {
         const instruction = self.program[self.pc];
         switch (instruction) {

@@ -1,137 +1,157 @@
 const std = @import("std");
+const BitSet = std.DynamicBitSetUnmanaged;
 
 const solver = @import("../solver.zig");
 
-const Position = struct {
-    x: usize,
-    y: usize,
-};
+const Position = struct { x: usize, y: usize };
+fn TileMap(comptime V: type) type {
+    return std.array_hash_map.Auto(u8, V);
+}
+const PointMap = std.array_hash_map.Auto(Position, u8);
 
-fn Maze(comptime n: u8) type {
-    return struct {
-        const Self = @This();
-        const BitSetInt = @Int(.unsigned, n);
-        const wire_count = n;
-        const goal = std.math.maxInt(BitSetInt);
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    const gpa = tools.gpa;
+    var layout: std.ArrayList(BitSet) = .empty;
+    defer {
+        for (layout.items) |*bitset| bitset.deinit(gpa);
+        layout.deinit(gpa);
+    }
+    var points: PointMap = .empty;
+    defer points.deinit(gpa);
 
-        pub const State = struct {
-            pos: Position,
-            visited: BitSetInt = 0,
-
-            pub fn finished(self: State) bool {
-                return self.visited == goal;
+    const width = (tools.input.peekDelimiterExclusive('\n') catch return error.InvalidInput).len;
+    var y: usize = 0;
+    while (try tools.input.takeDelimiter('\n')) |line| : (y += 1) {
+        var row: BitSet = try .initEmpty(gpa, width);
+        for (line, 0..) |tile, x| {
+            switch (tile) {
+                '.' => {},
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' => try points.put(gpa, .{ .x = x, .y = y }, tile),
+                '#' => row.set(x),
+                else => return error.InvalidInput,
             }
-        };
-
-        layout: [][]u8,
-        rowlist: std.ArrayList([]u8),
-
-        pub fn parse(gpa: std.mem.Allocator, reader: *std.Io.Reader) solver.Error!struct { Self, Position } {
-            const width = (reader.peekDelimiterExclusive('\n') catch return error.InvalidInput).len;
-            var rows: std.ArrayList([]u8) = .empty;
-            var start: Position = undefined;
-            var y: usize = 0;
-            while (try reader.takeDelimiter('\n')) |line| : (y += 1) {
-                if (line.len != width) return error.InvalidInput;
-                var row = try gpa.alloc(u8, width);
-                for (line, 0..) |char, x| {
-                    row[x] = char;
-                    if (char == '0') {
-                        start = .{ .x = x, .y = y };
-                    }
-                }
-                try rows.append(gpa, row);
-            }
-
-            return .{ .{ .layout = rows.items, .rowlist = rows }, start };
         }
+        try layout.append(gpa, row);
+    }
 
-        pub fn deinit(self: *Self, gpa: std.mem.Allocator) void {
-            for (self.layout) |row| gpa.free(row);
-            self.rowlist.deinit(gpa);
+    var distances: TileMap(TileMap(u16)) = try cacheShortest(gpa, layout.items, points);
+    defer {
+        for (distances.values()) |*d| d.deinit(gpa);
+        distances.deinit(gpa);
+    }
+    for (distances.keys(), distances.values()) |t1, map| {
+        std.debug.print("{c} ->\n", .{t1});
+        for (map.keys(), map.values()) |t2, dist| {
+            std.debug.print("    {c}: {}\n", .{ t2, dist });
         }
+    }
+    const path_buf = try gpa.alloc(u8, distances.entries.len);
+    path_buf[0] = '0';
+    defer gpa.free(path_buf);
 
-        fn shortestPath(self: Self, gpa: std.mem.Allocator, start: Position) error{OutOfMemory}!?u16 {
-            var queue: std.PriorityQueue(struct { u16, State }, void, cmp) = .empty;
-            defer queue.deinit(gpa);
-            var minima: std.AutoHashMapUnmanaged(State, u16) = .empty;
-            defer minima.deinit(gpa);
-            var state_buf: [4]State = undefined;
-
-            const initial: State = .{ .pos = start, .visited = 0 };
-            try queue.push(gpa, .{ 0, initial });
-            try minima.put(gpa, initial, 0);
-
-            while (queue.pop()) |entry| {
-                const dist, const state = entry;
-                if (state.finished()) return dist;
-                const new_dist = dist + 1;
-                for (self.generateStates(state, &state_buf)) |next| {
-                    if (new_dist >= minima.get(next) orelse std.math.maxInt(u16)) continue;
-                    try minima.put(gpa, next, new_dist);
-                    try queue.push(gpa, .{ new_dist, next });
-                }
-            } else return null;
-        }
-
-        pub fn generateStates(self: Self, state: State, state_buf: *[4]State) []State {
-            var idx: u8 = 0;
-            if (state.pos.x > 0) {
-                if (self.newStateIfValid(state, state.pos.x - 1, state.pos.y)) |s| {
-                    state_buf[idx] = s;
-                    idx += 1;
-                }
-            }
-            if (state.pos.x < self.layout[0].len - 1) {
-                if (self.newStateIfValid(state, state.pos.x + 1, state.pos.y)) |s| {
-                    state_buf[idx] = s;
-                    idx += 1;
-                }
-            }
-            if (state.pos.y > 0) {
-                if (self.newStateIfValid(state, state.pos.x, state.pos.y - 1)) |s| {
-                    state_buf[idx] = s;
-                    idx += 1;
-                }
-            }
-            if (state.pos.y < self.layout.len - 1) {
-                if (self.newStateIfValid(state, state.pos.x, state.pos.y + 1)) |s| {
-                    state_buf[idx] = s;
-                    idx += 1;
-                }
-            }
-            return state_buf[0..idx];
-        }
-
-        fn newStateIfValid(self: Self, state: State, x: usize, y: usize) ?State {
-            const tile = self.layout[y][x];
-            if (tile == '#') {
-                return null;
-            }
-            var visited = state.visited;
-            if (tile >= '1' and tile <= '7') {
-                visited |= std.math.shl(BitSetInt, 1, tile - 49);
-            } else if (tile == '8' and visited == goal >> 1) {
-                visited = goal;
-            }
-            return .{ .pos = .{ .x = x, .y = y }, .visited = visited };
-        }
-
-        fn cmp(_: void, a: struct { u16, State }, b: struct { u16, State }) std.math.Order {
-            return std.math.order(a[0], b[0]);
-        }
+    return .{
+        shortestPath(distances, path_buf, std.math.maxInt(u16), path_buf[0..1], 0, false),
+        shortestPath(distances, path_buf, std.math.maxInt(u16), path_buf[0..1], 0, true),
     };
 }
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
-    var maze1, const start = try Maze(7).parse(tools.gpa, tools.input);
-    defer maze1.deinit(tools.gpa);
-    const p1 = try maze1.shortestPath(tools.gpa, start);
+pub const solve = solver.intSolver(u32, solveInt);
 
-    var maze2: Maze(8) = .{ .layout = maze1.layout, .rowlist = maze1.rowlist };
-    maze2.layout[start.y][start.x] = '8';
+fn cacheShortest(gpa: std.mem.Allocator, layout: []const BitSet, points: PointMap) error{OutOfMemory}!TileMap(TileMap(u16)) {
+    var distances: TileMap(TileMap(u16)) = .empty;
+    var queue: std.Deque(struct { u16, Position }) = .empty;
+    defer queue.deinit(gpa);
+    var visited: std.AutoHashMapUnmanaged(Position, void) = .empty;
+    defer visited.deinit(gpa);
 
-    return .{ p1, try maze2.shortestPath(tools.gpa, start) };
+    for (points.values()) |tile| {
+        try distances.put(gpa, tile, .empty);
+    }
+    for (points.keys(), points.values()) |start, tile| {
+        defer visited.clearRetainingCapacity();
+        defer while (queue.popFront()) |_| {};
+
+        var point_dists = distances.getPtr(tile).?;
+        try queue.pushBack(gpa, .{ 0, start });
+        try visited.put(gpa, start, {});
+
+        while (queue.popFront()) |entry| {
+            const dist, const pos = entry;
+            if (points.get(pos)) |t| {
+                if (t != tile) {
+                    try point_dists.put(gpa, t, dist);
+                    try distances.getPtr(t).?.put(gpa, tile, dist);
+                }
+            }
+
+            if (point_dists.entries.len == points.entries.len) break;
+            if (pos.y > 0 and !layout[pos.y - 1].isSet(pos.x)) {
+                const next: Position = .{ .x = pos.x, .y = pos.y - 1 };
+                if (!visited.contains(next)) {
+                    try visited.put(gpa, next, {});
+                    try queue.pushBack(gpa, .{ dist + 1, next });
+                }
+            }
+            if (pos.y < layout.len - 1 and !layout[pos.y + 1].isSet(pos.x)) {
+                const next: Position = .{ .x = pos.x, .y = pos.y + 1 };
+                if (!visited.contains(next)) {
+                    try visited.put(gpa, next, {});
+                    try queue.pushBack(gpa, .{ dist + 1, next });
+                }
+            }
+            if (pos.x > 0 and !layout[pos.y].isSet(pos.x - 1)) {
+                const next: Position = .{ .x = pos.x - 1, .y = pos.y };
+                if (!visited.contains(next)) {
+                    try visited.put(gpa, next, {});
+                    try queue.pushBack(gpa, .{ dist + 1, next });
+                }
+            }
+            if (pos.x < layout[0].bit_length - 1 and !layout[pos.y].isSet(pos.x + 1)) {
+                const next: Position = .{ .x = pos.x + 1, .y = pos.y };
+                if (!visited.contains(next)) {
+                    try visited.put(gpa, next, {});
+                    try queue.pushBack(gpa, .{ dist + 1, next });
+                }
+            }
+        }
+    }
+    return distances;
 }
 
-pub const solve = solver.intSolver(u16, solveInt);
+fn shortestPath(
+    distances: TileMap(TileMap(u16)),
+    path_buf: []u8,
+    best: u16,
+    path: []u8,
+    dist: u16,
+    go_back: bool,
+) u16 {
+    if (best <= dist) return std.math.maxInt(u16);
+    const cur = path[path.len - 1];
+    if (path.len == distances.entries.len) {
+        return if (go_back) dist + distances.get(cur).?.get(path[0]).? else dist;
+    }
+
+    var min = best;
+    const point_dists = distances.get(cur).?;
+    for (point_dists.keys(), point_dists.values()) |next, inc_dist| {
+        if (inPath(path, next)) continue;
+        path_buf[path.len] = next;
+        min = @min(min, shortestPath(
+            distances,
+            path_buf,
+            min,
+            path_buf[0 .. path.len + 1],
+            dist + inc_dist,
+            go_back,
+        ));
+    }
+    return min;
+}
+
+fn inPath(path: []const u8, point: u8) bool {
+    for (path) |step| {
+        if (point == step) return true;
+    }
+    return false;
+}

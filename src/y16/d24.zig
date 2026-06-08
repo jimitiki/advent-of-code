@@ -11,14 +11,14 @@ const PointMap = std.array_hash_map.Auto(Position, u8);
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
-    var distances = try precomputeDistances(gpa, tools.input);
+    const distances = try precomputeDistances(gpa, tools.input);
     defer {
-        for (distances.values()) |*d| d.deinit(gpa);
-        distances.deinit(gpa);
+        for (distances) |d| gpa.free(d);
+        gpa.free(distances);
     }
-    const path_buf = try gpa.alloc(u8, distances.entries.len);
+    const path_buf = try gpa.alloc(u8, distances.len);
     defer gpa.free(path_buf);
-    path_buf[0] = '0';
+    path_buf[0] = 0;
 
     return .{
         shortestPath(distances, path_buf, std.math.maxInt(u16), path_buf[0..1], 0, false),
@@ -28,7 +28,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
 
 pub const solve = solver.intSolver(u32, solveInt);
 
-fn precomputeDistances(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error!TileMap(TileMap(u16)) {
+fn precomputeDistances(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Error![]const []const u16 {
     var layout: std.ArrayList(BitSet) = .empty;
     defer {
         for (layout.items) |*bitset| bitset.deinit(gpa);
@@ -44,7 +44,7 @@ fn precomputeDistances(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Err
         for (line, 0..) |tile, x| {
             switch (tile) {
                 '.' => {},
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' => try points.put(gpa, .{ .x = x, .y = y }, tile),
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' => try points.put(gpa, .{ .x = x, .y = y }, tile - 48),
                 '#' => row.set(x),
                 else => return error.InvalidInput,
             }
@@ -54,34 +54,33 @@ fn precomputeDistances(gpa: std.mem.Allocator, input: *std.Io.Reader) solver.Err
     return try cacheShortest(gpa, layout.items, points);
 }
 
-fn cacheShortest(gpa: std.mem.Allocator, layout: []const BitSet, points: PointMap) error{OutOfMemory}!TileMap(TileMap(u16)) {
-    var distances: TileMap(TileMap(u16)) = .empty;
+fn cacheShortest(gpa: std.mem.Allocator, layout: []const BitSet, points: PointMap) error{OutOfMemory}![]const []const u16 {
+    var distances = try gpa.alloc([]u16, points.entries.len);
+    for (0..distances.len) |i| {
+        distances[i] = try gpa.alloc(u16, points.entries.len);
+        @memset(distances[i], 0);
+    }
     var queue: std.Deque(struct { u16, Position }) = .empty;
     defer queue.deinit(gpa);
     var visited: std.AutoHashMapUnmanaged(Position, void) = .empty;
     defer visited.deinit(gpa);
 
-    for (points.values()) |tile| {
-        try distances.put(gpa, tile, .empty);
-    }
     for (points.keys(), points.values()) |start, tile| {
         defer visited.clearRetainingCapacity();
         defer while (queue.popFront()) |_| {};
 
-        var point_dists = distances.getPtr(tile).?;
+        var point_dists = distances[tile];
         try queue.pushBack(gpa, .{ 0, start });
         try visited.put(gpa, start, {});
 
         while (queue.popFront()) |entry| {
             const dist, const pos = entry;
             if (points.get(pos)) |t| {
-                if (t != tile) {
-                    try point_dists.put(gpa, t, dist);
-                    try distances.getPtr(t).?.put(gpa, tile, dist);
-                }
+                point_dists[t] = dist;
+                distances[t][tile] = dist;
             }
+            if (distancesFull(point_dists, tile)) break;
 
-            if (point_dists.entries.len == points.entries.len) break;
             if (pos.y > 0 and !layout[pos.y - 1].isSet(pos.x)) {
                 const next: Position = .{ .x = pos.x, .y = pos.y - 1 };
                 if (!visited.contains(next)) {
@@ -115,8 +114,15 @@ fn cacheShortest(gpa: std.mem.Allocator, layout: []const BitSet, points: PointMa
     return distances;
 }
 
+fn distancesFull(distances: []u16, tile: u8) bool {
+    for (distances, 0..) |d, t| {
+        if (t != tile and d == 0) return false;
+    }
+    return true;
+}
+
 fn shortestPath(
-    distances: TileMap(TileMap(u16)),
+    distances: []const []const u16,
     path_buf: []u8,
     best: u16,
     path: []u8,
@@ -125,13 +131,14 @@ fn shortestPath(
 ) u16 {
     if (best <= dist) return std.math.maxInt(u16);
     const cur = path[path.len - 1];
-    if (path.len == distances.entries.len) {
-        return if (go_back) dist + distances.get(cur).?.get(path[0]).? else dist;
+    if (path.len == distances.len) {
+        return if (go_back) dist + distances[cur][path[0]] else dist;
     }
 
     var min = best;
-    const point_dists = distances.get(cur).?;
-    for (point_dists.keys(), point_dists.values()) |next, inc_dist| {
+    const point_dists = distances[cur];
+    for (point_dists, 0..) |inc_dist, i| {
+        const next: u8 = @intCast(i);
         if (inPath(path, next)) continue;
         path_buf[path.len] = next;
         min = @min(min, shortestPath(

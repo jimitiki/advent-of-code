@@ -3,7 +3,7 @@ const Allocator = std.mem.Allocator;
 
 const Parser = @import("../Parser.zig");
 
-const Opcode = enum { cpy, dec, inc, jnz, tgl };
+const Opcode = enum { cpy, dec, inc, jnz, out, tgl };
 pub const Register = enum(u2) { a = 0, b = 1, c = 2, d = 3 };
 const Operand = union(enum) {
     register: Register,
@@ -14,21 +14,29 @@ const Instruction = union(Opcode) {
     dec: Operand,
     inc: Operand,
     jnz: struct { Operand, Operand },
+    out: Operand,
     tgl: Operand,
 };
+const SignalFn = fn (signal: i64) void;
+fn signalNoop(_: i64) void {}
 
 pub const Interpreter = struct {
     const Self = @This();
 
     registers: [4]i64,
     program: []Instruction,
+    signal: *const SignalFn,
     pc: usize = 0,
     loaded: bool = false,
 
     const LoadError = Parser.Error || Allocator.Error;
 
-    pub fn init() Self {
-        return .{ .registers = [_]i64{ 0, 0, 0, 0 }, .program = undefined };
+    pub fn init(signal: ?SignalFn) Self {
+        return .{
+            .registers = [_]i64{ 0, 0, 0, 0 },
+            .program = undefined,
+            .signal = if (signal) |s| s else signalNoop,
+        };
     }
 
     pub fn load(self: *Self, gpa: std.mem.Allocator, text: []const u8) LoadError!void {
@@ -72,6 +80,7 @@ pub const Interpreter = struct {
             .inc => .{ .inc = try parseOperand(&parser) },
             .jnz => .{ .jnz = .{ try parseOperand(&parser), try parseOperand(&parser) } },
             .tgl => .{ .tgl = try parseOperand(&parser) },
+            .out => .{ .out = try parseOperand(&parser) },
         };
     }
 
@@ -147,6 +156,10 @@ pub const Interpreter = struct {
                     self.pc += 1;
                 }
             },
+            .out => |operand| {
+                self.pc += 1;
+                self.signal(self.getOperand(operand));
+            },
             .tgl => |operand| {
                 const idx: usize = self.getOffset(operand);
                 if (idx > 0 and idx < self.program.len) {
@@ -164,7 +177,7 @@ pub const Interpreter = struct {
 };
 
 test "program" {
-    var interpreter: Interpreter = .init();
+    var interpreter: Interpreter = .init(null);
     defer interpreter.unload(std.testing.allocator);
     try interpreter.load(std.testing.allocator,
         \\ cpy 41 a

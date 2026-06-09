@@ -7,8 +7,13 @@ const NameTable = std.StringHashMapUnmanaged(usize);
 const Program = struct {
     name: []const u8,
     weight: u16,
+    total_weight: u32,
     parent: ?usize,
     children: []usize,
+
+    fn init(name: []const u8, weight: u16) Program {
+        return .{ .name = name, .weight = weight, .total_weight = undefined, .parent = null, .children = undefined };
+    }
 
     fn free(self: Program, gpa: std.mem.Allocator) void {
         gpa.free(self.name);
@@ -39,12 +44,17 @@ pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
         program_list.items[id].children = children;
     }
 
-    const root = for (program_list.items) |program| {
+    var root: Program = for (program_list.items) |program| {
         if (program.parent) |_| {} else break program;
     } else return .{ null, null };
+    const p1 = tools.p1buf[0..root.name.len];
+    @memcpy(p1, root.name);
 
-    @memcpy(tools.p1buf[0..root.name.len], root.name);
-    return .{ tools.p1buf[0..root.name.len], null };
+    _ = computeTotalWeight(program_list.items, &root);
+    const target_weight = computeNeededWeight(program_list.items, root);
+    const p2 = if (target_weight) |w| std.fmt.bufPrint(tools.p2buf, "{}", .{w}) catch unreachable else null;
+
+    return .{ p1, p2 };
 }
 
 fn registerProgram(
@@ -60,7 +70,7 @@ fn registerProgram(
     } else {
         const allocated = try gpa.alloc(u8, name.len);
         @memcpy(allocated, name);
-        const program: Program = .{ .name = allocated, .weight = weight, .children = undefined, .parent = null };
+        const program: Program = .init(allocated, weight);
         try name_lookup.put(gpa, allocated, program_list.items.len);
         try program_list.append(gpa, program);
         return program_list.items.len - 1;
@@ -78,7 +88,7 @@ fn registerChild(
     } else {
         const allocated = try gpa.alloc(u8, name.len);
         @memcpy(allocated, name);
-        const program: Program = .{ .name = allocated, .weight = undefined, .children = undefined, .parent = null };
+        const program: Program = .init(allocated, undefined);
         try name_lookup.put(gpa, allocated, program_list.items.len);
         try program_list.append(gpa, program);
         return program_list.items.len - 1;
@@ -105,4 +115,52 @@ fn parseChildren(
         children[idx] = id;
     }
     return children;
+}
+
+fn computeTotalWeight(programs: []Program, root: *Program) u32 {
+    var sum: u32 = root.weight;
+    for (root.children) |child_id| {
+        sum += computeTotalWeight(programs, &programs[child_id]);
+    }
+    root.total_weight = sum;
+    return sum;
+}
+
+fn computeNeededWeight(programs: []const Program, root: Program) ?u32 {
+    if (findImbalancedChild(programs, root.children)) |result| {
+        const target, const child_id = result;
+        if (computeNeededWeight(programs, programs[child_id])) |weight| {
+            return weight;
+        } else {
+            return target;
+        }
+    }
+    return null;
+}
+
+fn findImbalancedChild(programs: []const Program, children: []usize) ?struct { u32, usize } {
+    if (children.len < 2) return null;
+
+    const w1 = programs[children[0]].total_weight;
+    const w2 = programs[children[1]].total_weight;
+    if (w1 == w2) {
+        if (children.len == 2) return null;
+        for (children[2..]) |child_id| {
+            const program = programs[child_id];
+            if (program.total_weight != w1) {
+                return .{ computeAdjustment(w1, program), child_id };
+            }
+        }
+        return null;
+    }
+    const target = programs[children[2]].total_weight;
+    if (w1 == target) {
+        return .{ computeAdjustment(target, programs[children[1]]), children[1] };
+    } else {
+        return .{ computeAdjustment(target, programs[children[0]]), children[0] };
+    }
+}
+
+fn computeAdjustment(target_weight: u32, program: Program) u32 {
+    return target_weight - (program.total_weight - program.weight);
 }

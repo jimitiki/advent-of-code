@@ -44,9 +44,8 @@ pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
         program_list.items[id].children = children;
     }
 
-    var root: Program = for (program_list.items) |program| {
-        if (program.parent) |_| {} else break program;
-    } else return .{ null, null };
+    var root = program_list.items[0];
+    while (root.parent) |p| : (root = program_list.items[p]) {}
     const p1 = tools.p1buf[0..root.name.len];
     @memcpy(p1, root.name);
 

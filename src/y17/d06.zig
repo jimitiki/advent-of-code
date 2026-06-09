@@ -9,7 +9,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     defer bank_list.deinit(gpa);
 
     try parseBanks(gpa, &bank_list, tools.input);
-    return .{ try cycle(gpa, bank_list.items), null };
+    return try cycle(gpa, bank_list.items);
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
@@ -29,8 +29,8 @@ fn parseBanks(gpa: std.mem.Allocator, bank_list: *std.ArrayList(u8), reader: *st
     }
 }
 
-fn cycle(gpa: std.mem.Allocator, initial: []u8) error{OutOfMemory}!u16 {
-    var seen: std.StringHashMapUnmanaged(void) = .empty;
+fn cycle(gpa: std.mem.Allocator, initial: []u8) error{OutOfMemory}!struct { u16, u16 } {
+    var seen: std.StringHashMapUnmanaged(u16) = .empty;
     defer {
         var it = seen.keyIterator();
         while (it.next()) |sequence| gpa.free(sequence.*);
@@ -45,14 +45,14 @@ fn cycle(gpa: std.mem.Allocator, initial: []u8) error{OutOfMemory}!u16 {
     }) {
         const allocated = try gpa.alloc(u8, banks.len);
         @memcpy(allocated, banks);
-        try seen.put(gpa, allocated, {});
+        try seen.put(gpa, allocated, i);
     }
-    return i;
+    return .{ i, i - seen.get(banks).? };
 }
 
 test "cycle" {
     var banks = [_]u8{ 0, 2, 7, 0 };
-    try std.testing.expectEqual(5, cycle(std.testing.allocator, &banks));
+    try std.testing.expectEqual(.{ 5, 4 }, cycle(std.testing.allocator, &banks));
 }
 
 fn reallocate(banks: []u8) void {

@@ -4,6 +4,7 @@ const solver = @import("solver.zig");
 test "test all" {
     _ = @import("y16/asm.zig");
     _ = @import("y17/d01.zig");
+    _ = @import("y17/d02.zig");
     _ = @import("y16/d04.zig");
     _ = @import("y16/d05.zig");
     _ = @import("y16/d06.zig");

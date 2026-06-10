@@ -3,34 +3,49 @@ const std = @import("std");
 const solver = @import("../solver.zig");
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
-    return .{ try analyzeStream(tools.input), null };
+    return try analyzeStream(tools.input);
 }
 
-fn analyzeStream(reader: *std.Io.Reader) error{ReadFailed}!u16 {
+fn analyzeStream(reader: *std.Io.Reader) error{ReadFailed}!struct { u16, u16 } {
     var depth: u8 = 0;
     var score: u16 = 0;
-    var garbage = false;
+    var in_garbage = false;
+    var garbage_count: u16 = 0;
     while (true) {
         const c = reader.takeByte() catch break;
         switch (c) {
             '!' => _ = try reader.discardShort(1),
-            '>' => garbage = false,
-            '<' => garbage = true,
+            '>' => in_garbage = false,
+            '<' => {
+                if (in_garbage) {
+                    garbage_count += 1;
+                } else {
+                    in_garbage = true;
+                }
+            },
             '{' => {
-                if (!garbage) {
+                if (!in_garbage) {
                     depth += 1;
                     score += depth;
+                } else {
+                    garbage_count += 1;
                 }
             },
             '}' => {
-                if (!garbage) {
+                if (!in_garbage) {
                     depth -= 1;
+                } else {
+                    garbage_count += 1;
                 }
             },
-            else => {},
+            else => {
+                if (in_garbage) {
+                    garbage_count += 1;
+                }
+            },
         }
     }
-    return score;
+    return .{ score, garbage_count };
 }
 
 pub const solve = solver.intSolver(u16, solveInt);

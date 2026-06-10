@@ -39,6 +39,8 @@ const Cmp = enum {
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?i32, ?i32 } {
     var registers: std.AutoHashMapUnmanaged(u32, i32) = .empty;
     defer registers.deinit(tools.gpa);
+
+    var max_during: i32 = 0;
     while (try tools.input.takeDelimiter('\n')) |line| {
         var parser: Parser = .init(line, .{});
         const target = try parser.take();
@@ -52,13 +54,14 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?i32, ?i32 } {
         if (cmp.resolve(registers.get(cmp_reg) orelse 0, value)) {
             const entry = try registers.getOrPutValue(tools.gpa, convert(target), 0);
             entry.value_ptr.* = op.resolve(entry.value_ptr.*, amt);
+            max_during = @max(max_during, entry.value_ptr.*);
         }
         // const dest_id = convert(try parser.take());
     }
-    var max: i32 = std.math.minInt(i32);
+    var max_after: i32 = std.math.minInt(i32);
     var it = registers.valueIterator();
-    while (it.next()) |v| max = @max(v.*, max);
-    return .{ max, null };
+    while (it.next()) |v| max_after = @max(v.*, max_after);
+    return .{ max_after, max_during };
 }
 
 pub const solve = solver.intSolver(i32, solveInt);
@@ -72,7 +75,7 @@ test "solve" {
     ;
     var tools = try t.initTools(input);
     defer t.deinitTools(&tools);
-    try std.testing.expectEqual(.{ 1, null }, try solveInt(tools));
+    try std.testing.expectEqual(.{ 1, 10 }, try solveInt(tools));
 }
 
 fn convert(name: []const u8) u32 {

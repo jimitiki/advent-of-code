@@ -44,13 +44,15 @@ pub fn initTools(text: []const u8) !solver.Tools {
     const writer = try allocator.create(std.Io.Writer);
     reader.* = std.Io.Reader.fixed(text);
     writer.* = std.Io.Writer.fixed(buf[0..64]);
+    const p1buf = try allocator.alloc(u8, 32);
+    const p2buf = try allocator.alloc(u8, 32);
 
     return .{
         .gpa = allocator,
         .input = reader,
         .stdout = writer,
-        .p1buf = try allocator.alloc(u8, 32),
-        .p2buf = try allocator.alloc(u8, 32),
+        .p1buf = p1buf[0..32],
+        .p2buf = p2buf[0..32],
     };
 }
 
@@ -58,8 +60,8 @@ pub fn deinitTools(tools: *solver.Tools) void {
     const allocator = std.testing.allocator;
     allocator.free(tools.stdout.buffer);
     // allocator.free(tools.stdout.buffer);
-    allocator.free(tools.p1buf);
-    allocator.free(tools.p2buf);
+    allocator.free(@as([]u8, @ptrCast(tools.p1buf)));
+    allocator.free(@as([]u8, @ptrCast(tools.p2buf)));
     allocator.destroy(tools.stdout);
     allocator.destroy(tools.input);
 }

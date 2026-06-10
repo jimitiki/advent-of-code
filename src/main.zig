@@ -29,7 +29,7 @@ pub fn main(init: std.process.Init) !void {
     try writer.flush();
 }
 
-fn runSolver(init: std.process.Init, stdout: *std.Io.Writer, answer_buf1: []u8, answer_buf2: []u8) !solver.Result {
+fn runSolver(init: std.process.Init, stdout: *std.Io.Writer, answer_buf1: *[32]u8, answer_buf2: *[32]u8) !solver.Result {
     const allocator = init.arena.allocator();
     const args = init.minimal.args.toSlice(allocator) catch std.debug.panic("Failed to read arguments", .{});
     const year = std.fmt.parseUnsigned(u8, args[2], 10) catch std.debug.panic("Invalid year argument {s}", .{args[2]});

@@ -10,8 +10,8 @@ pub const Tools = struct {
     gpa: std.mem.Allocator,
     input: *std.Io.Reader,
     stdout: *std.Io.Writer,
-    p1buf: []u8,
-    p2buf: []u8,
+    p1buf: *[32]u8,
+    p2buf: *[32]u8,
 
     /// Reads the next line from the input stream, which is presumed to have only one line of
     /// useful data. If there is no line, `error.InvalidInput` is returned. Other read errors

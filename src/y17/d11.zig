@@ -8,7 +8,8 @@ const Pos = struct { x: i32, y: i32, z: i32 };
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var x: i32 = 0;
     var y: i32 = 0;
-    const z: i32 = 0;
+    var dist: u32 = 0;
+    var max_dist: u32 = 0;
     while (try tools.input.takeDelimiter(',')) |step| {
         const dir = std.meta.stringToEnum(Dir, stripNewline(step)) orelse break;
         switch (dir) {
@@ -25,9 +26,10 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
                 y += 1;
             },
         }
+        dist = @abs(x) + @abs(y);
+        max_dist = @max(max_dist, dist);
     }
-    const dist = @abs(x) + @abs(y) + @abs(z);
-    return .{ dist, null };
+    return .{ dist, max_dist };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);

@@ -49,3 +49,84 @@ fn analyzeStream(reader: *std.Io.Reader) error{ReadFailed}!struct { u16, u16 } {
 }
 
 pub const solve = solver.intSolver(u16, solveInt);
+
+test "score" {
+    {
+        const text = "{}";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(1, (try analyzeStream(&input))[0]);
+    }
+    {
+        const text = "{{{}}}";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(6, (try analyzeStream(&input))[0]);
+    }
+    {
+        const text = "{{},{}}";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(5, (try analyzeStream(&input))[0]);
+    }
+    {
+        const text = "{{{},{},{{}}}}";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(16, (try analyzeStream(&input))[0]);
+    }
+    {
+        const text = "{<a>,<a>,<a>,<a>}";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(1, (try analyzeStream(&input))[0]);
+    }
+    {
+        const text = "{{<ab>},{<ab>},{<ab>},{<ab>}}";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(9, (try analyzeStream(&input))[0]);
+    }
+    {
+        const text = "{{<!!>},{<!!>},{<!!>},{<!!>}}";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(9, (try analyzeStream(&input))[0]);
+    }
+    {
+        const text = "{{<a!>},{<a!>},{<a!>},{<ab>}}";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(3, (try analyzeStream(&input))[0]);
+    }
+}
+
+test "count garbage" {
+    {
+        const text = "<>";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(0, (try analyzeStream(&input))[1]);
+    }
+    {
+        const text = "<random characters>";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(17, (try analyzeStream(&input))[1]);
+    }
+    {
+        const text = "<<<<>";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(3, (try analyzeStream(&input))[1]);
+    }
+    {
+        const text = "<{!>}>";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(2, (try analyzeStream(&input))[1]);
+    }
+    {
+        const text = "<!!>";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(0, (try analyzeStream(&input))[1]);
+    }
+    {
+        const text = "<!!!>>";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(0, (try analyzeStream(&input))[1]);
+    }
+    {
+        const text = "<{o\"i!a,<{i<a>";
+        var input = std.Io.Reader.fixed(text);
+        try std.testing.expectEqual(10, (try analyzeStream(&input))[1]);
+    }
+}

@@ -5,7 +5,9 @@ const Parser = @import("../Parser.zig");
 
 const Group = std.AutoHashMapUnmanaged(u16, void);
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+// TODO: Improve the efficiency of the algorithm
+
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     const gpa = tools.gpa;
     var link_list: std.ArrayList(struct { u16, u16 }) = .empty;
     defer link_list.deinit(gpa);
@@ -19,23 +21,34 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
         }
     }
 
-    var group: Group = .empty;
-    defer group.deinit(gpa);
-    var queue: std.Deque(u16) = .empty;
-    defer queue.deinit(gpa);
-
-    try group.put(gpa, 0, {});
-    try queue.pushBack(gpa, 0);
-    while (queue.popFront()) |pid| {
-        for (link_list.items) |link| {
-            const other = if (pid == link[0]) link[1] else if (pid == link[1]) link[0] else continue;
-            const result = try group.getOrPut(gpa, other);
-            if (!result.found_existing) {
-                try queue.pushBack(gpa, other);
+    var group_list: std.ArrayList(Group) = .empty;
+    defer {
+        for (group_list.items) |*group| group.deinit(gpa);
+        group_list.deinit(gpa);
+    }
+    for (link_list.items) |link| {
+        for (group_list.items) |*group| {
+            if (group.contains(link[0])) {
+                break;
             }
+        } else {
+            var group: Group = .empty;
+            try group.put(gpa, link[0], {});
+            try connect(gpa, link_list.items, &group, link[0]);
+            try group_list.append(gpa, group);
         }
     }
-    return .{ group.size, null };
+    return .{ group_list.items[0].size, group_list.items.len };
 }
 
-pub const solve = solver.intSolver(u32, solveInt);
+pub const solve = solver.intSolver(usize, solveInt);
+
+fn connect(gpa: std.mem.Allocator, links: []const struct { u16, u16 }, group: *Group, pid: u16) error{OutOfMemory}!void {
+    for (links) |link| {
+        const other = if (link[0] == pid) link[1] else if (link[1] == pid) link[0] else continue;
+        const result = try group.getOrPut(gpa, other);
+        if (!result.found_existing) {
+            try connect(gpa, links, group, other);
+        }
+    }
+}

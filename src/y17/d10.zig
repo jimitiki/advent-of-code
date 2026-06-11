@@ -48,9 +48,11 @@ const KnotHasher = struct {
             a += 1;
             b -= 1;
         }) {
-            const temp = self.buf[self.bufIndex(a)];
-            self.buf[self.bufIndex(a)] = self.buf[self.bufIndex(b)];
-            self.buf[self.bufIndex(b)] = temp;
+            const ia = self.bufIndex(a);
+            const ib = self.bufIndex(b);
+            const temp = self.buf[ia];
+            self.buf[ia] = self.buf[ib];
+            self.buf[ib] = temp;
         }
         self.index = self.bufIndex(self.index + amount + self.skip_size);
         self.skip_size = if (self.skip_size == self.buf.len - 1) 0 else self.skip_size + 1;

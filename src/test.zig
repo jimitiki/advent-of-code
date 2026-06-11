@@ -25,6 +25,7 @@ test "test all" {
     _ = @import("y16/d12.zig");
     _ = @import("y17/d12.zig");
     _ = @import("y16/d13.zig");
+    _ = @import("y17/d13.zig");
     _ = @import("y16/d14.zig");
     _ = @import("y16/d15.zig");
     _ = @import("y16/d16.zig");

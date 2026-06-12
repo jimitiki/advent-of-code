@@ -26,6 +26,7 @@ test "test all" {
     _ = @import("y16/d24.zig");
     _ = @import("y16/d25.zig");
 
+    _ = @import("y17/KnotHasher.zig");
     _ = @import("y17/d01.zig");
     _ = @import("y17/d02.zig");
     _ = @import("y17/d03.zig");

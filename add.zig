@@ -122,8 +122,10 @@ pub fn main(init: std.process.Init) !void {
         const line = try test_reader.peekDelimiterExclusive('\n');
         if (line.len == 1 and line[0] == '}') break;
         if (line.len < 24) continue;
-        if (year < std.fmt.parseUnsigned(u8, line[18..20], 10) catch continue) break;
-        if (day < std.fmt.parseUnsigned(u8, line[22..24], 10) catch continue) break;
+        const y = std.fmt.parseUnsigned(u8, line[18..20], 10) catch continue;
+        if (year < y) break;
+        const d = std.fmt.parseUnsigned(u8, line[22..24], 10) catch continue;
+        if (year == y and day < d) break;
     }
     const test_file = try dir.openFile(init.io, "src/test.zig", .{ .mode = .write_only });
     defer test_file.close(init.io);

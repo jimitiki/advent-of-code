@@ -6,34 +6,33 @@ const Ring = struct {
     buf: []u8,
     head: u8 = 0,
 
-    const Error = error{InvalidInstruction};
+    const Error = error{InvalidInput};
 
     pub fn init(buf: []u8) Ring {
         return .{ .buf = buf };
     }
 
     pub fn spin(self: *Ring, n: u8) Error!void {
-        if (n > self.buf.len) return error.InvalidInstruction;
+        if (n > self.buf.len) return error.InvalidInput;
         self.head = @intCast(self.bufIndex(@as(u8, @intCast(self.buf.len)) - n));
     }
 
     pub fn exchange(self: *Ring, a: u8, b: u8) Error!void {
-        if (a > self.buf.len or b > self.buf.len) return error.InvalidInstruction;
+        if (a > self.buf.len or b > self.buf.len) return error.InvalidInput;
         self.swap(self.bufIndex(a), self.bufIndex(b));
     }
 
     pub fn partner(self: *Ring, a: u8, b: u8) Error!void {
         self.swap(
-            self.find(a) orelse return error.InvalidInstruction,
-            self.find(b) orelse return error.InvalidInstruction,
+            self.find(a) orelse return error.InvalidInput,
+            self.find(b) orelse return error.InvalidInput,
         );
     }
 
-    pub fn bufCopy(self: Ring, buf: []u8) []u8 {
+    pub fn bufCopy(self: Ring, buf: []u8) void {
         const start = self.buf.len - self.head;
         @memcpy(buf[0..start], self.buf[self.head..]);
-        @memcpy(buf[start..self.buf.len], self.buf[0..self.head]);
-        return buf[0..self.buf.len];
+        @memcpy(buf[start..], self.buf[0..self.head]);
     }
 
     fn swap(self: *Ring, ia: usize, ib: usize) void {
@@ -73,36 +72,72 @@ test "ring" {
     try std.testing.expectEqualSlices(u8, "aedcb", line.buf);
     try std.testing.expectEqual(4, line.head);
 
-    var out: [5]u8 = undefined;
-    const str = line.bufCopy(&out);
-    try std.testing.expectEqualSlices(u8, "baedc", str);
+    var str: [5]u8 = undefined;
+    line.bufCopy(&str);
+    try std.testing.expectEqualSlices(u8, "baedc", &str);
 }
 
+const Step = union(enum) {
+    s: u8,
+    x: struct { u8, u8 },
+    p: struct { u8, u8 },
+};
+
 pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
-    var buf: [16]u8 = undefined;
-    @memcpy(&buf, "abcdefghijklmnop");
-    var line: Ring = .init(&buf);
+    var steps: std.ArrayList(Step) = .empty;
+    defer steps.deinit(tools.gpa);
     while (try tools.input.takeDelimiter(',')) |step| {
         switch (step[0]) {
-            's' => line.spin(try parseInt(step[1..])) catch return error.InvalidInput,
+            's' => try steps.append(tools.gpa, .{ .s = try parseInt(step[1..]) }),
             'x' => {
                 for (step[1..], 1..) |c, i| {
                     if (c != '/') continue;
-                    line.exchange(
+                    try steps.append(tools.gpa, .{ .x = .{
                         try parseInt(step[1..i]),
                         try parseInt(step[i + 1 ..]),
-                    ) catch return error.InvalidInput;
+                    } });
+                    break;
                 }
             },
-            'p' => line.partner(step[1], step[3]) catch return error.InvalidInput,
+            'p' => try steps.append(tools.gpa, .{ .p = .{ step[1], step[3] } }),
             else => return error.InvalidInput,
         }
     }
-    std.debug.print("{s} [{}]\n", .{ line.buf, line.head });
-    return .{ line.bufCopy(tools.p1buf), null };
+
+    const start = "abcdefghijklmnop";
+    var buf: [start.len]u8 = undefined;
+    @memcpy(&buf, start);
+    var line: Ring = .init(&buf);
+
+    const first = tools.p1buf[0..start.len];
+    const cur = tools.p2buf[0..start.len];
+    var i: usize = 0;
+    while (!std.mem.eql(u8, cur, start)) : (i += 1) {
+        try executeSteps(steps.items, &line);
+        line.bufCopy(cur);
+        if (i == 0) {
+            @memcpy(first, cur);
+        }
+    }
+    const mod = 1_000_000_000 % i;
+    for (0..mod) |_| {
+        try executeSteps(steps.items, &line);
+    }
+    line.bufCopy(cur);
+    return .{ first, cur };
 }
 
 fn parseInt(str: []const u8) error{InvalidInput}!u8 {
     const buf = if (str[str.len - 1] == '\n') str[0 .. str.len - 1] else str;
     return std.fmt.parseInt(u8, buf, 10) catch error.InvalidInput;
+}
+
+fn executeSteps(steps: []Step, line: *Ring) error{InvalidInput}!void {
+    for (steps) |step| {
+        switch (step) {
+            .s => |n| try line.spin(n),
+            .p => |chars| try line.partner(chars[0], chars[1]),
+            .x => |indices| try line.exchange(indices[0], indices[1]),
+        }
+    }
 }

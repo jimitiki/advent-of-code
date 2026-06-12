@@ -17,7 +17,7 @@ pub fn init() Self {
     return .{ .buf = buf };
 }
 
-pub fn hash(self: *Self, data: []const u8, digest: *[32]u8) void {
+pub fn hash(self: *Self, data: []const u8, digest: *[16]u8) void {
     for (0..64) |_| {
         for (data) |length| {
             self.reverse(length);
@@ -30,13 +30,50 @@ pub fn hash(self: *Self, data: []const u8, digest: *[32]u8) void {
         const buf_index = i * 16;
         var dense: u8 = 0;
         for (self.buf[buf_index .. buf_index + 16]) |byte| dense ^= byte;
-        const digest_index = i * 2;
-        digest[digest_index] = std.fmt.hex_charset[dense >> 4];
-        digest[digest_index + 1] = std.fmt.hex_charset[dense & 0x0f];
+        digest[i] = dense;
     }
 }
 
 test "hash" {
+    var digest: [16]u8 = undefined;
+    var hasher: Self = .init();
+    hasher.hash("", &digest);
+    try std.testing.expectEqual(
+        [_]u8{ 0xa2, 0x58, 0x2a, 0x3a, 0x0e, 0x66, 0xe6, 0xe8, 0x6e, 0x38, 0x12, 0xdc, 0xb6, 0x72, 0xa2, 0x72 },
+        digest,
+    );
+    hasher = .init();
+    hasher.hash("AoC 2017", &digest);
+    try std.testing.expectEqual(
+        [_]u8{ 0x33, 0xef, 0xeb, 0x34, 0xea, 0x91, 0x90, 0x2b, 0xb2, 0xf5, 0x9c, 0x99, 0x20, 0xca, 0xa6, 0xcd },
+        digest,
+    );
+    hasher = .init();
+    hasher.hash("1,2,3", &digest);
+    try std.testing.expectEqual(
+        [_]u8{ 0x3e, 0xfb, 0xe7, 0x8a, 0x8d, 0x82, 0xf2, 0x99, 0x79, 0x03, 0x1a, 0x4a, 0xa0, 0xb1, 0x6a, 0x9d },
+        digest,
+    );
+    hasher = .init();
+    hasher.hash("1,2,4", &digest);
+    try std.testing.expectEqual(
+        [_]u8{ 0x63, 0x96, 0x08, 0x35, 0xbc, 0xdc, 0x13, 0x0f, 0x0b, 0x66, 0xd7, 0xff, 0x4f, 0x6a, 0x5a, 0x8e },
+        digest,
+    );
+}
+
+pub fn hashHex(self: *Self, data: []const u8, hex_digest: *[32]u8) void {
+    var digest: [16]u8 = undefined;
+    self.hash(data, &digest);
+
+    for (digest, 0..) |byte, i| {
+        const index = i * 2;
+        hex_digest[index] = std.fmt.hex_charset[byte >> 4];
+        hex_digest[index + 1] = std.fmt.hex_charset[byte & 0x0f];
+    }
+}
+
+test "hashHex" {
     var digest: [32]u8 = undefined;
     var hasher: Self = .init();
     hasher.hashHex("", &digest);

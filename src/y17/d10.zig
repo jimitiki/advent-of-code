@@ -27,7 +27,7 @@ pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
     ) catch unreachable;
 
     hasher = .init();
-    hasher.hash(input, tools.p2buf);
+    hasher.hashHex(input, tools.p2buf);
 
     return .{ p1_str, tools.p2buf };
 }

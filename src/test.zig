@@ -3,29 +3,16 @@ const solver = @import("solver.zig");
 
 test "test all" {
     _ = @import("y16/asm.zig");
-    _ = @import("y17/d01.zig");
-    _ = @import("y17/d02.zig");
-    _ = @import("y17/d03.zig");
     _ = @import("y16/d04.zig");
-    _ = @import("y17/d04.zig");
     _ = @import("y16/d05.zig");
-    _ = @import("y17/d05.zig");
     _ = @import("y16/d06.zig");
-    _ = @import("y17/d06.zig");
     _ = @import("y16/d07.zig");
-    _ = @import("y17/d07.zig");
     _ = @import("y16/d08.zig");
-    _ = @import("y17/d08.zig");
     _ = @import("y16/d09.zig");
-    _ = @import("y17/d09.zig");
     _ = @import("y16/d10.zig");
-    _ = @import("y17/d10.zig");
     _ = @import("y16/d11.zig");
-    _ = @import("y17/d11.zig");
     _ = @import("y16/d12.zig");
-    _ = @import("y17/d12.zig");
     _ = @import("y16/d13.zig");
-    _ = @import("y17/d13.zig");
     _ = @import("y16/d14.zig");
     _ = @import("y16/d15.zig");
     _ = @import("y16/d16.zig");
@@ -38,6 +25,20 @@ test "test all" {
     _ = @import("y16/d23.zig");
     _ = @import("y16/d24.zig");
     _ = @import("y16/d25.zig");
+
+    _ = @import("y17/d01.zig");
+    _ = @import("y17/d02.zig");
+    _ = @import("y17/d03.zig");
+    _ = @import("y17/d04.zig");
+    _ = @import("y17/d05.zig");
+    _ = @import("y17/d06.zig");
+    _ = @import("y17/d07.zig");
+    _ = @import("y17/d08.zig");
+    _ = @import("y17/d09.zig");
+    _ = @import("y17/d10.zig");
+    _ = @import("y17/d11.zig");
+    _ = @import("y17/d12.zig");
+    _ = @import("y17/d13.zig");
 }
 
 pub fn expectSolution(

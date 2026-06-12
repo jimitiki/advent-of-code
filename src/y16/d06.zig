@@ -54,9 +54,5 @@ test "solve" {
         \\dvrsen
         \\enarar
     ;
-    var tools = try t.initTools(text);
-    defer t.deinitTools(&tools);
-    const actual = try solve(tools);
-    try std.testing.expectEqualSlices(u8, "easter", actual[0].?);
-    try std.testing.expectEqualSlices(u8, "advent", actual[1].?);
+    try t.expectSolution(solve, .{ "easter", "advent" }, text);
 }

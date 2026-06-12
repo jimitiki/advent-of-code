@@ -73,9 +73,7 @@ test "solve" {
         \\c dec -10 if a >= 1
         \\c inc -20 if c == 10
     ;
-    var tools = try t.initTools(input);
-    defer t.deinitTools(&tools);
-    try std.testing.expectEqual(.{ 1, 10 }, try solveInt(tools));
+    try t.expectIntSolution(i32, solveInt, .{ 1, 10 }, input);
 }
 
 fn convert(name: []const u8) u32 {

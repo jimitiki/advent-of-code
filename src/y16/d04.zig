@@ -129,7 +129,5 @@ test "decrypt" {
 test "solve" {
     const t = @import("../test.zig");
     const input = "aaaaa-bbb-z-y-x-123[abxyz]\na-b-c-d-e-f-g-h-987[abcde]\nnot-a-real-room-404[oarel]\ntotally-real-room-200[decoy]";
-    var tools = try t.initTools(input);
-    defer t.deinitTools(&tools);
-    try std.testing.expectEqual(.{ 1514, null }, solveInt(tools));
+    try t.expectIntSolution(u32, solveInt, .{ 1514, null }, input);
 }

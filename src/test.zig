@@ -40,31 +40,39 @@ test "test all" {
     _ = @import("y16/d25.zig");
 }
 
-pub fn initTools(text: []const u8) !solver.Tools {
-    const allocator = std.testing.allocator;
-    var buf = try allocator.alloc(u8, 64);
-    const reader = try allocator.create(std.Io.Reader);
-    const writer = try allocator.create(std.Io.Writer);
-    reader.* = std.Io.Reader.fixed(text);
-    writer.* = std.Io.Writer.fixed(buf[0..64]);
-    const p1buf = try allocator.alloc(u8, 32);
-    const p2buf = try allocator.alloc(u8, 32);
-
-    return .{
-        .gpa = allocator,
-        .input = reader,
-        .stdout = writer,
-        .p1buf = p1buf[0..32],
-        .p2buf = p2buf[0..32],
-    };
+pub fn expectSolution(
+    comptime solveFn: fn (solver.Tools) solver.Error!solver.Result,
+    expected: solver.Result,
+    input: []const u8,
+) !void {
+    var buf: [128]u8 = undefined;
+    var reader = std.Io.Reader.fixed(input);
+    var writer = std.Io.Writer.fixed(buf[0..64]);
+    const actual = try solveFn(.{
+        .gpa = std.testing.allocator,
+        .input = &reader,
+        .stdout = &writer,
+        .p1buf = buf[64..96],
+        .p2buf = buf[96..],
+    });
+    try std.testing.expectEqualDeep(expected, actual);
 }
 
-pub fn deinitTools(tools: *solver.Tools) void {
-    const allocator = std.testing.allocator;
-    allocator.free(tools.stdout.buffer);
-    // allocator.free(tools.stdout.buffer);
-    allocator.free(@as([]u8, @ptrCast(tools.p1buf)));
-    allocator.free(@as([]u8, @ptrCast(tools.p2buf)));
-    allocator.destroy(tools.stdout);
-    allocator.destroy(tools.input);
+pub fn expectIntSolution(
+    comptime T: type,
+    comptime solveFn: fn (solver.Tools) solver.Error!struct { ?T, ?T },
+    expected: struct { ?T, ?T },
+    input: []const u8,
+) !void {
+    var buf: [128]u8 = undefined;
+    var reader = std.Io.Reader.fixed(input);
+    var writer = std.Io.Writer.fixed(buf[0..64]);
+    const actual = try solveFn(.{
+        .gpa = std.testing.allocator,
+        .input = &reader,
+        .stdout = &writer,
+        .p1buf = buf[64..96],
+        .p2buf = buf[96..],
+    });
+    try std.testing.expectEqual(expected, actual);
 }

@@ -78,6 +78,7 @@ const solutions: []const []const Solver = &.{
         @import("y17/d17.zig").solve,
         @import("y17/d18.zig").solve,
         @import("y17/d19.zig").solve,
+        @import("y17/d20.zig").solve,
     },
     // 2018
     &.{},

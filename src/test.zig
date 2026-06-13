@@ -46,6 +46,7 @@ test "test all" {
     _ = @import("y17/d17.zig");
     _ = @import("y17/d18.zig");
     _ = @import("y17/d19.zig");
+    _ = @import("y17/d20.zig");
 }
 
 pub fn expectSolution(

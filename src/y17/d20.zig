@@ -17,6 +17,9 @@ const Particle = struct {
     }
 };
 
+// TODO: Fix part 1. It needs to break ties in the case where multiple particles have the minimum acceleration
+// TODO: Speed up part 2
+
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var particle_list: std.ArrayList(Particle) = .empty;
     defer particle_list.deinit(tools.gpa);

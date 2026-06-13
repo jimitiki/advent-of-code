@@ -65,6 +65,26 @@ pub fn takeEnum(self: *Parser, comptime T: type) Parser.Error!T {
     return e;
 }
 
+pub fn findInt(self: *Parser, comptime T: type) Parser.Error!T {
+    const incl_neg = @typeInfo(T).int.signedness == .signed;
+    while (self.index < self.buf.len and !self.isInt(incl_neg)) : (self.index += 1) {}
+    if (self.index == self.buf.len) {
+        return error.EndOfBuffer;
+    }
+
+    const start = self.index;
+    self.index += 1;
+    while (self.index < self.buf.len and self.buf[self.index] >= '0' and self.buf[self.index] <= '9') : (self.index += 1) {}
+    if (std.fmt.parseInt(T, self.buf[start..self.index], 10)) |i| {
+        return i;
+    } else |err| {
+        switch (err) {
+            error.InvalidCharacter => unreachable,
+            error.Overflow => return error.InvalidToken,
+        }
+    }
+}
+
 pub fn skipToken(self: *Parser, token: []const u8) Parser.Error!void {
     _ = try self.takeToken(token);
 }
@@ -79,4 +99,15 @@ fn isDelimiter(self: *Parser, char: u8) bool {
         '.', ',' => self.options.skip_punctuation,
         else => false,
     };
+}
+
+fn isInt(self: Parser, incl_neg: bool) bool {
+    if (self.buf[self.index] == '-') {
+        if (!incl_neg) return false;
+        if (self.index == self.buf.len - 1) return false;
+
+        const next = self.buf[self.index + 1];
+        return next >= '0' and next <= '9';
+    }
+    return self.buf[self.index] >= '0' and self.buf[self.index] <= '9';
 }

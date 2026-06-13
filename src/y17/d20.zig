@@ -3,25 +3,95 @@ const std = @import("std");
 const solver = @import("../solver.zig");
 const Parser = @import("../Parser.zig");
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    var min_acc: u32 = std.math.maxInt(i32);
-    var particle: u32 = undefined;
-    var i: u32 = 0;
-    while (try tools.input.takeDelimiter('\n')) |line| : (i += 1) {
+const Vec3 = @Vector(3, i32);
+
+const Particle = struct {
+    id: u32,
+    pos: Vec3,
+    vel: Vec3,
+    acc: Vec3,
+
+    fn update(self: *Particle) void {
+        self.vel += self.acc;
+        self.pos += self.vel;
+    }
+};
+
+fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+    var particle_list: std.ArrayList(Particle) = .empty;
+    defer particle_list.deinit(tools.gpa);
+
+    var id: u32 = 0;
+    while (try tools.input.takeDelimiter('\n')) |line| : (id += 1) {
         var parser: Parser = .init(line, .{});
-        try parser.skipMany(6);
-        const xstr = try parser.take();
-        const acc_x = std.fmt.parseInt(i32, xstr[3..], 10) catch return error.InvalidInput;
-        const acc_y = try parser.takeInt(i32);
-        const zstr = try parser.take();
-        const acc_z = std.fmt.parseInt(i32, zstr[0 .. zstr.len - 1], 10) catch return error.InvalidInput;
-        const acc = @abs(acc_x) + @abs(acc_y) + @abs(acc_z);
-        if (acc < min_acc) {
-            min_acc = acc;
-            particle = i;
+        try particle_list.append(tools.gpa, .{
+            .id = id,
+            .pos = try parseVec(&parser),
+            .vel = try parseVec(&parser),
+            .acc = try parseVec(&parser),
+        });
+    }
+
+    var min_acc: u32 = std.math.maxInt(u32);
+    var particle_idx: ?usize = null;
+    for (particle_list.items, 0..) |particle, idx| {
+        const abs_acc: u32 = @reduce(.Add, @abs(particle.acc));
+        if (abs_acc < min_acc) {
+            min_acc = abs_acc;
+            particle_idx = idx;
         }
     }
-    return .{ particle, null };
+
+    var distances: std.AutoHashMapUnmanaged(struct { u32, u32 }, u32) = .empty;
+    defer distances.deinit(tools.gpa);
+    var closer: bool = true;
+    var t: u32 = 0;
+    while (closer) : (t += 1) {
+        closer = false;
+        for (particle_list.items) |*particle| particle.update();
+        var i: usize = 0;
+        while (i < particle_list.items.len - 1) {
+            const a = particle_list.items[i];
+            var j = i + 1;
+            var collision = false;
+
+            while (j < particle_list.items.len) {
+                const b = particle_list.items[j];
+                const d = dist(a, b);
+                if (d == 0) {
+                    collision = true;
+                    _ = particle_list.swapRemove(j);
+                } else {
+                    const pair = .{ @min(a.id, b.id), @max(a.id, b.id) };
+                    if (distances.get(pair)) |dprev| {
+                        if (dprev > d) closer = true;
+                    } else {
+                        closer = true;
+                    }
+                    try distances.put(tools.gpa, pair, d);
+                    j += 1;
+                }
+            }
+            if (collision) {
+                _ = particle_list.swapRemove(i);
+            } else {
+                i += 1;
+            }
+        }
+    }
+    return .{ particle_idx, particle_list.items.len };
 }
 
-pub const solve = solver.intSolver(u32, solveInt);
+pub const solve = solver.intSolver(usize, solveInt);
+
+fn parseVec(parser: *Parser) Parser.Error!Vec3 {
+    return .{
+        try parser.findInt(i32),
+        try parser.findInt(i32),
+        try parser.findInt(i32),
+    };
+}
+
+fn dist(a: Particle, b: Particle) u32 {
+    return @reduce(.Add, @abs(a.pos - b.pos));
+}

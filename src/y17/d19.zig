@@ -27,7 +27,8 @@ pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
     var pos: ?Pos = .{ .x = xstart, .y = 0 };
     var dir: Dir = .d;
     var letter_count: usize = 0;
-    while (pos) |p| {
+    var steps: usize = 0;
+    while (pos) |p| : (steps += 1) {
         const char = map[p.y][p.x];
         if (char == '+') {
             dir, pos = turn(map, dir, p);
@@ -41,7 +42,7 @@ pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
         pos = move(map, dir, p);
     }
 
-    return .{ tools.p1buf[0..letter_count], null };
+    return .{ tools.p1buf[0..letter_count], std.fmt.bufPrint(tools.p2buf, "{}", .{steps}) catch unreachable };
 }
 
 test "solve" {
@@ -53,7 +54,7 @@ test "solve" {
         \\    |  |  |  D
         \\    +B-+  +--+
     ;
-    try t.expectSolution(solve, .{ "ABCDEF", null }, input);
+    try t.expectSolution(solve, .{ "ABCDEF", "38" }, input);
 }
 
 fn turn(map: []const []const u8, dir: Dir, pos: Pos) struct { Dir, Pos } {

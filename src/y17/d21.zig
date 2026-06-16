@@ -10,8 +10,14 @@ const Transform = struct {
     cnt6: u8,
 };
 
+const State = struct {
+    start: u9,
+    iterations: u8,
+};
+
 const RuleTable2 = std.AutoHashMapUnmanaged(u4, [3][3]u1);
 const TransformTable = std.AutoHashMapUnmanaged(u9, Transform);
+const Memo = std.AutoHashMapUnmanaged(State, u32);
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
@@ -75,21 +81,49 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
         }
     }
 
-    const start: [3][3]u1 = .{ .{ 0, 1, 0 }, .{ 1, 0, 0 }, .{ 1, 1, 1 } };
-    const t = transforms.get(rotate3(start, 0, false)).?;
-    return .{ iterate(transforms, t, 5), iterate(transforms, t, 18) };
+    var memo: Memo = .empty;
+    defer memo.deinit(gpa);
+    const start: u9 = 0b010_100_111;
+    return .{
+        try iterate(gpa, transforms, &memo, start, 5),
+        try iterate(gpa, transforms, &memo, start, 18),
+    };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
 
-fn iterate(transforms: TransformTable, transform: Transform, n: u16) u32 {
-    if (n == 0) return transform.cnt3;
-    if (n == 1) return transform.cnt4;
-    if (n == 2) return transform.cnt6;
+fn iterate(
+    gpa: std.mem.Allocator,
+    transforms: TransformTable,
+    memo: *Memo,
+    start: u9,
+    n: u8,
+) error{OutOfMemory}!u32 {
+    const state: State = .{ .start = start, .iterations = n };
+    if (memo.get(state)) |m| {
+        return m;
+    }
+    const transform = transforms.get(start).?;
+    const sum = switch (n) {
+        0 => transform.cnt3,
+        1 => transform.cnt4,
+        2 => transform.cnt6,
+        else => try sumChildren(gpa, transforms, memo, transform, n - 3),
+    };
+    try memo.put(gpa, state, sum);
+    return sum;
+}
 
+fn sumChildren(
+    gpa: std.mem.Allocator,
+    transforms: TransformTable,
+    memo: *Memo,
+    transform: Transform,
+    n: u8,
+) error{OutOfMemory}!u32 {
     var sum: u32 = 0;
     for (transform.final) |next| {
-        sum += iterate(transforms, transforms.get(next).?, n - 3);
+        sum += try iterate(gpa, transforms, memo, next, n);
     }
     return sum;
 }

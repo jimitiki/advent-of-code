@@ -77,7 +77,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
 
     const start: [3][3]u1 = .{ .{ 0, 1, 0 }, .{ 1, 0, 0 }, .{ 1, 1, 1 } };
     const t = transforms.get(rotate3(start, 0, false)).?;
-    return .{ iterate(transforms, t, 5), null };
+    return .{ iterate(transforms, t, 5), iterate(transforms, t, 18) };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);

@@ -5,13 +5,14 @@ const testing = @import("../testing.zig");
 
 const Counter = @import("../counter.zig").Counter;
 
-fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     const ids = try input.sliceLines(tools.gpa);
     defer tools.gpa.free(ids);
-    return .{ checksum(ids), null };
+    return .{
+        std.fmt.bufPrint(p1buf, "{}", .{checksum(ids)}) catch unreachable,
+        matchingLetters(p2buf, ids),
+    };
 }
-
-pub const solve = solver.intSolver(u16, solveInt);
 
 fn checksum(ids: []const []const u8) u16 {
     var count_two: u16 = 0;
@@ -49,4 +50,57 @@ test "checksum" {
         "ababab",
     };
     try std.testing.expectEqual(12, checksum(&ids));
+}
+
+fn matchingLetters(buf: []u8, ids: []const []const u8) ?[]const u8 {
+    for (ids, 0..) |a, i| {
+        for (ids[i..]) |b| {
+            if (diffIndex(a, b)) |index| {
+                for (a, 0..) |char, j| {
+                    if (j == index) {
+                        continue;
+                    } else if (j > index) {
+                        buf[j - 1] = char;
+                    } else {
+                        buf[j] = char;
+                    }
+                }
+                return buf[0 .. a.len - 1];
+            }
+        }
+    }
+    return null;
+}
+
+test "part 2" {
+    const ids: [7][]const u8 = .{
+        "abcde",
+        "fghij",
+        "klmno",
+        "pqrst",
+        "fguij",
+        "axcye",
+        "wvxyz",
+    };
+    var buf: [32]u8 = undefined;
+    try std.testing.expectEqualSlices(u8, "fgij", matchingLetters(&buf, &ids).?);
+}
+
+fn diffIndex(a: []const u8, b: []const u8) ?usize {
+    if (a.len != b.len) return null;
+    var found = false;
+    var index: usize = undefined;
+    for (a, b, 0..) |ca, cb, i| {
+        if (ca != cb) {
+            if (found) {
+                return null;
+            }
+            found = true;
+            index = i;
+        }
+    }
+    if (!found) {
+        return null;
+    }
+    return index;
 }

@@ -9,8 +9,7 @@ const hashIndex = @import("../hash.zig").hashIndex;
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     _ = tools;
-    var parser = input.parser(.{});
-    const string = try parser.take();
+    const string = try input.firstLine();
 
     var buf: [128]u8 = undefined;
     var answer1: u32 = 0;

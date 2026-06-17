@@ -6,11 +6,10 @@ fn solveInt(input: solver.Input, tools: solver.Tools) error{InvalidInput}!struct
     _ = tools;
     var floor: i32 = 0;
     var answer: ?i32 = null;
-    for (input.text, 0..) |char, i| {
+    for (try input.firstLine(), 0..) |char, i| {
         switch (char) {
             '(' => floor += 1,
             ')' => floor -= 1,
-            '\n' => break,
             else => return error.InvalidInput,
         }
         if (floor < 0) {

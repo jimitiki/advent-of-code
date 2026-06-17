@@ -6,8 +6,7 @@ const solver = @import("../solver.zig");
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     _ = tools;
-    var parser = input.parser(.{});
-    const target = try parser.takeInt(u32);
+    const target = try input.asInt(u32);
     var answer1: u32 = 1;
     while (sumPresents(answer1) < target) : (answer1 += 1) {}
     var answer2: u32 = 1;

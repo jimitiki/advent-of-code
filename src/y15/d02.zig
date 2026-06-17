@@ -7,8 +7,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
     _ = tools;
     var answer1: u32 = 0;
     var answer2: u32 = 0;
-    var reader = input.reader();
-    while (try reader.takeDelimiter('\n')) |line| {
+    var lines = input.lines();
+    while (lines.next()) |line| {
         const wstart = for (line, 0..) |c, i| {
             if (c == 'x') {
                 break i + 1;

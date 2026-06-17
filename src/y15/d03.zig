@@ -16,22 +16,19 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
     var santa2: House = .{};
     var robosanta: House = .{};
 
-    var reader = input.reader();
-    while (true) {
-        visited_p1.put(tools.gpa, santa1, {}) catch unreachable;
-        visited_p2.put(tools.gpa, santa2, {}) catch unreachable;
-        if (reader.takeByte()) |char| {
-            if (char == '\n') break;
-            santa1 = try move(santa1, char);
-            santa2 = try move(santa2, char);
-        } else |_| break;
-        visited_p1.put(tools.gpa, santa1, {}) catch unreachable;
-        visited_p2.put(tools.gpa, robosanta, {}) catch unreachable;
-        if (reader.takeByte()) |char| {
-            if (char == '\n') break;
-            santa1 = try move(santa1, char);
-            robosanta = try move(robosanta, char);
-        } else |_| break;
+    const moves = try input.firstLine();
+    try visited_p1.put(tools.gpa, santa1, {});
+    try visited_p2.put(tools.gpa, santa2, {});
+    for (moves, 0..) |m, i| {
+        santa1 = try move(santa1, m);
+        try visited_p1.put(tools.gpa, santa1, {});
+        if (i & 1 == 0) {
+            santa2 = try move(santa2, m);
+            try visited_p2.put(tools.gpa, santa2, {});
+        } else {
+            robosanta = try move(robosanta, m);
+            try visited_p2.put(tools.gpa, robosanta, {});
+        }
     }
     return .{ visited_p1.size, visited_p2.size };
 }

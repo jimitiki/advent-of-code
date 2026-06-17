@@ -6,14 +6,20 @@ const testing = @import("../testing.zig");
 const Counter = @import("../counter.zig").Counter;
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
-    _ = tools;
+    const ids = try input.sliceLines(tools.gpa);
+    defer tools.gpa.free(ids);
+    return .{ checksum(ids), null };
+}
+
+pub const solve = solver.intSolver(u16, solveInt);
+
+fn checksum(ids: []const []const u8) u16 {
     var count_two: u16 = 0;
     var count_three: u16 = 0;
     var counts: [26]u8 = undefined;
-    var reader = input.reader();
-    while (try reader.takeDelimiter('\n')) |line| {
+    for (ids) |id| {
         @memset(&counts, 0);
-        for (line) |char| {
+        for (id) |char| {
             counts[char - 97] += 1;
         }
         for (counts) |c| {
@@ -29,20 +35,18 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16
             }
         }
     }
-    return .{ count_two * count_three, null };
+    return count_two * count_three;
 }
 
-pub const solve = solver.intSolver(u16, solveInt);
-
-test "solve" {
-    const input =
-        \\abcdef
-        \\bababc
-        \\abbcde
-        \\abcccd
-        \\aabcdd
-        \\abcdee
-        \\ababab
-    ;
-    try testing.expectIntSolution(u16, solveInt, .{ 12, null }, input);
+test "checksum" {
+    const ids: [7][]const u8 = .{
+        "abcdef",
+        "bababc",
+        "abbcde",
+        "abcccd",
+        "aabcdd",
+        "abcdee",
+        "ababab",
+    };
+    try std.testing.expectEqual(12, checksum(&ids));
 }

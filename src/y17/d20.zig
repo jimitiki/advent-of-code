@@ -20,12 +20,12 @@ const Particle = struct {
 // TODO: Fix part 1. It needs to break ties in the case where multiple particles have the minimum acceleration
 // TODO: Speed up part 2
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var particle_list: std.ArrayList(Particle) = .empty;
     defer particle_list.deinit(tools.gpa);
 
     var id: u32 = 0;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| : (id += 1) {
+    while (try input.reader.takeDelimiter('\n')) |line| : (id += 1) {
         var parser: Parser = .init(line, .{});
         try particle_list.append(tools.gpa, .{
             .id = id,

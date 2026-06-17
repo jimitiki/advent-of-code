@@ -9,7 +9,7 @@ const RelativeTable = std.StringHashMapUnmanaged(HappinessTable);
 
 // TODO: Use indeces to represent relatives - switch from hash maps to slices.
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?i16, ?i16 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i16, ?i16 } {
     const gpa = tools.gpa;
     var names: NameSet = .empty;
     defer {
@@ -26,7 +26,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?i16, ?i16 } {
         }
         relatives.deinit(gpa);
     }
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         var parser = Parser.init(line, .{});
         const name1 = try parser.take();
         try parser.skip();

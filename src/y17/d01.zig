@@ -2,8 +2,9 @@ const std = @import("std");
 
 const solver = @import("../solver.zig");
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
-    const digits = tools.input.reader.takeDelimiterExclusive('\n') catch return error.InvalidInput;
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
+    _ = tools;
+    const digits = input.reader.takeDelimiterExclusive('\n') catch return error.InvalidInput;
     return .{ sumAdjacent(digits), sumOpposite(digits) };
 }
 

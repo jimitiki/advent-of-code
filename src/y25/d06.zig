@@ -11,14 +11,14 @@ const Op = enum {
     mult,
 };
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     const gpa = tools.gpa;
     var lines: std.ArrayList([]const u8) = .empty;
     defer {
         for (lines.items) |line| gpa.free(line);
         lines.deinit(gpa);
     }
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         if (lines.items.len > 0 and line.len != lines.items[0].len) {
             return error.InvalidInput;
         }

@@ -9,9 +9,9 @@ fn TileMap(comptime V: type) type {
 }
 const PointMap = std.array_hash_map.Auto(Position, u8);
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
-    const distances = try precomputeDistances(gpa, tools.input.reader);
+    const distances = try precomputeDistances(gpa, input.reader);
     defer {
         for (distances) |d| gpa.free(d);
         gpa.free(distances);

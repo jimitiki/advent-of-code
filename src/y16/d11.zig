@@ -68,7 +68,7 @@ fn StateMap(comptime V: type) type {
     return std.HashMapUnmanaged(State, V, Context, 80);
 }
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
     var chips: std.StringHashMapUnmanaged(u2) = .empty;
     defer chips.deinit(gpa);
@@ -76,7 +76,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     defer rtgs.deinit(gpa);
 
     var i: u2 = 0;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| : (i += 1) {
+    while (try input.reader.takeDelimiter('\n')) |line| : (i += 1) {
         var parser: Parser = .init(line, .{});
         try parser.skipMany(4);
         while (try parseElement(&parser)) |result| {

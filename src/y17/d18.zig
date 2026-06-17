@@ -107,12 +107,12 @@ const Interpreter = struct {
     }
 };
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
     const gpa = tools.gpa;
     var instruction_list: std.ArrayList(Instruction) = .empty;
     defer instruction_list.deinit(tools.gpa);
 
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         try instruction_list.append(tools.gpa, try parseInstruction(line));
     }
 

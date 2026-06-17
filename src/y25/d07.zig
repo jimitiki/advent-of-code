@@ -4,9 +4,9 @@ const solver = @import("../solver.zig");
 
 // TODO: Create a visualization
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     const width = checkwidth: {
-        const first_line = tools.input.reader.peekDelimiterExclusive('\n') catch return error.InvalidInput;
+        const first_line = input.reader.peekDelimiterExclusive('\n') catch return error.InvalidInput;
         break :checkwidth first_line.len;
     };
     const paths = try tools.gpa.alloc(u64, width);
@@ -16,7 +16,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     @memset(paths, 0);
     @memset(next, 0);
     var splits: u64 = 0;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         for (line, 0..) |c, i| {
             switch (c) {
                 'S' => next[i] = 1,

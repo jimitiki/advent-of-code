@@ -7,8 +7,9 @@ const hashIndex = @import("../hash.zig").hashIndex;
 // TODO: Re-implement MD5?
 // TODO: Apparently the input seed "cxsaadws" solves in under 500 hashes. Use it for unit tests
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    const string = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    _ = tools;
+    const string = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
 
     var buf: [128]u8 = undefined;
     var answer1: u32 = 0;

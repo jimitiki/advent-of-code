@@ -11,9 +11,9 @@ const Operation = union(enum) {
 
 // TODO: Make an animation
 
-pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
     var screen = [_]u50{0} ** 6;
-    while (try tools.input.reader.takeDelimiter('\n')) |instruction| {
+    while (try input.reader.takeDelimiter('\n')) |instruction| {
         try execute(u50, &screen, tools.gpa, instruction);
     }
 

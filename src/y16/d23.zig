@@ -5,9 +5,9 @@ const Interpreter = @import("asm.zig").Interpreter;
 
 // TODO: Speed up part 2
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
     var interpreter: Interpreter = .init(null);
-    const text = tools.input.reader.peekGreedy(1) catch unreachable;
+    const text = input.reader.peekGreedy(1) catch unreachable;
     try interpreter.load(tools.gpa, text);
     defer interpreter.unload(tools.gpa);
     interpreter.setRegister(.a, 7);

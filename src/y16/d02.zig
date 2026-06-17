@@ -16,7 +16,7 @@ const keypad_p2 = [_][5]?u8{
     [_]?u8{ null, null, 'D', null, null },
 };
 
-pub fn solve(tools: solver.Tools) solver.Error!struct { ?[]const u8, ?[]const u8 } {
+pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?[]const u8, ?[]const u8 } {
     var keys_p1: std.ArrayList(u8) = .empty;
     defer keys_p1.deinit(tools.gpa);
     var keys_p2: std.ArrayList(u8) = .empty;
@@ -26,7 +26,7 @@ pub fn solve(tools: solver.Tools) solver.Error!struct { ?[]const u8, ?[]const u8
     var col_p1: u2 = 1;
     var row_p2: u3 = 2;
     var col_p2: u3 = 0;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         for (line) |char| {
             switch (char) {
                 'U' => {

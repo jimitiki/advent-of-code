@@ -4,10 +4,11 @@ const solver = @import("../solver.zig");
 
 const digits = "987654321";
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
+    _ = tools;
     var answer1: u64 = 0;
     var answer2: u64 = 0;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         answer1 += highestJoltage(line, 2);
         answer2 += highestJoltage(line, 12);
     }

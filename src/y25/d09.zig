@@ -9,10 +9,10 @@ const Tile = struct { u64, u64 };
 // Is there a way to do it with just testing that the center of the rectangle is within the
 // polygon?
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     var tiles: std.ArrayList(Tile) = .empty;
     defer tiles.deinit(tools.gpa);
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         for (line, 0..) |c, i| {
             if (c == ',') {
                 try tiles.append(tools.gpa, .{

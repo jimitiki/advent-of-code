@@ -17,20 +17,19 @@ pub const Input = struct {
 
 pub const Tools = struct {
     gpa: std.mem.Allocator,
-    input: Input,
     stdout: *std.Io.Writer,
     p1buf: *[32]u8,
     p2buf: *[32]u8,
 };
-pub const Solver = *const fn (Tools) Error!Result;
-pub fn intSolver(comptime T: type, comptime solveFn: fn (Tools) Error!struct { ?T, ?T }) Solver {
+pub const Solver = *const fn (Input, Tools) Error!Result;
+pub fn intSolver(comptime T: type, comptime solveFn: fn (Input, Tools) Error!struct { ?T, ?T }) Solver {
     switch (@typeInfo(T)) {
         .int => {},
         else => @compileError("Type must be an integer type, got" ++ @typeName(T)),
     }
     return struct {
-        pub fn solve(tools: Tools) Error!Result {
-            const answers = try solveFn(tools);
+        pub fn solve(input: Input, tools: Tools) Error!Result {
+            const answers = try solveFn(input, tools);
             return .{ fmtIntAnswer(T, tools.p1buf, answers[0]), fmtIntAnswer(T, tools.p2buf, answers[1]) };
         }
     }.solve;

@@ -2,8 +2,9 @@ const std = @import("std");
 
 const solver = @import("../solver.zig");
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    _ = tools;
+    while (try input.reader.takeDelimiter('\n')) |line| {
         _ = line;
     }
     return .{ null, null };

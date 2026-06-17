@@ -3,8 +3,8 @@ const Md5 = std.crypto.hash.Md5;
 
 const solver = @import("../solver.zig");
 
-pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
-    const passcode = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
+    const passcode = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     var hashbuf: [1024]u8 = undefined;
     var pathbuf: [256]u8 = undefined;
     @memcpy(hashbuf[0..passcode.len], passcode);

@@ -5,15 +5,14 @@ const Parser = @import("../Parser.zig");
 
 const KnotHasher = @import("KnotHasher.zig");
 
-pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
-    const input = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
     var count: usize = 1;
-    for (input) |char| {
+    for (input.text) |char| {
         if (char == ',') count += 1;
     }
     const lengths = try tools.gpa.alloc(usize, count);
     defer tools.gpa.free(lengths);
-    var parser: Parser = .init(input, .{});
+    var parser: Parser = .init(input.text, .{});
     for (0..lengths.len) |i| {
         lengths[i] = try parser.takeInt(usize);
     }
@@ -27,7 +26,7 @@ pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
     ) catch unreachable;
 
     hasher = .init();
-    hasher.hashHex(input, tools.p2buf);
+    hasher.hashHex(input.text, tools.p2buf);
 
     return .{ p1_str, tools.p2buf };
 }

@@ -5,8 +5,9 @@ const Parser = @import("../Parser.zig");
 
 // TODO: Use `modpow`?
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
-    const line = (try tools.input.reader.takeDelimiter('\n')) orelse return error.InvalidInput;
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
+    _ = tools;
+    const line = (try input.reader.takeDelimiter('\n')) orelse return error.InvalidInput;
     var parser: Parser = .init(line, .{});
     try parser.skipMany(15);
     const col = try parser.takeInt(u64);

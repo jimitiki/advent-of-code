@@ -12,10 +12,11 @@ const Instruction = union(Action) {
 };
 const Position = struct { x: usize, y: usize };
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+    _ = tools;
     var lights1: [1000][1000]u8 = .{.{0} ** 1000} ** 1000;
     var lights2: [1000][1000]u8 = .{.{0} ** 1000} ** 1000;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         var parser: Parser = .init(line, .{});
         const action = try parser.takeEnum(Action);
         const inst: Instruction = switch (action) {

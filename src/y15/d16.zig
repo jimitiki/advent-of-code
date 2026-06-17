@@ -9,13 +9,13 @@ const sue_str = "Sue 0: children: 3, cats: 7, samoyeds: 2, pomeranians: 3, akita
 
 // TODO: Maybe "Sue"s should be represented by a struct after all?
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var sue = try parseSue(tools.gpa, sue_str);
     defer sue.deinit(tools.gpa);
     var sue1: ?usize = null;
     var sue2: ?usize = null;
     var i: usize = 1;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| : (i += 1) {
+    while (try input.reader.takeDelimiter('\n')) |line| : (i += 1) {
         var candidate = try parseSue(tools.gpa, line);
         defer candidate.deinit(tools.gpa);
         if (isMatch(sue, candidate, false)) sue1 = i;

@@ -11,10 +11,10 @@ const Ingredient = struct {
     texture: i64,
 };
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
     var ingredients: std.ArrayList(Ingredient) = .empty;
     defer ingredients.deinit(tools.gpa);
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         ingredients.append(tools.gpa, try parseIngredient(line)) catch unreachable;
     }
 

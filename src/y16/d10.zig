@@ -27,7 +27,7 @@ const Inputs = std.AutoHashMapUnmanaged(u16, u16);
 const Outputs = std.AutoHashMapUnmanaged(u16, u16);
 const Bots = std.AutoHashMapUnmanaged(u16, Bot);
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var inputs: Inputs = .empty;
     defer inputs.deinit(tools.gpa);
     var outputs: Outputs = .empty;
@@ -35,7 +35,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var bots: Bots = .empty;
     defer bots.deinit(tools.gpa);
 
-    while (try tools.input.reader.takeDelimiter('\n')) |instruction| {
+    while (try input.reader.takeDelimiter('\n')) |instruction| {
         try parseInstruction(tools.gpa, &inputs, &outputs, &bots, instruction);
     }
     return .{

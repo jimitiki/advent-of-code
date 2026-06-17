@@ -54,12 +54,12 @@ const Combination = struct {
 };
 const ComboMap = std.AutoHashMapUnmanaged(BitSet, std.ArrayList(Combination));
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     const gpa = tools.gpa;
     var min_lights: ?usize = 0;
     var min_jolts: ?usize = 0;
     var line_no: u32 = 1;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| : (line_no += 1) {
+    while (try input.reader.takeDelimiter('\n')) |line| : (line_no += 1) {
         if (line[0] == '#') continue;
         if (line[0] != '[') return error.InvalidInput;
         const light_cnt: usize = for (line[1..], 1..) |c, i| {

@@ -4,9 +4,9 @@ const NodeSet = std.AutoHashMapUnmanaged(usize, void);
 const Parser = @import("../Parser.zig");
 const solver = @import("../solver.zig");
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     const gpa = tools.gpa;
-    const graph = try constructGraph(gpa, tools.input.reader);
+    const graph = try constructGraph(gpa, input.reader);
     defer {
         for (graph) |node_edges| {
             gpa.free(node_edges);

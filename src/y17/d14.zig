@@ -18,8 +18,8 @@ const Disk = struct {
 
 // TODO: Find a more efficient way to store/access specific squares in the grid. (The real bottleneck, however, is the hashing.)
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
-    const key = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
+    const key = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     var message = try tools.gpa.alloc(u8, key.len + 4);
     defer tools.gpa.free(message);
 

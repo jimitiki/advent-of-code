@@ -21,7 +21,7 @@ const Program = struct {
     }
 };
 
-pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
     const gpa = tools.gpa;
     var program_list: std.ArrayList(Program) = .empty;
     defer {
@@ -31,7 +31,7 @@ pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
     var name_lookup: NameTable = .empty;
     defer name_lookup.deinit(gpa);
 
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         var parser: Parser = .init(line, .{});
         const name = try parser.take();
         const weight_str = try parser.take();

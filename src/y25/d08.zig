@@ -27,7 +27,7 @@ const Pair = struct {
     }
 };
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     const gpa = tools.gpa;
     var pairs: std.ArrayList(Pair) = .empty;
     defer pairs.deinit(gpa);
@@ -35,7 +35,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     defer boxes.deinit(gpa);
 
     // Find closest pairs
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         var endx: usize = 0;
         const pos: Pos = for (line, 0..) |c, i| {
             if (c == ',') {

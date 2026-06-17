@@ -4,9 +4,9 @@ const Md5 = std.crypto.hash.Md5;
 const solver = @import("../solver.zig");
 const hashIndex = @import("../hash.zig").hashIndex;
 
-pub fn solve(tools: solver.Tools) solver.Error!struct { ?[]const u8, ?[]const u8 } {
+pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?[]const u8, ?[]const u8 } {
     const stdout = tools.stdout;
-    const seed = tools.input.reader.peekDelimiterExclusive('\n') catch return error.InvalidInput;
+    const seed = input.reader.peekDelimiterExclusive('\n') catch return error.InvalidInput;
     var pw1: []u8 = tools.p1buf[0..8];
     @memset(pw1, '*');
     var pw1_cnt: u4 = 0;

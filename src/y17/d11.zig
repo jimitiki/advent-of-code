@@ -5,12 +5,13 @@ const solver = @import("../solver.zig");
 const Dir = enum { n, ne, nw, s, se, sw };
 const Pos = struct { x: i32, y: i32, z: i32 };
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    _ = tools;
     var x: i32 = 0;
     var y: i32 = 0;
     var dist: u32 = 0;
     var max_dist: u32 = 0;
-    while (try tools.input.reader.takeDelimiter(',')) |step| {
+    while (try input.reader.takeDelimiter(',')) |step| {
         const dir = std.meta.stringToEnum(Dir, stripNewline(step)) orelse break;
         switch (dir) {
             .n => y -= 1,

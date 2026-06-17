@@ -26,7 +26,7 @@ const Operation = union(Action) {
     },
 };
 
-pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
     const pw = tools.p1buf[0..8];
     @memcpy(pw, "abcdefgh");
 
@@ -35,7 +35,7 @@ pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
 
     var operations: std.ArrayList(Operation) = .empty;
     defer operations.deinit(tools.gpa);
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         try operations.append(tools.gpa, try parseOperation(line));
     }
     runOperations(pw, operations.items);

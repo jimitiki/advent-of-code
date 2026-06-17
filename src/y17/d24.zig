@@ -8,7 +8,7 @@ const ComponentTable = std.AutoHashMapUnmanaged(u8, std.ArrayList(Component));
 
 // TODO: Optimize
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     const gpa = tools.gpa;
     var components: ComponentTable = .empty;
     defer {
@@ -18,7 +18,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     }
 
     var component_count: u8 = 0;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| : (component_count += 1) {
+    while (try input.reader.takeDelimiter('\n')) |line| : (component_count += 1) {
         for (line, 0..) |char, i| {
             if (char == '/') {
                 const component: Component = .{

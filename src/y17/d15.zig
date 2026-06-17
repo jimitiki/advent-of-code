@@ -4,9 +4,10 @@ const solver = @import("../solver.zig");
 const Parser = @import("../Parser.zig");
 const t = @import("../test.zig");
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
-    const astart = try parseInput(tools.input.reader);
-    const bstart = try parseInput(tools.input.reader);
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
+    _ = tools;
+    const astart = try parseInput(input.reader);
+    const bstart = try parseInput(input.reader);
 
     var a = astart;
     var b = bstart;

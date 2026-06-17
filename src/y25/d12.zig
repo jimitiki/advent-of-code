@@ -4,7 +4,7 @@ const solver = @import("../solver.zig");
 
 const Shape = std.bit_set.IntegerBitSet(9);
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var valid: usize = 0;
     var invalid: usize = 0;
     var unknown: usize = 0;
@@ -13,7 +13,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var shapes: std.ArrayList(Shape) = .empty;
     defer shapes.deinit(tools.gpa);
     var shape: Shape = undefined;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         if (shape_mode and line.len > 2 and line[2] == 'x') {
             shape_mode = false;
         }

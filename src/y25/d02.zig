@@ -5,12 +5,12 @@ const AutoArrayHashMap = std.array_hash_map.Auto;
 
 const solver = @import("../solver.zig");
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     var answer1: u64 = 0;
     var answer2: u64 = 0;
     var invalid_ids: AutoArrayHashMap(u64, void) = .empty;
     defer invalid_ids.deinit(tools.gpa);
-    while (try tools.input.reader.takeDelimiter(',')) |range| {
+    while (try input.reader.takeDelimiter(',')) |range| {
         var lengths: AutoArrayHashMap(usize, void) = .empty;
         defer lengths.deinit(tools.gpa);
         const split_point = find(range, '-') orelse return error.InvalidInput;

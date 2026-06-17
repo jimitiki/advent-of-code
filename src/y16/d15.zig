@@ -14,10 +14,10 @@ const Disc = struct {
 
 // TODO: Optimize further. Chinese Remainder Theorem?
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var discs: std.ArrayList(Disc) = .empty;
     defer discs.deinit(tools.gpa);
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         try discs.append(tools.gpa, try parseDisc(line));
     }
     const p1 = calculateTime(discs.items);

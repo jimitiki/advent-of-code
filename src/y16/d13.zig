@@ -22,8 +22,8 @@ fn PosMap(comptime V: type) type {
     return std.AutoHashMapUnmanaged(Pos, V);
 }
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
-    const s = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+    const s = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     const seed = std.fmt.parseInt(usize, s, 10) catch return error.InvalidInput;
 
     var path: std.ArrayList(Pos) = .empty;

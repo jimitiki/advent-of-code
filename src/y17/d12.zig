@@ -7,12 +7,12 @@ const Group = std.AutoHashMapUnmanaged(u16, void);
 
 // TODO: Improve the efficiency of the algorithm
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     const gpa = tools.gpa;
     var link_list: std.ArrayList(struct { u16, u16 }) = .empty;
     defer link_list.deinit(gpa);
 
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         var parser: Parser = .init(line, .{});
         const pid = try parser.takeInt(u16);
         try parser.skip();

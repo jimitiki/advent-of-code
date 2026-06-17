@@ -13,11 +13,11 @@ const Range = struct {
 };
 const RangeList = std.ArrayList(Range);
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
     var ranges: RangeList = .empty;
     defer ranges.deinit(gpa);
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         for (line, 0..) |char, i| {
             if (char == '-') {
                 // std.debug.print("{s} -> {s} / {s}\n", .{line, line[0]})

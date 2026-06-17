@@ -48,14 +48,14 @@ const Dir = enum {
     }
 };
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
     var initial: std.ArrayList(Pos) = .empty;
     defer initial.deinit(gpa);
 
     var y: u16 = 0;
     var start: Pos = .{ undefined, undefined };
-    while (try tools.input.reader.takeDelimiter('\n')) |line| : (y += 1) {
+    while (try input.reader.takeDelimiter('\n')) |line| : (y += 1) {
         if (y == 0) {
             start[0] = @intCast(@divExact(line.len - 1, 2));
         }

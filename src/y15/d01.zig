@@ -1,12 +1,13 @@
 const std = @import("std");
 const solver = @import("../solver.zig");
 
-fn solveInt(tools: solver.Tools) error{InvalidInput}!struct { ?i32, ?i32 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) error{InvalidInput}!struct { ?i32, ?i32 } {
+    _ = tools;
     var floor: i32 = 0;
     var pos: i32 = 1;
     var answer: ?i32 = null;
     while (true) : (pos += 1) {
-        const c = tools.input.reader.takeByte() catch break;
+        const c = input.reader.takeByte() catch break;
         switch (c) {
             '(' => floor += 1,
             ')' => floor -= 1,

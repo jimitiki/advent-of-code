@@ -55,16 +55,19 @@ test "test all" {
 }
 
 pub fn expectSolution(
-    comptime solveFn: fn (solver.Tools) solver.Error!solver.Result,
+    comptime solveFn: fn (solver.Input, solver.Tools) solver.Error!solver.Result,
     expected: solver.Result,
-    input: []const u8,
+    text: []const u8,
 ) !void {
     var buf: [128]u8 = undefined;
-    var reader = std.Io.Reader.fixed(input);
+    var reader = std.Io.Reader.fixed(text);
     var writer = std.Io.Writer.fixed(buf[0..64]);
     const actual = try solveFn(.{
+        .parser = .init(text, .{}),
+        .reader = &reader,
+        .text = text,
+    }, .{
         .gpa = std.testing.allocator,
-        .input = .{ .parser = .init(input, .{}), .reader = &reader, .text = input },
         .stdout = &writer,
         .p1buf = buf[64..96],
         .p2buf = buf[96..],
@@ -74,16 +77,19 @@ pub fn expectSolution(
 
 pub fn expectIntSolution(
     comptime T: type,
-    comptime solveFn: fn (solver.Tools) solver.Error!struct { ?T, ?T },
+    comptime solveFn: fn (solver.Input, solver.Tools) solver.Error!struct { ?T, ?T },
     expected: struct { ?T, ?T },
-    input: []const u8,
+    text: []const u8,
 ) !void {
     var buf: [128]u8 = undefined;
-    var reader = std.Io.Reader.fixed(input);
+    var reader = std.Io.Reader.fixed(text);
     var writer = std.Io.Writer.fixed(buf[0..64]);
     const actual = try solveFn(.{
+        .parser = .init(text, .{}),
+        .reader = &reader,
+        .text = text,
+    }, .{
         .gpa = std.testing.allocator,
-        .input = .{ .parser = .init(input, .{}), .reader = &reader, .text = input },
         .stdout = &writer,
         .p1buf = buf[64..96],
         .p2buf = buf[96..],

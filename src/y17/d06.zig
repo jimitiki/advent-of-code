@@ -3,12 +3,12 @@ const std = @import("std");
 const solver = @import("../solver.zig");
 const Parser = @import("../Parser.zig");
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
     var bank_list: std.ArrayList(u8) = .empty;
     defer bank_list.deinit(gpa);
 
-    try parseBanks(gpa, &bank_list, tools.input.reader);
+    try parseBanks(gpa, &bank_list, input.reader);
     return try cycle(gpa, bank_list.items);
 }
 

@@ -39,14 +39,14 @@ const Direction = enum(u2) {
 };
 const Position = struct { x: i32, y: i32 };
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var visited: std.AutoHashMapUnmanaged(Position, void) = .empty;
     defer visited.deinit(tools.gpa);
 
     var direction: Direction = .n;
     var position: Position = .{ .x = 0, .y = 0 };
     var first_revisited: ?Position = null;
-    while (try tools.input.reader.takeDelimiter(',')) |step| {
+    while (try input.reader.takeDelimiter(',')) |step| {
         const move = try parseMove(step);
         direction = direction.turn(move.turn);
         for (0..move.amount) |_| {

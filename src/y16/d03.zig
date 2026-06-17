@@ -3,14 +3,15 @@ const std = @import("std");
 const solver = @import("../solver.zig");
 const Parser = @import("../Parser.zig");
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    _ = tools;
     var t1 = [_]u32{ 0, 0, 0 };
     var t2 = [_]u32{ 0, 0, 0 };
     var t3 = [_]u32{ 0, 0, 0 };
     var count_h: u32 = 0;
     var count_v: u32 = 0;
     var i: u2 = 0;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| : (i = (i + 1) % 3) {
+    while (try input.reader.takeDelimiter('\n')) |line| : (i = (i + 1) % 3) {
         const triangle = try parseTriangle(line);
         if (validateTriangle(triangle)) {
             count_h += 1;

@@ -4,11 +4,11 @@ const solver = @import("../solver.zig");
 
 // TODO: Potentially represent containers with a bitset
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var containers: std.ArrayList(u32) = .empty;
     defer containers.deinit(tools.gpa);
 
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         const capacity = std.fmt.parseUnsigned(u32, line, 10) catch return error.InvalidInput;
         containers.append(tools.gpa, capacity) catch unreachable;
     }

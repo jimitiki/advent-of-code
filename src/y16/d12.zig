@@ -3,9 +3,9 @@ const std = @import("std");
 const solver = @import("../solver.zig");
 const Interpreter = @import("asm.zig").Interpreter;
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
     var interpreter: Interpreter = .init(null);
-    const text = tools.input.reader.peekGreedy(1) catch unreachable;
+    const text = input.reader.peekGreedy(1) catch unreachable;
     try interpreter.load(tools.gpa, text);
     defer interpreter.unload(tools.gpa);
     interpreter.execute();

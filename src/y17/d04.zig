@@ -5,13 +5,13 @@ const Parser = @import("../Parser.zig");
 
 const WordSet = std.StringHashMapUnmanaged(void);
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     var wordset: WordSet = .empty;
     defer wordset.deinit(tools.gpa);
 
     var no_repeats: u16 = 0;
     var no_anagrams: u16 = 0;
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         if (!try hasRepeat(tools.gpa, &wordset, line)) {
             no_repeats += 1;
         }

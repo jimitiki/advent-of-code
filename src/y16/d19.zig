@@ -2,8 +2,9 @@ const std = @import("std");
 
 const solver = @import("../solver.zig");
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    const elf_count = std.fmt.parseUnsigned(u32, try tools.input.takeOneLine(), 10) catch return error.InvalidInput;
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    _ = tools;
+    const elf_count = std.fmt.parseUnsigned(u32, try input.takeOneLine(), 10) catch return error.InvalidInput;
     return .{ takeLeft(elf_count), takeAcross(elf_count) };
 }
 

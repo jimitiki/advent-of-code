@@ -8,7 +8,7 @@ const PathCache = std.AutoArrayHashMapUnmanaged(u32, struct { usize, u2 });
 const dac = convertDevName("dac");
 const fft = convertDevName("fft");
 
-fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     const gpa = tools.gpa;
     var devices: DevMap = .empty;
     defer {
@@ -16,7 +16,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
         while (it.next()) |d| d.deinit(gpa);
         devices.deinit(gpa);
     }
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         var outputs: std.ArrayList(u32) = .empty;
         for (line[5..], 5..) |c, i| {
             if (c == ' ') {

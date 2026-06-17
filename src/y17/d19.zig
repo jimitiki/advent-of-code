@@ -6,14 +6,14 @@ const t = @import("../test.zig");
 const Dir = enum { d, l, r, u };
 const Pos = struct { x: usize, y: usize };
 
-pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
     const gpa = tools.gpa;
     var line_list: std.ArrayList([]const u8) = .empty;
     defer {
         for (line_list.items) |line| gpa.free(line);
         line_list.deinit(gpa);
     }
-    while (try tools.input.reader.takeDelimiter('\n')) |line| {
+    while (try input.reader.takeDelimiter('\n')) |line| {
         const l = try gpa.alloc(u8, line.len);
         @memcpy(l, line);
         try line_list.append(gpa, l);

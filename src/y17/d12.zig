@@ -12,7 +12,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usi
     var link_list: std.ArrayList(struct { u16, u16 }) = .empty;
     defer link_list.deinit(gpa);
 
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         var parser: Parser = .init(line, .{});
         const pid = try parser.takeInt(u16);
         try parser.skip();

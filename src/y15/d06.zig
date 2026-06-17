@@ -16,7 +16,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usi
     _ = tools;
     var lights1: [1000][1000]u8 = .{.{0} ** 1000} ** 1000;
     var lights2: [1000][1000]u8 = .{.{0} ** 1000} ** 1000;
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         var parser: Parser = .init(line, .{});
         const action = try parser.takeEnum(Action);
         const inst: Instruction = switch (action) {

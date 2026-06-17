@@ -11,7 +11,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64
     var weights: std.ArrayList(u64) = .empty;
     defer weights.deinit(tools.gpa);
     var total_weight: u64 = 0;
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         const weight = std.fmt.parseUnsigned(u64, line, 10) catch return error.InvalidInput;
         total_weight += weight;
         weights.append(tools.gpa, weight) catch unreachable;

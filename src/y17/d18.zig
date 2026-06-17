@@ -112,7 +112,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i64
     var instruction_list: std.ArrayList(Instruction) = .empty;
     defer instruction_list.deinit(tools.gpa);
 
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         try instruction_list.append(tools.gpa, try parseInstruction(line));
     }
 

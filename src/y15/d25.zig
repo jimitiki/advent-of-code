@@ -7,8 +7,7 @@ const Parser = @import("../Parser.zig");
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     _ = tools;
-    const line = (try input.reader.takeDelimiter('\n')) orelse return error.InvalidInput;
-    var parser: Parser = .init(line, .{});
+    var parser = input.parser(.{});
     try parser.skipMany(15);
     const col = try parser.takeInt(u64);
     try parser.skip();

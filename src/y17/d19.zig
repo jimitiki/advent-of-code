@@ -13,7 +13,8 @@ pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[
         for (line_list.items) |line| gpa.free(line);
         line_list.deinit(gpa);
     }
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         const l = try gpa.alloc(u8, line.len);
         @memcpy(l, line);
         try line_list.append(gpa, l);

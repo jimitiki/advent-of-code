@@ -4,7 +4,8 @@ const solver = @import("../solver.zig");
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     _ = tools;
-    return try analyzeStream(input.reader);
+    var reader = input.reader();
+    return try analyzeStream(&reader);
 }
 
 fn analyzeStream(reader: *std.Io.Reader) error{ReadFailed}!struct { u16, u16 } {

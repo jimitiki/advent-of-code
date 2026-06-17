@@ -35,7 +35,8 @@ pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[
 
     var operations: std.ArrayList(Operation) = .empty;
     defer operations.deinit(tools.gpa);
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         try operations.append(tools.gpa, try parseOperation(line));
     }
     runOperations(pw, operations.items);

@@ -22,7 +22,8 @@ const Reindeer = struct {
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var reindeer: std.ArrayList(Reindeer) = .empty;
     defer reindeer.deinit(tools.gpa);
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         var parser: Parser = .init(line, .{});
         try parser.skipMany(3);
         const speed = try parser.takeInt(u32);

@@ -25,9 +25,8 @@ const SignalChecker = struct {
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
     var interpreter: Interpreter = .init(SignalChecker.checkSignal);
     defer interpreter.unload(tools.gpa);
-    const text = input.reader.peekGreedy(1) catch unreachable;
     const p1: ?i64 = for (0..std.math.maxInt(i64)) |i| {
-        try interpreter.load(tools.gpa, text);
+        try interpreter.load(tools.gpa, input.text);
         interpreter.setRegister(.a, @intCast(i));
         interpreter.executeUntil(9);
         while (interpreter.pc != 8 and SignalChecker.ok) interpreter.step();

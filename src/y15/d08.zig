@@ -5,7 +5,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usi
     _ = tools;
     var answer1: usize = 0;
     var answer2: usize = 0;
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         answer1 += line.len - try decodedChars(line);
         answer2 += encodedChars(line) - line.len;
     }

@@ -12,7 +12,8 @@ const Tile = struct { u64, u64 };
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     var tiles: std.ArrayList(Tile) = .empty;
     defer tiles.deinit(tools.gpa);
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         for (line, 0..) |c, i| {
             if (c == ',') {
                 try tiles.append(tools.gpa, .{

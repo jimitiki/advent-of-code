@@ -14,7 +14,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i64
         for (rows.items) |*row| row.deinit(gpa);
         rows.deinit(gpa);
     }
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         if (width == 0) {
             width = line.len;
             try rows.append(gpa, try .initEmpty(gpa, width));

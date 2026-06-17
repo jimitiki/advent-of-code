@@ -4,7 +4,8 @@ const solver = @import("../solver.zig");
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     _ = tools;
-    const elf_count = std.fmt.parseUnsigned(u32, try input.takeOneLine(), 10) catch return error.InvalidInput;
+    var parser = input.parser(.{});
+    const elf_count = try parser.takeInt(u32);
     return .{ takeLeft(elf_count), takeAcross(elf_count) };
 }
 

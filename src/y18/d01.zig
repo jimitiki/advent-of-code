@@ -8,7 +8,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i32
     defer change_list.deinit(tools.gpa);
 
     var frequency: i32 = 0;
-    while (try input.parser.parseInt(i32)) |n| {
+    var parser = input.parser(.{});
+    while (try parser.parseInt(i32)) |n| {
         try change_list.append(tools.gpa, n);
         frequency += n;
     }

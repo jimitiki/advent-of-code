@@ -4,7 +4,8 @@ const solver = @import("../solver.zig");
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     _ = tools;
-    const len_v1, const len_v2 = try computeDecompressedLength(input.reader, std.math.maxInt(usize));
+    var reader = input.reader();
+    const len_v1, const len_v2 = try computeDecompressedLength(&reader, std.math.maxInt(usize));
     return .{ len_v1, len_v2 };
 }
 

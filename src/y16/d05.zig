@@ -6,7 +6,8 @@ const hashIndex = @import("../hash.zig").hashIndex;
 
 pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!struct { ?[]const u8, ?[]const u8 } {
     const stdout = tools.stdout;
-    const seed = input.reader.peekDelimiterExclusive('\n') catch return error.InvalidInput;
+    var parser = input.parser(.{});
+    const seed = try parser.take();
     var pw1: []u8 = p1buf[0..8];
     @memset(pw1, '*');
     var pw1_cnt: u4 = 0;

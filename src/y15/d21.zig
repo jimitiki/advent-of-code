@@ -64,10 +64,11 @@ const Fighter = struct {
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     _ = tools;
+    var reader = input.reader();
     const boss: Fighter = .{
-        .hp = try parseBossStat(try input.reader.takeDelimiter('\n') orelse return error.InvalidInput),
-        .damage = try parseBossStat(try input.reader.takeDelimiter('\n') orelse return error.InvalidInput),
-        .armor = try parseBossStat(try input.reader.takeDelimiter('\n') orelse return error.InvalidInput),
+        .hp = try parseBossStat(try reader.takeDelimiter('\n') orelse return error.InvalidInput),
+        .damage = try parseBossStat(try reader.takeDelimiter('\n') orelse return error.InvalidInput),
+        .armor = try parseBossStat(try reader.takeDelimiter('\n') orelse return error.InvalidInput),
     };
 
     return .{ minCost(boss), maxCost(boss) };

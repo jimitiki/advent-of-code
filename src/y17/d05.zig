@@ -5,7 +5,8 @@ const solver = @import("../solver.zig");
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var offsets: std.ArrayList(i16) = .empty;
     defer offsets.deinit(tools.gpa);
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         try offsets.append(tools.gpa, std.fmt.parseInt(i16, line, 10) catch return error.InvalidInput);
     }
     const copy = try tools.gpa.alloc(i16, offsets.items.len);

@@ -74,11 +74,12 @@ const Tape = struct {
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
-    const start, const step_count, var states = try parseInput(gpa, input.reader);
+    var reader = input.reader();
+    const start, const step_count, var states = try parseInput(gpa, &reader);
     defer states.deinit(gpa);
 
     var i: u32 = 0;
-    while (try input.reader.takeDelimiter('\n')) |line| : (i += 1) {
+    while (try reader.takeDelimiter('\n')) |line| : (i += 1) {
         if (line.len == 0) continue;
         var parser: Parser = .init(line, .{});
         try parser.skipMany(3);

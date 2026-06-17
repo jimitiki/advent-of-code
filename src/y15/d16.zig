@@ -15,7 +15,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usi
     var sue1: ?usize = null;
     var sue2: ?usize = null;
     var i: usize = 1;
-    while (try input.reader.takeDelimiter('\n')) |line| : (i += 1) {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| : (i += 1) {
         var candidate = try parseSue(tools.gpa, line);
         defer candidate.deinit(tools.gpa);
         if (isMatch(sue, candidate, false)) sue1 = i;

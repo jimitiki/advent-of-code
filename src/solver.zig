@@ -6,12 +6,14 @@ pub const Result = struct { ?[]const u8, ?[]const u8 };
 pub const Error = Parser.Error || error{ InvalidInput, OutOfMemory, ReadFailed, StreamTooLong, WriteFailed };
 
 pub const Input = struct {
-    reader: *std.Io.Reader,
     text: []const u8,
-    parser: *Parser,
 
-    pub fn takeOneLine(self: Input) error{ InvalidInput, ReadFailed, StreamTooLong }![]const u8 {
-        return try self.reader.takeDelimiter('\n') orelse error.InvalidInput;
+    pub fn reader(self: Input) std.Io.Reader {
+        return std.Io.Reader.fixed(self.text);
+    }
+
+    pub fn parser(self: Input, options: Parser.Options) Parser {
+        return .init(self.text, options);
     }
 };
 

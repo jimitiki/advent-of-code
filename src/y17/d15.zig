@@ -6,8 +6,9 @@ const testing = @import("../testing.zig");
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     _ = tools;
-    const astart = try parseInput(input.reader);
-    const bstart = try parseInput(input.reader);
+    var reader = input.reader();
+    const astart = try parseInput(&reader);
+    const bstart = try parseInput(&reader);
 
     var a = astart;
     var b = bstart;

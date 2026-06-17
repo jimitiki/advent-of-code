@@ -13,7 +13,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usi
     var shapes: std.ArrayList(Shape) = .empty;
     defer shapes.deinit(tools.gpa);
     var shape: Shape = undefined;
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         if (shape_mode and line.len > 2 and line[2] == 'x') {
             shape_mode = false;
         }

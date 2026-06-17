@@ -6,7 +6,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
     var answer1: u32 = 0;
     var answer2: u32 = 0;
 
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         if (evaluateP1(line)) answer1 += 1;
         if (evaluateP2(line)) answer2 += 1;
     }

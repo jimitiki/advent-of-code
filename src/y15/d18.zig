@@ -10,7 +10,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usi
     _ = tools;
     var grid = [_]Row{.empty} ** 102;
     var i: usize = 1;
-    while (try input.reader.takeDelimiter('\n')) |line| : (i += 1) {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| : (i += 1) {
         grid[i] = parseRow(line);
     }
     return .{ run(grid, false), run(grid, true) };

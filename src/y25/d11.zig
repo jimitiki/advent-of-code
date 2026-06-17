@@ -16,7 +16,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usi
         while (it.next()) |d| d.deinit(gpa);
         devices.deinit(gpa);
     }
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         var outputs: std.ArrayList(u32) = .empty;
         for (line[5..], 5..) |c, i| {
             if (c == ' ') {

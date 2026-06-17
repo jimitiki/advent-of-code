@@ -27,11 +27,12 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16
     var nodes: std.ArrayList(Node) = .empty;
     defer nodes.deinit(tools.gpa);
 
-    _ = input.reader.discardDelimiterInclusive('\n') catch return error.InvalidInput;
-    _ = input.reader.discardDelimiterInclusive('\n') catch return error.InvalidInput;
+    var reader = input.reader();
+    _ = reader.discardDelimiterInclusive('\n') catch return error.InvalidInput;
+    _ = reader.discardDelimiterInclusive('\n') catch return error.InvalidInput;
     var height: u16 = 0;
     var line_no: u16 = 0;
-    while (try input.reader.takeDelimiter('\n')) |line| : (line_no += 1) {
+    while (try reader.takeDelimiter('\n')) |line| : (line_no += 1) {
         if (height == 0 and line[16] == '1') height = line_no;
         try nodes.append(tools.gpa, try parseNode(line));
     }

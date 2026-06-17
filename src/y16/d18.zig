@@ -4,7 +4,8 @@ const BitSet = std.DynamicBitSetUnmanaged;
 const solver = @import("../solver.zig");
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
-    const first_row = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+    var parser = input.parser(.{ .skip_punctuation = false });
+    const first_row = try parser.take();
     var p1start: BitSet = try .initEmpty(tools.gpa, first_row.len);
     defer p1start.deinit(tools.gpa);
     for (first_row, 0..) |char, i| {

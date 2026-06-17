@@ -8,7 +8,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
     var containers: std.ArrayList(u32) = .empty;
     defer containers.deinit(tools.gpa);
 
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         const capacity = std.fmt.parseUnsigned(u32, line, 10) catch return error.InvalidInput;
         containers.append(tools.gpa, capacity) catch unreachable;
     }

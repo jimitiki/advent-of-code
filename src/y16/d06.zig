@@ -5,7 +5,8 @@ const Counter = @import("../counter.zig").Counter(u8);
 
 pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!struct { ?[]const u8, ?[]const u8 } {
     const gpa = tools.gpa;
-    const first_code = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+    var reader = input.reader();
+    const first_code = try reader.takeDelimiter('\n') orelse return error.InvalidInput;
     const code_len = first_code.len;
     const counters = try gpa.alloc(Counter, code_len);
     defer {
@@ -19,7 +20,7 @@ pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[
         try counter.map.ensureTotalCapacity(gpa, 26);
         _ = try counter.add(gpa, char);
     }
-    while (try input.reader.takeDelimiter('\n')) |code| {
+    while (try reader.takeDelimiter('\n')) |code| {
         if (code.len != code_len) {
             return error.InvalidInput;
         }

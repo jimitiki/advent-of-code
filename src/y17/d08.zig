@@ -41,7 +41,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i32
     defer registers.deinit(tools.gpa);
 
     var max_during: i32 = 0;
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         var parser: Parser = .init(line, .{});
         const target = try parser.take();
         const op = try parser.takeEnum(Op);

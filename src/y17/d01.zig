@@ -4,7 +4,8 @@ const solver = @import("../solver.zig");
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     _ = tools;
-    const digits = input.reader.takeDelimiterExclusive('\n') catch return error.InvalidInput;
+    var parser = input.parser(.{});
+    const digits = try parser.take();
     return .{ sumAdjacent(digits), sumOpposite(digits) };
 }
 

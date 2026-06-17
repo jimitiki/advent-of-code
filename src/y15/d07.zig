@@ -165,7 +165,8 @@ const Circuit = struct {
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     var gates: std.ArrayList(Gate) = .empty;
     defer gates.deinit(tools.gpa);
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         gates.append(tools.gpa, try parseGate(line)) catch unreachable;
     }
     var circuit1: Circuit = .init(tools.gpa, gates.items);

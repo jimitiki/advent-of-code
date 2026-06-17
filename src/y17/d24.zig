@@ -18,7 +18,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16
     }
 
     var component_count: u8 = 0;
-    while (try input.reader.takeDelimiter('\n')) |line| : (component_count += 1) {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| : (component_count += 1) {
         for (line, 0..) |char, i| {
             if (char == '/') {
                 const component: Component = .{

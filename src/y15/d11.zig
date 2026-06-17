@@ -2,7 +2,8 @@ const std = @import("std");
 const solver = @import("../solver.zig");
 
 pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
-    const old = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+    var parser = input.parser(.{});
+    const old = try parser.take();
     const pw: []u8 = tools.gpa.alloc(u8, old.len) catch unreachable;
     @memcpy(pw, old);
     defer tools.gpa.free(pw);

@@ -44,7 +44,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
     var sum_valid: u32 = 0;
     var obj_storage_sector: ?u32 = null;
     var buf: [64]u8 = undefined;
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         const room = try Room.parse(line);
         if (!try room.validate(tools.gpa)) {
             continue;

@@ -11,7 +11,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
     var count_h: u32 = 0;
     var count_v: u32 = 0;
     var i: u2 = 0;
-    while (try input.reader.takeDelimiter('\n')) |line| : (i = (i + 1) % 3) {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| : (i = (i + 1) % 3) {
         const triangle = try parseTriangle(line);
         if (validateTriangle(triangle)) {
             count_h += 1;

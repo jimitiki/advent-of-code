@@ -30,7 +30,8 @@ const Spinlock = struct {
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     _ = tools;
-    const step = std.fmt.parseInt(u64, input.text, 10) catch return error.InvalidInput;
+    var parser = input.parser(.{});
+    const step = try parser.takeInt(u64);
     var buf: [2018]u64 = undefined;
     var spinlock: Spinlock = .init(&buf, step);
 

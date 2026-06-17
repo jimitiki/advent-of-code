@@ -35,7 +35,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
     var bots: Bots = .empty;
     defer bots.deinit(tools.gpa);
 
-    while (try input.reader.takeDelimiter('\n')) |instruction| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |instruction| {
         try parseInstruction(tools.gpa, &inputs, &outputs, &bots, instruction);
     }
     return .{

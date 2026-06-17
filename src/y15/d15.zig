@@ -14,7 +14,8 @@ const Ingredient = struct {
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
     var ingredients: std.ArrayList(Ingredient) = .empty;
     defer ingredients.deinit(tools.gpa);
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         ingredients.append(tools.gpa, try parseIngredient(line)) catch unreachable;
     }
 

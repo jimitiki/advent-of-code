@@ -4,7 +4,8 @@ const solver = @import("../solver.zig");
 // TODO: Use "elements": https://en.wikipedia.org/wiki/Look-and-say_sequence#Cosmological_decay
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    const seed = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+    var parser = input.parser(.{});
+    const seed = try parser.take();
     var buf_cur: []u8 = tools.gpa.alloc(u8, seed.len) catch unreachable;
     defer tools.gpa.free(buf_cur);
     for (seed, 0..) |char, i| {

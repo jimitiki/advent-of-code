@@ -8,7 +8,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
     var bank_list: std.ArrayList(u8) = .empty;
     defer bank_list.deinit(gpa);
 
-    try parseBanks(gpa, &bank_list, input.reader);
+    var reader = input.reader();
+    try parseBanks(gpa, &bank_list, &reader);
     return try cycle(gpa, bank_list.items);
 }
 

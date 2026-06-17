@@ -23,8 +23,8 @@ fn PosMap(comptime V: type) type {
 }
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
-    const s = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
-    const seed = std.fmt.parseInt(usize, s, 10) catch return error.InvalidInput;
+    var parser = input.parser(.{});
+    const seed = try parser.takeInt(usize);
 
     var path: std.ArrayList(Pos) = .empty;
     defer path.deinit(tools.gpa);

@@ -65,14 +65,8 @@ pub fn expectSolution(
 ) !void {
     var buf: [128]u8 = undefined;
     var writer = std.Io.Writer.fixed(buf[0..64]);
-    var reader = std.Io.Reader.fixed(text);
-    var parser: Parser = .init(text, .{});
     const actual = try solveFn(
-        .{
-            .parser = &parser,
-            .reader = &reader,
-            .text = text,
-        },
+        .{ .text = text },
         .{
             .gpa = std.testing.allocator,
             .stdout = &writer,
@@ -91,14 +85,8 @@ pub fn expectIntSolution(
 ) !void {
     var buf: [64]u8 = undefined;
     var writer = std.Io.Writer.fixed(&buf);
-    var reader = std.Io.Reader.fixed(text);
-    var parser: Parser = .init(text, .{});
     const actual = try solveFn(
-        .{
-            .parser = &parser,
-            .reader = &reader,
-            .text = text,
-        },
+        .{ .text = text },
         .{
             .gpa = std.testing.allocator,
             .stdout = &writer,

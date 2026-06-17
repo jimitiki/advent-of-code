@@ -31,7 +31,8 @@ pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[
     var name_lookup: NameTable = .empty;
     defer name_lookup.deinit(gpa);
 
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         var parser: Parser = .init(line, .{});
         const name = try parser.take();
         const weight_str = try parser.take();

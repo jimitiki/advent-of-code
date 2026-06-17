@@ -35,7 +35,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usi
     defer boxes.deinit(gpa);
 
     // Find closest pairs
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         var endx: usize = 0;
         const pos: Pos = for (line, 0..) |c, i| {
             if (c == ',') {

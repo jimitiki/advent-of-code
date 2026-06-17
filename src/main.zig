@@ -25,11 +25,8 @@ pub fn main(init: std.process.Init) !void {
         "{s}/y{}/d{:0>2}.txt",
         .{ args[1], year, day },
     ) catch unreachable;
-    std.debug.print("{s}\n", .{input_path});
     const text = try std.Io.Dir.cwd().readFileAlloc(init.io, input_path, allocator, .unlimited);
-    var reader = std.Io.Reader.fixed(text);
-    var parser: Parser = .init(text, .{});
-    const input: solver.Input = .{ .parser = &parser, .reader = &reader, .text = text };
+    const input: solver.Input = .{ .text = text };
     var answer_buf: [64]u8 = undefined;
     const tools: solver.Tools = .{ .gpa = gpa, .stdout = writer };
     const solution = solutions.get(year, day) catch std.debug.panic("Invalid year and/or day ({}, {})", .{ year, day });

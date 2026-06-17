@@ -21,7 +21,8 @@ const Dir = enum {
 };
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    const n = std.fmt.parseUnsigned(u32, input.text, 10) catch return error.InvalidInput;
+    var parser = input.parser(.{});
+    const n = try parser.takeInt(u32);
 
     return .{ distance(n), try findLarger(tools.gpa, n) };
 }

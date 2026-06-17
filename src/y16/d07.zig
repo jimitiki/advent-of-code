@@ -51,7 +51,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
     _ = tools;
     var sum_tls: u32 = 0;
     var sum_ssl: u32 = 0;
-    while (try input.reader.takeDelimiter('\n')) |ip| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |ip| {
         if (supportsTLS(ip) catch return error.InvalidInput) {
             sum_tls += 1;
         }

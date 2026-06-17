@@ -5,7 +5,8 @@ const solver = @import("../solver.zig");
 // TODO: Is there a way to avoid generating data to fill the whole disk?
 
 pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
-    const str = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+    var parser = input.parser(.{});
+    const str = try parser.take();
     var max_size = str.len;
     while (max_size < 35651584) : (max_size = max_size * 2 + 1) {}
     const buf = try tools.gpa.alloc(u8, max_size);

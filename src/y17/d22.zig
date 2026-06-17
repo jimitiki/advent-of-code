@@ -55,7 +55,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
 
     var y: u16 = 0;
     var start: Pos = .{ undefined, undefined };
-    while (try input.reader.takeDelimiter('\n')) |line| : (y += 1) {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| : (y += 1) {
         if (y == 0) {
             start[0] = @intCast(@divExact(line.len - 1, 2));
         }

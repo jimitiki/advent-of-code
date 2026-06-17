@@ -14,7 +14,8 @@ const Operation = union(enum) {
 pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     _ = p2buf;
     var screen = [_]u50{0} ** 6;
-    while (try input.reader.takeDelimiter('\n')) |instruction| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |instruction| {
         try execute(u50, &screen, tools.gpa, instruction);
     }
 

@@ -5,7 +5,8 @@ const solver = @import("../solver.zig");
 
 pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     _ = tools;
-    const passcode = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+    var parser = input.parser(.{});
+    const passcode = try parser.take();
     var hashbuf: [1024]u8 = undefined;
     var pathbuf: [256]u8 = undefined;
     @memcpy(hashbuf[0..passcode.len], passcode);

@@ -59,7 +59,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usi
     var min_lights: ?usize = 0;
     var min_jolts: ?usize = 0;
     var line_no: u32 = 1;
-    while (try input.reader.takeDelimiter('\n')) |line| : (line_no += 1) {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| : (line_no += 1) {
         if (line[0] == '#') continue;
         if (line[0] != '[') return error.InvalidInput;
         const light_cnt: usize = for (line[1..], 1..) |c, i| {

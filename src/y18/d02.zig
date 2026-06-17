@@ -10,7 +10,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16
     var count_two: u16 = 0;
     var count_three: u16 = 0;
     var counts: [26]u8 = undefined;
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         @memset(&counts, 0);
         for (line) |char| {
             counts[char - 97] += 1;

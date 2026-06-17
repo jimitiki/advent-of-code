@@ -11,7 +11,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
     var y: i32 = 0;
     var dist: u32 = 0;
     var max_dist: u32 = 0;
-    while (try input.reader.takeDelimiter(',')) |step| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter(',')) |step| {
         const dir = std.meta.stringToEnum(Dir, stripNewline(step)) orelse break;
         switch (dir) {
             .n => y -= 1,

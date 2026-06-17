@@ -26,7 +26,8 @@ pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[
     var col_p1: u2 = 1;
     var row_p2: u3 = 2;
     var col_p2: u3 = 0;
-    while (try input.reader.takeDelimiter('\n')) |line| {
+    var reader = input.reader();
+    while (try reader.takeDelimiter('\n')) |line| {
         for (line) |char| {
             switch (char) {
                 'U' => {

@@ -20,6 +20,10 @@ pub const Input = struct {
             self.index = end + 1;
             return self.buf[start..end];
         }
+
+        pub fn reset(self: *LineIterator) void {
+            self.index = 0;
+        }
     };
 
     pub fn reader(self: Input) std.Io.Reader {
@@ -32,6 +36,21 @@ pub const Input = struct {
 
     pub fn lines(self: Input) LineIterator {
         return .{ .buf = self.text };
+    }
+
+    pub fn sliceLines(self: Input, gpa: std.mem.Allocator) error{OutOfMemory}![]const []const u8 {
+        var count: usize = 0;
+        var it: LineIterator = .{ .buf = self.text };
+        while (it.next()) |_| : (count += 1) {}
+        it.reset();
+
+        const slice = try gpa.alloc([]const u8, count);
+
+        var index: usize = 0;
+        while (it.next()) |line| : (index += 1) {
+            slice[index] = line;
+        }
+        return slice;
     }
 
     pub fn firstLine(self: Input) error{InvalidInput}![]const u8 {

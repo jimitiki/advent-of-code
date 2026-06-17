@@ -12,26 +12,23 @@ const Rect = struct {
     y2: u16,
 };
 
-fn solveInt(input: solver.Input, _: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    var coverage: [1000][1000]u2 = .{.{0} ** 1000} ** 1000;
-
+fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    var rect_list: std.ArrayList(Rect) = .empty;
+    defer rect_list.deinit(tools.gpa);
     var lines = input.lines();
     while (lines.next()) |line| {
-        const rect = try parseRect(line);
+        try rect_list.append(tools.gpa, try parseRect(line));
+    }
+
+    var coverage: [1000][1000]u2 = .{.{0} ** 1000} ** 1000;
+    for (rect_list.items) |rect| {
         for (rect.y1..rect.y2) |y| {
             for (rect.x1..rect.x2) |x| {
                 coverage[y][x] +|= 1;
             }
         }
     }
-
-    var count: u32 = 0;
-    for (coverage) |row| {
-        for (row) |square| {
-            if (square >= 2) count += 1;
-        }
-    }
-    return .{ count, null };
+    return .{ countOverlap(&coverage), null };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
@@ -54,4 +51,14 @@ fn parseRect(str: []const u8) Parser.Error!Rect {
     const height = try parser.findInt(u16);
 
     return .{ .x1 = lspace, .y1 = tspace, .x2 = lspace + width, .y2 = tspace + height };
+}
+
+fn countOverlap(coverage: *[1000][1000]u2) u32 {
+    var count: u32 = 0;
+    for (coverage) |row| {
+        for (row) |square| {
+            if (square >= 2) count += 1;
+        }
+    }
+    return count;
 }

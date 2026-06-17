@@ -6,6 +6,7 @@ const testing = @import("../testing.zig");
 const Parser = @import("../Parser.zig");
 
 const Rect = struct {
+    claim_no: u16,
     x1: u16,
     y1: u16,
     x2: u16,
@@ -28,7 +29,7 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
             }
         }
     }
-    return .{ countOverlap(&coverage), null };
+    return .{ countOverlap(&coverage), findNonOverlapping(&coverage, rect_list.items) };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
@@ -39,21 +40,27 @@ test "solve" {
         \\#2 @ 3,1: 4x4
         \\#3 @ 5,5: 2x2
     ;
-    try testing.expectIntSolution(u32, solveInt, .{ 4, null }, input);
+    try testing.expectIntSolution(u32, solveInt, .{ 4, 3 }, input);
 }
 
 fn parseRect(str: []const u8) Parser.Error!Rect {
     var parser: Parser = .init(str, .{});
-    try parser.skipMany(2);
+    const claim_no = try parser.findInt(u16);
     const lspace = try parser.findInt(u16);
     const tspace = try parser.findInt(u16);
     const width = try parser.findInt(u16);
     const height = try parser.findInt(u16);
 
-    return .{ .x1 = lspace, .y1 = tspace, .x2 = lspace + width, .y2 = tspace + height };
+    return .{
+        .claim_no = claim_no,
+        .x1 = lspace,
+        .y1 = tspace,
+        .x2 = lspace + width,
+        .y2 = tspace + height,
+    };
 }
 
-fn countOverlap(coverage: *[1000][1000]u2) u32 {
+fn countOverlap(coverage: *const [1000][1000]u2) u32 {
     var count: u32 = 0;
     for (coverage) |row| {
         for (row) |square| {
@@ -61,4 +68,16 @@ fn countOverlap(coverage: *[1000][1000]u2) u32 {
         }
     }
     return count;
+}
+
+fn findNonOverlapping(coverage: *const [1000][1000]u2, rects: []const Rect) ?u32 {
+    check_rect: for (rects) |rect| {
+        for (rect.y1..rect.y2) |y| {
+            for (rect.x1..rect.x2) |x| {
+                if (coverage[y][x] > 1) continue :check_rect;
+            }
+        }
+        return rect.claim_no;
+    }
+    return null;
 }

@@ -10,7 +10,8 @@ pub const Options = struct {
 };
 
 pub const TakeError = error{EndOfBuffer};
-pub const Error = TakeError || error{InvalidToken};
+pub const TokenError = error{InvalidToken};
+pub const Error = TakeError || TokenError;
 
 pub fn init(buf: []const u8, options: Options) Parser {
     return .{ .buf = buf, .options = options };
@@ -37,6 +38,13 @@ pub fn skip(self: *Parser) Parser.TakeError!void {
     _ = try self.take();
 }
 
+pub fn parseInt(self: *Parser, comptime T: type) TokenError!?T {
+    const token = self.peek() orelse return null;
+    const int = std.fmt.parseInt(T, token, 10) catch return error.InvalidToken;
+    self.index += token.len;
+    return int;
+}
+
 pub fn takeByte(self: *Parser) Parser.Error!u8 {
     const token = self.peek() orelse return error.EndOfBuffer;
     if (token.len != 1) return error.InvalidToken;
@@ -52,10 +60,7 @@ pub fn takeToken(self: *Parser, token: []const u8) Parser.Error![]const u8 {
 }
 
 pub fn takeInt(self: *Parser, comptime T: type) Parser.Error!T {
-    const token = self.peek() orelse return error.EndOfBuffer;
-    const int = std.fmt.parseInt(T, token, 10) catch return error.InvalidToken;
-    self.index += token.len;
-    return int;
+    return (try self.parseInt(T)) orelse error.EndOfBuffer;
 }
 
 pub fn takeEnum(self: *Parser, comptime T: type) Parser.Error!T {

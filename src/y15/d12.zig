@@ -3,7 +3,7 @@ const std = @import("std");
 const solver = @import("../solver.zig");
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
-    const answer = try sumNumbers(tools.gpa, tools.input);
+    const answer = try sumNumbers(tools.gpa, tools.input.reader);
     return .{ answer[0], answer[1] };
 }
 

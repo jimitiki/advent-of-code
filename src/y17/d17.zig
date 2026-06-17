@@ -29,7 +29,7 @@ const Spinlock = struct {
 };
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
-    const input = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
+    const input = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     const step = std.fmt.parseInt(u64, input, 10) catch return error.InvalidInput;
     var buf: [2018]u64 = undefined;
     var spinlock: Spinlock = .init(&buf, step);

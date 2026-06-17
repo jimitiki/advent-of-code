@@ -3,7 +3,7 @@ const std = @import("std");
 const solver = @import("../solver.zig");
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    const elf_count = std.fmt.parseUnsigned(u32, try tools.takeOneLine(), 10) catch return error.InvalidInput;
+    const elf_count = std.fmt.parseUnsigned(u32, try tools.input.takeOneLine(), 10) catch return error.InvalidInput;
     return .{ takeLeft(elf_count), takeAcross(elf_count) };
 }
 

@@ -10,7 +10,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     var answer2: u64 = 0;
     var invalid_ids: AutoArrayHashMap(u64, void) = .empty;
     defer invalid_ids.deinit(tools.gpa);
-    while (try tools.input.takeDelimiter(',')) |range| {
+    while (try tools.input.reader.takeDelimiter(',')) |range| {
         var lengths: AutoArrayHashMap(usize, void) = .empty;
         defer lengths.deinit(tools.gpa);
         const split_point = find(range, '-') orelse return error.InvalidInput;

@@ -41,13 +41,13 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
         }
         rules.deinit(tools.gpa);
     }
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         if (line.len == 0) break;
         const in, const out = try parseRule(line);
         addRule(tools.gpa, &rules, in, out);
     }
 
-    const molecule = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
+    const molecule = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     const answer1 = calibrate(tools.gpa, rules, molecule);
 
     var it: AtomIterator = .{ .string = molecule };

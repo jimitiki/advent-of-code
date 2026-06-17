@@ -27,7 +27,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     var nodes: std.ArrayList(Node) = .empty;
     defer nodes.deinit(tools.gpa);
 
-    const input = tools.input;
+    const input = tools.input.reader;
     _ = input.discardDelimiterInclusive('\n') catch return error.InvalidInput;
     _ = input.discardDelimiterInclusive('\n') catch return error.InvalidInput;
     var height: u16 = 0;

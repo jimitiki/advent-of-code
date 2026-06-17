@@ -64,7 +64,7 @@ pub fn expectSolution(
     var writer = std.Io.Writer.fixed(buf[0..64]);
     const actual = try solveFn(.{
         .gpa = std.testing.allocator,
-        .input = &reader,
+        .input = .{ .parser = .init(input, .{}), .reader = &reader, .text = input },
         .stdout = &writer,
         .p1buf = buf[64..96],
         .p2buf = buf[96..],
@@ -83,7 +83,7 @@ pub fn expectIntSolution(
     var writer = std.Io.Writer.fixed(buf[0..64]);
     const actual = try solveFn(.{
         .gpa = std.testing.allocator,
-        .input = &reader,
+        .input = .{ .parser = .init(input, .{}), .reader = &reader, .text = input },
         .stdout = &writer,
         .p1buf = buf[64..96],
         .p2buf = buf[96..],

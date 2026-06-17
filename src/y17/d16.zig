@@ -86,7 +86,7 @@ const Step = union(enum) {
 pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
     var steps: std.ArrayList(Step) = .empty;
     defer steps.deinit(tools.gpa);
-    while (try tools.input.takeDelimiter(',')) |step| {
+    while (try tools.input.reader.takeDelimiter(',')) |step| {
         switch (step[0]) {
             's' => try steps.append(tools.gpa, .{ .s = try parseInt(step[1..]) }),
             'x' => {

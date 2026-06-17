@@ -31,7 +31,7 @@ pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
     var name_lookup: NameTable = .empty;
     defer name_lookup.deinit(gpa);
 
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         var parser: Parser = .init(line, .{});
         const name = try parser.take();
         const weight_str = try parser.take();

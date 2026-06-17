@@ -24,7 +24,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var firewall: std.ArrayList(Layer) = .empty;
     defer firewall.deinit(tools.gpa);
 
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         for (line, 0..) |char, i| {
             if (char == ':') {
                 const layer: Layer = .{

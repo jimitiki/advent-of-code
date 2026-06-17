@@ -21,7 +21,7 @@ const Dir = enum {
 };
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    const line = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
+    const line = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     const input = std.fmt.parseUnsigned(u32, line, 10) catch return error.InvalidInput;
 
     return .{ distance(input), try findLarger(tools.gpa, input) };

@@ -7,7 +7,7 @@ const Candidate = struct { index: usize, char: u8 };
 const Queue = std.Deque(Candidate);
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
-    const salt = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
+    const salt = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     return .{
         try computeIndex(tools.gpa, salt, 64, 0),
         try computeIndex(tools.gpa, salt, 64, 2016),

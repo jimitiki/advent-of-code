@@ -13,7 +13,7 @@ pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
         for (line_list.items) |line| gpa.free(line);
         line_list.deinit(gpa);
     }
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         const l = try gpa.alloc(u8, line.len);
         @memcpy(l, line);
         try line_list.append(gpa, l);

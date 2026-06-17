@@ -5,7 +5,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var answer1: u32 = 0;
     var answer2: u32 = 0;
 
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         if (evaluateP1(line)) answer1 += 1;
         if (evaluateP2(line)) answer2 += 1;
     }

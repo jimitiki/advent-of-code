@@ -7,7 +7,7 @@ const digits = "987654321";
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     var answer1: u64 = 0;
     var answer2: u64 = 0;
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         answer1 += highestJoltage(line, 2);
         answer2 += highestJoltage(line, 12);
     }

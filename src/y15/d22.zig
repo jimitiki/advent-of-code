@@ -20,8 +20,8 @@ const Spell = enum { magic_missile, drain, shield, poison, recharge };
 const spells = [_]Spell{ .magic_missile, .drain, .shield, .poison, .recharge };
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    const boss_hp = try parseBossStat(try tools.input.takeDelimiter('\n') orelse return error.InvalidInput);
-    const boss_atk = try parseBossStat(try tools.input.takeDelimiter('\n') orelse return error.InvalidInput);
+    const boss_hp = try parseBossStat(try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput);
+    const boss_atk = try parseBossStat(try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput);
 
     const answer1 = minMana(boss_atk, boss_hp, .{ .hp = 50, .mana = 500 }, 0, false, 0);
     min_spent = std.math.maxInt(u32);

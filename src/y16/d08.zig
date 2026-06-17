@@ -13,7 +13,7 @@ const Operation = union(enum) {
 
 pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
     var screen = [_]u50{0} ** 6;
-    while (try tools.input.takeDelimiter('\n')) |instruction| {
+    while (try tools.input.reader.takeDelimiter('\n')) |instruction| {
         try execute(u50, &screen, tools.gpa, instruction);
     }
 

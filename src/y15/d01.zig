@@ -6,7 +6,7 @@ fn solveInt(tools: solver.Tools) error{InvalidInput}!struct { ?i32, ?i32 } {
     var pos: i32 = 1;
     var answer: ?i32 = null;
     while (true) : (pos += 1) {
-        const c = tools.input.takeByte() catch break;
+        const c = tools.input.reader.takeByte() catch break;
         switch (c) {
             '(' => floor += 1,
             ')' => floor -= 1,

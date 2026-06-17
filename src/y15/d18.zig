@@ -9,7 +9,7 @@ const Row = std.bit_set.ArrayBitSet(usize, 102);
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var grid = [_]Row{.empty} ** 102;
     var i: usize = 1;
-    while (try tools.input.takeDelimiter('\n')) |line| : (i += 1) {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| : (i += 1) {
         grid[i] = parseRow(line);
     }
     return .{ run(grid, false), run(grid, true) };

@@ -26,7 +26,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?i16, ?i16 } {
         }
         relatives.deinit(gpa);
     }
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         var parser = Parser.init(line, .{});
         const name1 = try parser.take();
         try parser.skip();

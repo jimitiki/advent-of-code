@@ -9,7 +9,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
 
     var chksum: u16 = 0;
     var divsum: u16 = 0;
-    while (try tools.input.takeDelimiter('\n')) |line| : (row.clearRetainingCapacity()) {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| : (row.clearRetainingCapacity()) {
         var parser: Parser = .init(line, .{});
         var min: u16 = std.math.maxInt(u16);
         var max: u16 = 0;

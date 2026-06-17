@@ -18,7 +18,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
         for (lines.items) |line| gpa.free(line);
         lines.deinit(gpa);
     }
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         if (lines.items.len > 0 and line.len != lines.items[0].len) {
             return error.InvalidInput;
         }

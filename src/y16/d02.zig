@@ -26,7 +26,7 @@ pub fn solve(tools: solver.Tools) solver.Error!struct { ?[]const u8, ?[]const u8
     var col_p1: u2 = 1;
     var row_p2: u3 = 2;
     var col_p2: u3 = 0;
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         for (line) |char| {
             switch (char) {
                 'U' => {

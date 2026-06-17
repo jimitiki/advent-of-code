@@ -76,7 +76,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     defer rtgs.deinit(gpa);
 
     var i: u2 = 0;
-    while (try tools.input.takeDelimiter('\n')) |line| : (i += 1) {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| : (i += 1) {
         var parser: Parser = .init(line, .{});
         try parser.skipMany(4);
         while (try parseElement(&parser)) |result| {

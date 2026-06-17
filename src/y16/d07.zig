@@ -50,7 +50,7 @@ const IPIterator = struct {
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var sum_tls: u32 = 0;
     var sum_ssl: u32 = 0;
-    while (try tools.input.takeDelimiter('\n')) |ip| {
+    while (try tools.input.reader.takeDelimiter('\n')) |ip| {
         if (supportsTLS(ip) catch return error.InvalidInput) {
             sum_tls += 1;
         }

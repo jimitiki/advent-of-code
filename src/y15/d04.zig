@@ -8,7 +8,7 @@ const hashIndex = @import("../hash.zig").hashIndex;
 // TODO: Apparently the input seed "cxsaadws" solves in under 500 hashes. Use it for unit tests
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
-    const string = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
+    const string = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
 
     var buf: [128]u8 = undefined;
     var answer1: u32 = 0;

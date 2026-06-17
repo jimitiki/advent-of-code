@@ -4,7 +4,7 @@ const solver = @import("../solver.zig");
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var answer1: usize = 0;
     var answer2: usize = 0;
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         answer1 += line.len - try decodedChars(line);
         answer2 += encodedChars(line) - line.len;
     }

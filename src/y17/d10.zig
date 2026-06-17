@@ -6,7 +6,7 @@ const Parser = @import("../Parser.zig");
 const KnotHasher = @import("KnotHasher.zig");
 
 pub fn solve(tools: solver.Tools) solver.Error!solver.Result {
-    const input = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
+    const input = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     var count: usize = 1;
     for (input) |char| {
         if (char == ',') count += 1;

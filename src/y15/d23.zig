@@ -48,7 +48,7 @@ const Instruction = union(Op) {
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     var program: std.ArrayList(Instruction) = .empty;
     defer program.deinit(tools.gpa);
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         program.append(tools.gpa, try Instruction.parse(line)) catch unreachable;
     }
     return .{ execute(program.items, 0, 0), execute(program.items, 1, 0) };

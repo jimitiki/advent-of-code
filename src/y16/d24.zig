@@ -11,7 +11,7 @@ const PointMap = std.array_hash_map.Auto(Position, u8);
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
-    const distances = try precomputeDistances(gpa, tools.input);
+    const distances = try precomputeDistances(gpa, tools.input.reader);
     defer {
         for (distances) |d| gpa.free(d);
         gpa.free(distances);

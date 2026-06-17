@@ -26,8 +26,8 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var transforms: TransformTable = .empty;
     defer transforms.deinit(gpa);
 
-    var line = try tools.input.takeDelimiter('\n') orelse return error.InvalidInput;
-    while (line.len == 20) : (line = try tools.input.takeDelimiter('\n') orelse "") {
+    var line = try tools.input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
+    while (line.len == 20) : (line = try tools.input.reader.takeDelimiter('\n') orelse "") {
         var parser: Parser = .init(line, .{ .skip_punctuation = false });
         const pattern = try parser.take();
         try parser.skip();
@@ -38,7 +38,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
             try rules2.put(gpa, rotate2(in, @intCast(n)), out);
         }
     }
-    while (line.len == 34) : (line = try tools.input.takeDelimiter('\n') orelse "") {
+    while (line.len == 34) : (line = try tools.input.reader.takeDelimiter('\n') orelse "") {
         var parser: Parser = .init(line, .{ .skip_punctuation = false });
         const pattern = try parser.take();
         try parser.skip();

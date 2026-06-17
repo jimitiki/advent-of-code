@@ -10,7 +10,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     var y: i32 = 0;
     var dist: u32 = 0;
     var max_dist: u32 = 0;
-    while (try tools.input.takeDelimiter(',')) |step| {
+    while (try tools.input.reader.takeDelimiter(',')) |step| {
         const dir = std.meta.stringToEnum(Dir, stripNewline(step)) orelse break;
         switch (dir) {
             .n => y -= 1,

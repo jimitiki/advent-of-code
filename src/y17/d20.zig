@@ -25,7 +25,7 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     defer particle_list.deinit(tools.gpa);
 
     var id: u32 = 0;
-    while (try tools.input.takeDelimiter('\n')) |line| : (id += 1) {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| : (id += 1) {
         var parser: Parser = .init(line, .{});
         try particle_list.append(tools.gpa, .{
             .id = id,

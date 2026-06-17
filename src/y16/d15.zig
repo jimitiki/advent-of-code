@@ -17,7 +17,7 @@ const Disc = struct {
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var discs: std.ArrayList(Disc) = .empty;
     defer discs.deinit(tools.gpa);
-    while (try tools.input.takeDelimiter('\n')) |line| {
+    while (try tools.input.reader.takeDelimiter('\n')) |line| {
         try discs.append(tools.gpa, try parseDisc(line));
     }
     const p1 = calculateTime(discs.items);

@@ -6,7 +6,7 @@ const solver = @import("../solver.zig");
 
 fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     const gpa = tools.gpa;
-    const graph = try constructGraph(gpa, tools.input);
+    const graph = try constructGraph(gpa, tools.input.reader);
     defer {
         for (graph) |node_edges| {
             gpa.free(node_edges);

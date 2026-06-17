@@ -8,7 +8,7 @@ pub const Error = Parser.Error || error{ InvalidInput, OutOfMemory, ReadFailed, 
 pub const Input = struct {
     reader: *std.Io.Reader,
     text: []const u8,
-    parser: Parser,
+    parser: *Parser,
 
     pub fn takeOneLine(self: Input) error{ InvalidInput, ReadFailed, StreamTooLong }![]const u8 {
         return try self.reader.takeDelimiter('\n') orelse error.InvalidInput;

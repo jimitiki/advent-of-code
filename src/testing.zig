@@ -1,6 +1,8 @@
 const std = @import("std");
 const solver = @import("solver.zig");
 
+const Parser = @import("Parser.zig");
+
 test "test all" {
     _ = @import("y16/asm.zig");
     _ = @import("y16/d04.zig");
@@ -52,6 +54,7 @@ test "test all" {
     _ = @import("y17/d23.zig");
     _ = @import("y17/d24.zig");
     _ = @import("y17/d25.zig");
+    _ = @import("y18/d01.zig");
 }
 
 pub fn expectSolution(
@@ -62,9 +65,10 @@ pub fn expectSolution(
     var buf: [128]u8 = undefined;
     var writer = std.Io.Writer.fixed(buf[0..64]);
     var reader = std.Io.Reader.fixed(text);
+    var parser: Parser = .init(text, .{});
     const actual = try solveFn(
         .{
-            .parser = .init(text, .{}),
+            .parser = &parser,
             .reader = &reader,
             .text = text,
         },
@@ -87,9 +91,10 @@ pub fn expectIntSolution(
     var buf: [64]u8 = undefined;
     var writer = std.Io.Writer.fixed(&buf);
     var reader = std.Io.Reader.fixed(text);
+    var parser: Parser = .init(text, .{});
     const actual = try solveFn(
         .{
-            .parser = .init(text, .{}),
+            .parser = &parser,
             .reader = &reader,
             .text = text,
         },

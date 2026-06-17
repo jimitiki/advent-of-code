@@ -28,7 +28,8 @@ pub fn main(init: std.process.Init) !void {
     std.debug.print("{s}\n", .{input_path});
     const text = try std.Io.Dir.cwd().readFileAlloc(init.io, input_path, allocator, .unlimited);
     var reader = std.Io.Reader.fixed(text);
-    const input: solver.Input = .{ .parser = .init(text, .{}), .reader = &reader, .text = text };
+    var parser: Parser = .init(text, .{});
+    const input: solver.Input = .{ .parser = &parser, .reader = &reader, .text = text };
     var answer_buf: [64]u8 = undefined;
     const tools: solver.Tools = .{ .gpa = gpa, .stdout = writer };
     const solution = solutions.get(year, day) catch std.debug.panic("Invalid year and/or day ({}, {})", .{ year, day });

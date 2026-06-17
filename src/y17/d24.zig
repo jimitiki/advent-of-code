@@ -37,6 +37,19 @@ fn solveInt(tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
         }
     }
 
+    // Move components with identical ports to the front to the list to maximize the benefit
+    var it = components.valueIterator();
+    while (it.next()) |list| {
+        for (list.items[1..], 1..) |component, i| {
+            if (component[0] == component[1]) {
+                const temp = list.items[0];
+                list.items[0] = component;
+                list.items[i] = temp;
+                break;
+            }
+        }
+    }
+
     var used: ComponentSet = .empty;
     defer used.deinit(gpa);
     try used.ensureTotalCapacity(gpa, component_count);
@@ -64,6 +77,10 @@ fn strongest(
         used.putAssumeCapacity(next, {});
         defer _ = used.remove(next);
         max = @max(max, strongest(components, used, next_port, strength + next[0] + next[1]));
+
+        // If the component has identical ports, it will always be optimal to insert it into the
+        // "bridge"
+        if (next[0] == next[1]) break;
     }
     return max;
 }
@@ -87,6 +104,10 @@ fn longest(
         if (len > max[0] or len == max[0] and str > max[1]) {
             max = .{ len, str };
         }
+
+        // If the component has identical ports, it will always be optimal to insert it into the
+        // "bridge"
+        if (next[0] == next[1]) break;
     }
     return max;
 }

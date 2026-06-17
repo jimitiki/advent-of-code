@@ -8,12 +8,40 @@ pub const Error = Parser.Error || error{ InvalidInput, OutOfMemory, ReadFailed, 
 pub const Input = struct {
     text: []const u8,
 
+    const LineIterator = struct {
+        buf: []const u8,
+        index: usize = 0,
+
+        pub fn next(self: *LineIterator) ?[]const u8 {
+            if (self.index >= self.buf.len) return null;
+            const start = self.index;
+            var end = start;
+            while (end < self.buf.len and self.buf[end] != '\n') : (end += 1) {}
+            self.index = end + 1;
+            return self.buf[start..end];
+        }
+    };
+
     pub fn reader(self: Input) std.Io.Reader {
         return std.Io.Reader.fixed(self.text);
     }
 
     pub fn parser(self: Input, options: Parser.Options) Parser {
         return .init(self.text, options);
+    }
+
+    pub fn lines(self: Input) LineIterator {
+        return .{ .buf = self.text };
+    }
+
+    pub fn firstLine(self: Input) error{InvalidInput}![]const u8 {
+        var l = self.lines();
+        return l.next() orelse error.InvalidInput;
+    }
+
+    pub fn asInt(self: Input, comptime T: type) Parser.Error!T {
+        var p = self.parser(.{});
+        return try p.takeInt(T);
     }
 };
 

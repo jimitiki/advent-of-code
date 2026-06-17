@@ -3,14 +3,19 @@ const std = @import("std");
 const solver = @import("solver.zig");
 const solutions = @import("solutions.zig");
 
+const CountingAllocator = @import("CountingAllocator.zig");
+
 pub fn main(init: std.process.Init) !void {
     var stdout_buf: [256]u8 = undefined;
     var stdout: std.Io.File.Writer = .init(.stdout(), init.io, &stdout_buf);
     var writer = &stdout.interface;
 
+    var counting_allocator: CountingAllocator = .init(init.gpa);
+    const gpa = counting_allocator.allocator();
+
     var answer_buf: [64]u8 = undefined;
     const start = std.Io.Clock.real.now(init.io);
-    if (runSolver(init, writer, answer_buf[0..32], answer_buf[32..])) |result| {
+    if (runSolver(gpa, init, writer, answer_buf[0..32], answer_buf[32..])) |result| {
         const elapsed = start.durationTo(std.Io.Clock.real.now(init.io));
         if (result[0]) |answer| {
             try writer.print("Part 1: {s}\n", .{answer});
@@ -22,14 +27,21 @@ pub fn main(init: std.process.Init) !void {
         } else {
             try writer.print("Part 2: No Answer\n", .{});
         }
-        try writer.print("Elapsed time: {}.{:0>6} seconds\n", .{ elapsed.toSeconds(), @abs(elapsed.toMicroseconds()) % 1000000 });
+        try writer.print(
+            "Allocated memory - Peak: {}B | Cumulative: {}B\n",
+            .{ counting_allocator.peak, counting_allocator.total },
+        );
+        try writer.print(
+            "Elapsed time: {}.{:0>6} seconds\n",
+            .{ elapsed.toSeconds(), @abs(elapsed.toMicroseconds()) % 1000000 },
+        );
     } else |err| {
         try writer.print("Error while running solver: {}\n", .{err});
     }
     try writer.flush();
 }
 
-fn runSolver(init: std.process.Init, stdout: *std.Io.Writer, answer_buf1: *[32]u8, answer_buf2: *[32]u8) !solver.Result {
+fn runSolver(gpa: std.mem.Allocator, init: std.process.Init, stdout: *std.Io.Writer, answer_buf1: *[32]u8, answer_buf2: *[32]u8) !solver.Result {
     const allocator = init.arena.allocator();
     const args = init.minimal.args.toSlice(allocator) catch std.debug.panic("Failed to read arguments", .{});
     const year = std.fmt.parseUnsigned(u8, args[2], 10) catch std.debug.panic("Invalid year argument {s}", .{args[2]});
@@ -46,7 +58,7 @@ fn runSolver(init: std.process.Init, stdout: *std.Io.Writer, answer_buf1: *[32]u
 
     const solution = solutions.get(year, day) catch std.debug.panic("Invalid year and/or day ({}, {})", .{ year, day });
     return solution(.{
-        .gpa = init.gpa,
+        .gpa = gpa,
         .input = &reader.interface,
         .stdout = stdout,
         .p1buf = answer_buf1,

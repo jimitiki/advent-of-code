@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const t = @import("../test.zig");
+const testing = @import("../testing.zig");
 const Parser = @import("../Parser.zig");
 
 const Op = enum {
@@ -73,7 +73,7 @@ test "solve" {
         \\c dec -10 if a >= 1
         \\c inc -20 if c == 10
     ;
-    try t.expectIntSolution(i32, solveInt, .{ 1, 10 }, input);
+    try testing.expectIntSolution(i32, solveInt, .{ 1, 10 }, input);
 }
 
 fn convert(name: []const u8) u32 {

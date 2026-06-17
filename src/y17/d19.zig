@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const t = @import("../test.zig");
+const testing = @import("../testing.zig");
 
 const Dir = enum { d, l, r, u };
 const Pos = struct { x: usize, y: usize };
@@ -54,7 +54,7 @@ test "solve" {
         \\    |  |  |  D
         \\    +B-+  +--+
     ;
-    try t.expectSolution(solve, .{ "ABCDEF", "38" }, input);
+    try testing.expectSolution(solve, .{ "ABCDEF", "38" }, input);
 }
 
 fn turn(map: []const []const u8, dir: Dir, pos: Pos) struct { Dir, Pos } {

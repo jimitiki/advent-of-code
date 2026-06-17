@@ -127,7 +127,7 @@ test "decrypt" {
 }
 
 test "solve" {
-    const t = @import("../test.zig");
+    const testing = @import("../testing.zig");
     const input = "aaaaa-bbb-z-y-x-123[abxyz]\na-b-c-d-e-f-g-h-987[abcde]\nnot-a-real-room-404[oarel]\ntotally-real-room-200[decoy]";
-    try t.expectIntSolution(u32, solveInt, .{ 1514, null }, input);
+    try testing.expectIntSolution(u32, solveInt, .{ 1514, null }, input);
 }

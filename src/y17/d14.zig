@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const t = @import("../test.zig");
+const testing = @import("../testing.zig");
 const KnotHasher = @import("KnotHasher.zig");
 
 const BitSet = std.bit_set.ArrayBitSet(u8, 128);
@@ -54,7 +54,7 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16
 pub const solve = solver.intSolver(u16, solveInt);
 
 test "solve" {
-    try t.expectIntSolution(u16, solveInt, .{ 8108, 1242 }, "flqrgnkx");
+    try testing.expectIntSolution(u16, solveInt, .{ 8108, 1242 }, "flqrgnkx");
 }
 
 fn exploreRegion(disk: Disk, explored: *Cache, pos: struct { u8, u8 }) void {

@@ -35,7 +35,7 @@ pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[
 }
 
 test "solve" {
-    const t = @import("../test.zig");
+    const testing = @import("../testing.zig");
     const text =
         \\eedadn
         \\drvtee
@@ -54,5 +54,5 @@ test "solve" {
         \\dvrsen
         \\enarar
     ;
-    try t.expectSolution(solve, .{ "easter", "advent" }, text);
+    try testing.expectSolution(solve, .{ "easter", "advent" }, text);
 }

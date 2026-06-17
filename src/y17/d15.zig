@@ -2,7 +2,7 @@ const std = @import("std");
 
 const solver = @import("../solver.zig");
 const Parser = @import("../Parser.zig");
-const t = @import("../test.zig");
+const testing = @import("../testing.zig");
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     _ = tools;
@@ -43,7 +43,7 @@ test "solve" {
         \\Generator A starts with 65
         \\Generator B starts with 8921
     ;
-    try t.expectIntSolution(u64, solveInt, .{ 588, 309 }, input);
+    try testing.expectIntSolution(u64, solveInt, .{ 588, 309 }, input);
 }
 
 fn parseInput(reader: *std.Io.Reader) solver.Error!u64 {

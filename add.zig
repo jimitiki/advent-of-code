@@ -113,7 +113,7 @@ pub fn main(init: std.process.Init) !void {
         }
     }
 
-    const test_text = try dir.readFileAlloc(init.io, "src/test.zig", gpa, .unlimited);
+    const test_text = try dir.readFileAlloc(init.io, "src/testing.zig", gpa, .unlimited);
     var test_reader = std.Io.Reader.fixed(test_text);
     while (try test_reader.takeDelimiter('\n')) |line| {
         if (line.len > 4 and std.mem.eql(u8, "test ", line[0..5])) break;
@@ -127,7 +127,7 @@ pub fn main(init: std.process.Init) !void {
         const d = std.fmt.parseUnsigned(u8, line[22..24], 10) catch continue;
         if (year == y and day < d) break;
     }
-    const test_file = try dir.openFile(init.io, "src/test.zig", .{ .mode = .write_only });
+    const test_file = try dir.openFile(init.io, "src/testing.zig", .{ .mode = .write_only });
     defer test_file.close(init.io);
     var testw = test_file.writer(init.io, &buf);
     var test_writer = &testw.interface;

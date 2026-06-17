@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const t = @import("../test.zig");
+const testing = @import("../testing.zig");
 
 // TODO: Implement part 1 without shifting memory at every step.
 
@@ -52,5 +52,5 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64
 pub const solve = solver.intSolver(u64, solveInt);
 
 test "solve" {
-    try t.expectIntSolution(u64, solveInt, .{ 638, 1222153 }, "3");
+    try testing.expectIntSolution(u64, solveInt, .{ 638, 1222153 }, "3");
 }

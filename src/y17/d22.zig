@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const t = @import("../test.zig");
+const testing = @import("../testing.zig");
 
 const Pos = struct { i16, i16 };
 const State = enum { weakened, infected, flagged };
@@ -129,5 +129,5 @@ test "solve" {
         \\#..
         \\...
     ;
-    try t.expectIntSolution(u32, solveInt, .{ 5587, 2511944 }, input);
+    try testing.expectIntSolution(u32, solveInt, .{ 5587, 2511944 }, input);
 }

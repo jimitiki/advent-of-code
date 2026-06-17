@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const solver = @import("../solver.zig");
-const expectIntSolution = @import("../test.zig").expectIntSolution;
+const expectIntSolution = @import("../testing.zig").expectIntSolution;
 
 const Layer = struct {
     depth: u32,

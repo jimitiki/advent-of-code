@@ -30,11 +30,11 @@ pub fn main(init: std.process.Init) !void {
     var reader = std.Io.Reader.fixed(text);
     const input: solver.Input = .{ .parser = .init(text, .{}), .reader = &reader, .text = text };
     var answer_buf: [64]u8 = undefined;
-    const tools: solver.Tools = .{ .gpa = gpa, .p1buf = answer_buf[0..32], .p2buf = answer_buf[32..], .stdout = writer };
+    const tools: solver.Tools = .{ .gpa = gpa, .stdout = writer };
     const solution = solutions.get(year, day) catch std.debug.panic("Invalid year and/or day ({}, {})", .{ year, day });
 
     const start = std.Io.Clock.real.now(init.io);
-    if (solution(input, tools)) |result| {
+    if (solution(input, tools, answer_buf[0..32], answer_buf[32..])) |result| {
         const elapsed = start.durationTo(std.Io.Clock.real.now(init.io));
         try printResult(writer, counting_allocator, elapsed, result);
     } else |err| {

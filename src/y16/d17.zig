@@ -3,17 +3,18 @@ const Md5 = std.crypto.hash.Md5;
 
 const solver = @import("../solver.zig");
 
-pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
+    _ = tools;
     const passcode = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     var hashbuf: [1024]u8 = undefined;
     var pathbuf: [256]u8 = undefined;
     @memcpy(hashbuf[0..passcode.len], passcode);
     const best_path = findBestPath(&pathbuf, &hashbuf, passcode.len, std.math.maxInt(usize), "", 0, 0);
     if (best_path) |p| {
-        @memcpy(tools.p1buf[0..p.len], p);
+        @memcpy(p1buf[0..p.len], p);
     }
     const worst_path = findWorstPath(&hashbuf, passcode.len, 0, "", 0, 0);
-    const p2 = if (worst_path) |p| std.fmt.bufPrint(tools.p2buf, "{}", .{p}) catch unreachable else null;
+    const p2 = if (worst_path) |p| std.fmt.bufPrint(p2buf, "{}", .{p}) catch unreachable else null;
     return .{ best_path, p2 };
 }
 

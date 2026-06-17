@@ -21,7 +21,7 @@ const Program = struct {
     }
 };
 
-pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     const gpa = tools.gpa;
     var program_list: std.ArrayList(Program) = .empty;
     defer {
@@ -46,12 +46,12 @@ pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Resul
 
     var root = program_list.items[0];
     while (root.parent) |p| : (root = program_list.items[p]) {}
-    const p1 = tools.p1buf[0..root.name.len];
+    const p1 = p1buf[0..root.name.len];
     @memcpy(p1, root.name);
 
     _ = computeTotalWeight(program_list.items, &root);
     const target_weight = computeNeededWeight(program_list.items, root);
-    const p2 = if (target_weight) |w| std.fmt.bufPrint(tools.p2buf, "{}", .{w}) catch unreachable else null;
+    const p2 = if (target_weight) |w| std.fmt.bufPrint(p2buf, "{}", .{w}) catch unreachable else null;
 
     return .{ p1, p2 };
 }

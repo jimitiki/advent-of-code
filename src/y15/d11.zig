@@ -1,13 +1,13 @@
 const std = @import("std");
 const solver = @import("../solver.zig");
 
-pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     const old = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     const pw: []u8 = tools.gpa.alloc(u8, old.len) catch unreachable;
     @memcpy(pw, old);
     defer tools.gpa.free(pw);
-    const answer1 = nextValidPassword(pw, tools.p1buf) orelse return .{ null, null };
-    return .{ answer1, nextValidPassword(pw, tools.p2buf) };
+    const answer1 = nextValidPassword(pw, p1buf) orelse return .{ null, null };
+    return .{ answer1, nextValidPassword(pw, p2buf) };
 }
 
 fn nextValidPassword(pw: []u8, buf: []u8) ?[]const u8 {

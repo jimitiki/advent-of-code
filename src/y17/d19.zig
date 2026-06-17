@@ -6,7 +6,7 @@ const t = @import("../test.zig");
 const Dir = enum { d, l, r, u };
 const Pos = struct { x: usize, y: usize };
 
-pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     const gpa = tools.gpa;
     var line_list: std.ArrayList([]const u8) = .empty;
     defer {
@@ -34,7 +34,7 @@ pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Resul
             dir, pos = turn(map, dir, p);
             continue;
         } else if (char >= 'A' and char <= 'Z') {
-            tools.p1buf[letter_count] = char;
+            p1buf[letter_count] = char;
             letter_count += 1;
         } else if (char != '|' and char != '-') {
             return error.InvalidInput;
@@ -42,7 +42,7 @@ pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Resul
         pos = move(map, dir, p);
     }
 
-    return .{ tools.p1buf[0..letter_count], std.fmt.bufPrint(tools.p2buf, "{}", .{steps}) catch unreachable };
+    return .{ p1buf[0..letter_count], std.fmt.bufPrint(p2buf, "{}", .{steps}) catch unreachable };
 }
 
 test "solve" {

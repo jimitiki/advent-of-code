@@ -11,7 +11,8 @@ const Operation = union(enum) {
 
 // TODO: Make an animation
 
-pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
+    _ = p2buf;
     var screen = [_]u50{0} ** 6;
     while (try input.reader.takeDelimiter('\n')) |instruction| {
         try execute(u50, &screen, tools.gpa, instruction);
@@ -32,7 +33,7 @@ pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Resul
     try tools.stdout.flush();
 
     return .{
-        std.fmt.bufPrint(tools.p1buf, "{}", .{pixels_on}) catch unreachable,
+        std.fmt.bufPrint(p1buf, "{}", .{pixels_on}) catch unreachable,
         "see console output",
     };
 }

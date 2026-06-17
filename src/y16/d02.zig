@@ -16,7 +16,7 @@ const keypad_p2 = [_][5]?u8{
     [_]?u8{ null, null, 'D', null, null },
 };
 
-pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?[]const u8, ?[]const u8 } {
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!struct { ?[]const u8, ?[]const u8 } {
     var keys_p1: std.ArrayList(u8) = .empty;
     defer keys_p1.deinit(tools.gpa);
     var keys_p2: std.ArrayList(u8) = .empty;
@@ -51,9 +51,9 @@ pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?[]
         try keys_p1.append(tools.gpa, keypad_p1[row_p1][col_p1]);
         try keys_p2.append(tools.gpa, keypad_p2[row_p2][col_p2].?);
     }
-    const code_p1 = tools.p1buf[0..keys_p1.items.len];
+    const code_p1 = p1buf[0..keys_p1.items.len];
     @memcpy(code_p1, keys_p1.items);
-    const code_p2 = tools.p2buf[0..keys_p2.items.len];
+    const code_p2 = p2buf[0..keys_p2.items.len];
     @memcpy(code_p2, keys_p2.items);
     return .{ code_p1, code_p2 };
 }

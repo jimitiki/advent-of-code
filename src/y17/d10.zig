@@ -5,7 +5,7 @@ const Parser = @import("../Parser.zig");
 
 const KnotHasher = @import("KnotHasher.zig");
 
-pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     var count: usize = 1;
     for (input.text) |char| {
         if (char == ',') count += 1;
@@ -20,13 +20,13 @@ pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Resul
     var hasher: KnotHasher = .init();
     for (lengths) |length| hasher.reverse(length);
     const p1_str = std.fmt.bufPrint(
-        tools.p1buf,
+        p1buf,
         "{}",
         .{@as(u16, hasher.buf[0]) * hasher.buf[1]},
     ) catch unreachable;
 
     hasher = .init();
-    hasher.hashHex(input.text, tools.p2buf);
+    hasher.hashHex(input.text, p2buf);
 
-    return .{ p1_str, tools.p2buf };
+    return .{ p1_str, p2buf };
 }

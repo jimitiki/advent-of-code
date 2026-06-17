@@ -55,23 +55,26 @@ test "test all" {
 }
 
 pub fn expectSolution(
-    comptime solveFn: fn (solver.Input, solver.Tools) solver.Error!solver.Result,
+    comptime solveFn: solver.Solver,
     expected: solver.Result,
     text: []const u8,
 ) !void {
     var buf: [128]u8 = undefined;
-    var reader = std.Io.Reader.fixed(text);
     var writer = std.Io.Writer.fixed(buf[0..64]);
-    const actual = try solveFn(.{
-        .parser = .init(text, .{}),
-        .reader = &reader,
-        .text = text,
-    }, .{
-        .gpa = std.testing.allocator,
-        .stdout = &writer,
-        .p1buf = buf[64..96],
-        .p2buf = buf[96..],
-    });
+    var reader = std.Io.Reader.fixed(text);
+    const actual = try solveFn(
+        .{
+            .parser = .init(text, .{}),
+            .reader = &reader,
+            .text = text,
+        },
+        .{
+            .gpa = std.testing.allocator,
+            .stdout = &writer,
+        },
+        buf[64..96],
+        buf[96..],
+    );
     try std.testing.expectEqualDeep(expected, actual);
 }
 
@@ -81,18 +84,19 @@ pub fn expectIntSolution(
     expected: struct { ?T, ?T },
     text: []const u8,
 ) !void {
-    var buf: [128]u8 = undefined;
+    var buf: [64]u8 = undefined;
+    var writer = std.Io.Writer.fixed(&buf);
     var reader = std.Io.Reader.fixed(text);
-    var writer = std.Io.Writer.fixed(buf[0..64]);
-    const actual = try solveFn(.{
-        .parser = .init(text, .{}),
-        .reader = &reader,
-        .text = text,
-    }, .{
-        .gpa = std.testing.allocator,
-        .stdout = &writer,
-        .p1buf = buf[64..96],
-        .p2buf = buf[96..],
-    });
+    const actual = try solveFn(
+        .{
+            .parser = .init(text, .{}),
+            .reader = &reader,
+            .text = text,
+        },
+        .{
+            .gpa = std.testing.allocator,
+            .stdout = &writer,
+        },
+    );
     try std.testing.expectEqual(expected, actual);
 }

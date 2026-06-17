@@ -83,7 +83,7 @@ const Step = union(enum) {
     p: struct { u8, u8 },
 };
 
-pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     var steps: std.ArrayList(Step) = .empty;
     defer steps.deinit(tools.gpa);
     while (try input.reader.takeDelimiter(',')) |step| {
@@ -109,8 +109,8 @@ pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Resul
     @memcpy(&buf, start);
     var line: Ring = .init(&buf);
 
-    const first = tools.p1buf[0..start.len];
-    const cur = tools.p2buf[0..start.len];
+    const first = p1buf[0..start.len];
+    const cur = p2buf[0..start.len];
     var i: usize = 0;
     while (!std.mem.eql(u8, cur, start)) : (i += 1) {
         try executeSteps(steps.items, &line);

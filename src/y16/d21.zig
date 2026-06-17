@@ -26,11 +26,11 @@ const Operation = union(Action) {
     },
 };
 
-pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
-    const pw = tools.p1buf[0..8];
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
+    const pw = p1buf[0..8];
     @memcpy(pw, "abcdefgh");
 
-    const scrambled = tools.p2buf[0..8];
+    const scrambled = p2buf[0..8];
     @memcpy(scrambled, "fbgdceah");
 
     var operations: std.ArrayList(Operation) = .empty;

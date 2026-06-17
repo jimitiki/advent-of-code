@@ -3,7 +3,7 @@ const std = @import("std");
 const solver = @import("../solver.zig");
 const Counter = @import("../counter.zig").Counter(u8);
 
-pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?[]const u8, ?[]const u8 } {
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!struct { ?[]const u8, ?[]const u8 } {
     const gpa = tools.gpa;
     const first_code = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     const code_len = first_code.len;
@@ -27,11 +27,11 @@ pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?[]
             _ = try counter.add(gpa, char);
         }
     }
-    for (counters, tools.p1buf[0..code_len], tools.p2buf[0..code_len]) |counter, *char1, *char2| {
+    for (counters, p1buf[0..code_len], p2buf[0..code_len]) |counter, *char1, *char2| {
         char1.* = counter.max()[0];
         char2.* = counter.min()[0];
     }
-    return .{ tools.p1buf[0..code_len], tools.p2buf[0..code_len] };
+    return .{ p1buf[0..code_len], p2buf[0..code_len] };
 }
 
 test "solve" {

@@ -4,7 +4,7 @@ const solver = @import("../solver.zig");
 
 // TODO: Is there a way to avoid generating data to fill the whole disk?
 
-pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Result {
+pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     const str = try input.reader.takeDelimiter('\n') orelse return error.InvalidInput;
     var max_size = str.len;
     while (max_size < 35651584) : (max_size = max_size * 2 + 1) {}
@@ -12,11 +12,11 @@ pub fn solve(input: solver.Input, tools: solver.Tools) solver.Error!solver.Resul
     defer tools.gpa.free(buf);
 
     const p1chksum = computeChksum(buf, 272, str);
-    @memcpy(tools.p1buf[0..p1chksum.len], p1chksum);
+    @memcpy(p1buf[0..p1chksum.len], p1chksum);
     const p2chksum = computeChksum(buf, 35651584, str);
     std.debug.print("{s}\n", .{p2chksum});
-    @memcpy(tools.p2buf[0..p2chksum.len], p2chksum);
-    return .{ tools.p1buf[0..p1chksum.len], tools.p2buf[0..p2chksum.len] };
+    @memcpy(p2buf[0..p2chksum.len], p2chksum);
+    return .{ p1buf[0..p1chksum.len], p2buf[0..p2chksum.len] };
 }
 
 fn computeChksum(buf: []u8, disk_size: usize, input: []const u8) []const u8 {

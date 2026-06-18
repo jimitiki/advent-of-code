@@ -58,6 +58,7 @@ test "test all" {
     _ = @import("y18/d02.zig");
     _ = @import("y18/d03.zig");
     _ = @import("y18/d04.zig");
+    _ = @import("y18/d05.zig");
 }
 
 pub fn expectSolution(

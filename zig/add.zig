@@ -93,7 +93,7 @@ pub fn main(init: std.process.Init) !void {
 
     var dir_buf: [16]u8 = undefined;
     var file_buf: [16]u8 = undefined;
-    const input_dir_path = try std.fmt.bufPrint(&dir_buf, "inputs/y{}/", .{year});
+    const input_dir_path = try std.fmt.bufPrint(&dir_buf, "../inputs/y{}/", .{year});
     const input_file_name = try std.fmt.bufPrint(&file_buf, "d{:0>2}.txt", .{day});
     const input_dir = try dir.createDirPathOpen(init.io, input_dir_path, .{});
     if (input_dir.createFile(init.io, input_file_name, .{ .exclusive = true })) |_| {} else |err| {

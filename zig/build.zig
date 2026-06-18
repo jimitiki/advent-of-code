@@ -30,7 +30,7 @@ pub fn build(b: *std.Build) !void {
     });
     const exe = b.addExecutable(.{ .name = "advent", .root_module = run_mod });
     const run_cmd = b.addRunArtifact(exe);
-    run_cmd.addDirectoryArg(b.path("inputs"));
+    run_cmd.addDirectoryArg(b.path("../inputs"));
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }

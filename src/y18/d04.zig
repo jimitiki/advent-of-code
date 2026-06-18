@@ -75,20 +75,7 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
         }
     }
 
-    var max_sleep: u32 = 0;
-    var guard: u16 = undefined;
-    var it = sleep_counter.iterator();
-    while (it.next()) |entry| {
-        var sum: u32 = 0;
-        for (entry.value_ptr.*) |score| sum += score;
-        if (sum > max_sleep) {
-            max_sleep = sum;
-            guard = entry.key_ptr.*;
-        }
-    }
-
-    const minute: u32 = @intCast(std.mem.findMax(u8, sleep_counter.getPtr(guard).?));
-    return .{ minute * guard, null };
+    return .{ strategy1(sleep_counter), strategy2(sleep_counter) };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
@@ -113,7 +100,39 @@ test "solve" {
         \\[1518-11-05 00:45] falls asleep
         \\[1518-11-05 00:55] wakes up
     ;
-    try testing.expectIntSolution(u32, solveInt, .{ 240, null }, input);
+    try testing.expectIntSolution(u32, solveInt, .{ 240, 4455 }, input);
+}
+
+fn strategy1(sleep_counter: SleepCounter) u32 {
+    var max_sleep: u32 = 0;
+    var guard: u16 = undefined;
+    var it = sleep_counter.iterator();
+    while (it.next()) |entry| {
+        var sum: u32 = 0;
+        for (entry.value_ptr.*) |score| sum += score;
+        if (sum > max_sleep) {
+            max_sleep = sum;
+            guard = entry.key_ptr.*;
+        }
+    }
+    const minute: u32 = @intCast(std.mem.findMax(u8, sleep_counter.getPtr(guard).?));
+    return minute * guard;
+}
+
+fn strategy2(sleep_counter: SleepCounter) u32 {
+    var max_sleep: u8 = 0;
+    var minute: u8 = undefined;
+    var guard: u16 = undefined;
+    var it = sleep_counter.iterator();
+    while (it.next()) |entry| {
+        const m: u8 = @intCast(std.mem.findMax(u8, entry.value_ptr));
+        if (entry.value_ptr[m] > max_sleep) {
+            max_sleep = entry.value_ptr[m];
+            minute = m;
+            guard = entry.key_ptr.*;
+        }
+    }
+    return minute * guard;
 }
 
 fn parseEvent(str: []const u8) Parser.Error!Event {

@@ -8,7 +8,7 @@ pub const Error = Parser.Error || error{ InvalidInput, OutOfMemory, ReadFailed, 
 pub const Input = struct {
     text: []const u8,
 
-    const LineIterator = struct {
+    pub const LineIterator = struct {
         buf: []const u8,
         index: usize = 0,
 

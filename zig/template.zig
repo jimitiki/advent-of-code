@@ -6,10 +6,10 @@ const testing = @import("../testing.zig");
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     _ = tools;
 
-    _ = input.firstLine();
+    _ = try input.firstLine();
 
     var parser = input.parser(.{});
-    _ = parser.takeInt(u32);
+    _ = try parser.takeInt(u32);
 
     var lines = input.lines();
     while (lines.next()) |line| {

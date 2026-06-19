@@ -26,9 +26,10 @@ pub const Interpreter = struct {
     const Self = @This();
 
     gpa: std.mem.Allocator,
-    buf: [64]Instruction = undefined,
+    pid: u32,
     registers: Registers,
-    program: []const Instruction = undefined,
+    buf: [64]Instruction = undefined,
+    program: []const Instruction = &.{},
     pc: usize = 0,
     queue: Queue = .empty,
     snd_count: u32 = 0,
@@ -36,16 +37,24 @@ pub const Interpreter = struct {
     pub fn init(gpa: std.mem.Allocator, pid: u32) Self {
         var registers: Registers = .initFill(0);
         registers.set(.p, pid);
-        var interpreter: Self = .{ .gpa = gpa, .registers = registers };
-        interpreter.program = interpreter.buf[0..0];
-        return interpreter;
+        return .{ .gpa = gpa, .pid = pid, .registers = registers };
     }
 
     pub fn deinit(self: *Self) void {
         self.queue.deinit(self.gpa);
     }
 
+    fn reset(self: *Self) void {
+        self.program = self.buf[0..0];
+        self.pc = 0;
+        @memset(&self.registers.values, 0);
+        self.registers.set(.p, self.pid);
+        while (self.queue.popBack()) |_| {}
+        self.snd_count = 0;
+    }
+
     pub fn load(self: *Self, program: []const u8) Parser.Error!void {
+        self.reset();
         var lines: solver.Input.LineIterator = .{ .buf = program };
         var index: usize = 0;
         while (lines.next()) |line| {

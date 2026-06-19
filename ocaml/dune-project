@@ -1,0 +1,22 @@
+(lang dune 3.23)
+
+(name advent)
+
+(generate_opam_files true)
+
+(source
+ (github jimitiki/advent))
+
+(authors "jimitiki <dev@jimitiki.com>")
+
+(license Unlicense)
+
+(documentation https://github.com/jimitiki/advent)
+
+(package
+ (name advent)
+ (synopsis "Advent of Code in OCaml")
+ (description "Programmatic solutions to the Advent of Code problems written in OCaml")
+ (depends ocaml))
+
+; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html

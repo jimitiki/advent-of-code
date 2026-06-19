@@ -13,25 +13,24 @@ const Parser = @import("../Parser.zig");
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?i64, ?i64 } {
     const gpa = tools.gpa;
 
-    var mp1: duet.Interpreter = .init(gpa, 0);
-    defer mp1.deinit();
-    try mp1.load(input.text);
-    while (try mp1.step(&mp1.queue)) {
-        switch (mp1.program[mp1.pc]) {
+    var m1: duet.Interpreter = .init(gpa, 0);
+    defer m1.deinit();
+    try m1.load(input.text);
+    while (try m1.step(&m1.queue)) {
+        switch (m1.program[m1.pc]) {
             .rcv => break,
             else => {},
         }
     }
+    const recovered_frequency = m1.queue.popBack();
 
-    var m1: duet.Interpreter = .init(gpa, 0);
-    defer m1.deinit();
     var m2: duet.Interpreter = .init(gpa, 1);
     defer m2.deinit();
     try m1.load(input.text);
     try m2.load(input.text);
     while (try m1.step(&m2.queue) or try m2.step(&m1.queue)) {}
 
-    return .{ mp1.queue.popBack(), m2.snd_count };
+    return .{ recovered_frequency, m2.snd_count };
 }
 
 pub const solve = solver.intSolver(i64, solveInt);

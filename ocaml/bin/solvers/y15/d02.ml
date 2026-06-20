@@ -23,20 +23,23 @@ let rec parse lines =
   | "" :: tail -> parse tail
   | line :: tail -> parse_line line :: parse tail
 
-let paper (l, w, h) =
-  let lw = l * w in
-  let lh = l * h in
-  let wh = w * h in
-  let min = Int.min (Int.min lw lh) wh in
-  (2 * lw) + (2 * lh) + (2 * wh) + min
-
-let rec sum_paper ?(acc = 0) dims =
+let rec sum ?(acc = 0) f dims =
   match dims with
   | [] -> acc
   | (l, w, h) :: tail ->
-      let acc = paper (l, w, h) + acc in
-      sum_paper ~acc tail
+      let acc = f (l, w, h) + acc in
+      sum ~acc f tail
+
+let paper (l, w, h) =
+  let lw, lh, wh = (l * w, l * h, w * h) in
+  let min = Int.min (Int.min lw lh) wh in
+  (2 * lw) + (2 * lh) + (2 * wh) + min
+
+let ribbon (l, w, h) =
+  let vol = l * w * h in
+  let l2, w2, h2 = (l * 2, w * 2, h * 2) in
+  vol + Int.min (Int.min (l2 + w2) (l2 + h2)) (w2 + h2)
 
 let solve input =
   let dims = parse input in
-  (Ans.Int (sum_paper dims), Ans.None)
+  (Ans.Int (sum paper dims), Ans.Int (sum ribbon dims))

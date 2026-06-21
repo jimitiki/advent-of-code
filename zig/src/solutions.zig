@@ -92,6 +92,7 @@ const solutions: []const []const Solver = &.{
         @import("y18/d03.zig").solve,
         @import("y18/d04.zig").solve,
         @import("y18/d05.zig").solve,
+        @import("y18/d06.zig").solve,
     },
     // 2019
     &.{},

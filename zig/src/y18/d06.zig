@@ -13,6 +13,9 @@ const Pos = struct {
 
 const Counter = counter.Counter(usize);
 
+// Currently, this is just a brute force solution. A proper flood fill or sweep line algorithm
+// would probably be faster.
+
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     const gpa = tools.gpa;
     var coord_list: std.ArrayList(Pos) = .empty;
@@ -67,7 +70,17 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
         }
     }
 
-    return .{ @intCast(ctr.max()[1]), null };
+    var count: u32 = 0;
+    for (ymin..ymax + 1) |y| {
+        for (xmin..xmax + 1) |x| {
+            const dist_sum = sumDistance(coord_list.items, .{ .x = @intCast(x), .y = @intCast(y) });
+            if (dist_sum <= 10000) {
+                count += 1;
+            }
+        }
+    }
+
+    return .{ @intCast(ctr.max()[1]), count };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);
@@ -87,6 +100,14 @@ fn closestCoord(coords: []const Pos, pos: Pos) ?usize {
         }
     }
     return if (count > 1) null else index;
+}
+
+fn sumDistance(coords: []const Pos, pos: Pos) u32 {
+    var sum: u32 = 0;
+    for (coords) |c| {
+        sum += distance(pos, c);
+    }
+    return sum;
 }
 
 fn distance(a: Pos, b: Pos) u32 {

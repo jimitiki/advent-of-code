@@ -29,3 +29,9 @@ let first_negative index floor len =
 let solve input =
   let input = Input.one_line input in
   (walk_floors input final_floor, walk_floors input first_negative)
+
+module S = struct
+  let solve = solve
+end
+
+let () = Registry.register (15, 1) (module S : Solver)

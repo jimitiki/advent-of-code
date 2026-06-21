@@ -43,3 +43,9 @@ let ribbon (l, w, h) =
 let solve input =
   let dims = parse input in
   (Ans.Int (sum paper dims), Ans.Int (sum ribbon dims))
+
+module S = struct
+  let solve = solve
+end
+
+let () = Registry.register (15, 2) (module S : Solver)

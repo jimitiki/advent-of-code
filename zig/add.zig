@@ -89,23 +89,30 @@ pub fn main(init: std.process.Init) !void {
         return;
     };
     std.debug.print("Adding solution for 20{}.{}\n", .{ year, day });
-    var buf: [1024]u8 = undefined;
 
-    var dir_buf: [16]u8 = undefined;
-    var file_buf: [16]u8 = undefined;
-    const input_dir_path = try std.fmt.bufPrint(&dir_buf, "../inputs/y{}/", .{year});
-    const input_file_name = try std.fmt.bufPrint(&file_buf, "d{:0>2}.txt", .{day});
+    var buf: [1024]u8 = undefined;
+    const input_dir_path = try std.fmt.bufPrint(&buf, "../inputs/y{}/", .{year});
     const input_dir = try dir.createDirPathOpen(init.io, input_dir_path, .{});
-    if (input_dir.createFile(init.io, input_file_name, .{ .exclusive = true })) |_| {} else |err| {
+    const input_file_name = try std.fmt.bufPrint(&buf, "d{:0>2}.txt", .{day});
+    if (input_dir.createFile(init.io, input_file_name, .{ .exclusive = true })) |f| {
+        std.debug.print("Retrieving input... ", .{});
+        defer f.close(init.io);
+        const input = if (fetch_input(gpa, init.io, &buf, dir, year, day)) |input| input else |err| {
+            std.debug.print("FAILED\n", .{});
+            return err;
+        };
+        std.debug.print("Done\n", .{});
+        try f.writePositionalAll(init.io, input, 0);
+    } else |err| {
         switch (err) {
             error.PathAlreadyExists => {},
             else => |e| return e,
         }
     }
 
-    const src_dir_path = try std.fmt.bufPrint(&dir_buf, "src/y{}/", .{year});
-    const src_file_name = try std.fmt.bufPrint(&file_buf, "d{:0>2}.zig", .{day});
+    const src_dir_path = try std.fmt.bufPrint(&buf, "src/y{}/", .{year});
     const src_dir = try dir.createDirPathOpen(init.io, src_dir_path, .{});
+    const src_file_name = try std.fmt.bufPrint(&buf, "d{:0>2}.zig", .{day});
     if (std.Io.Dir.copyFile(dir, "template.zig", src_dir, src_file_name, init.io, .{ .replace = false, .make_path = true })) |_| {} else |err| {
         switch (err) {
             error.PathAlreadyExists => {},
@@ -129,6 +136,7 @@ pub fn main(init: std.process.Init) !void {
     }
     const test_file = try dir.openFile(init.io, "src/testing.zig", .{ .mode = .write_only });
     defer test_file.close(init.io);
+
     var testw = test_file.writer(init.io, &buf);
     var test_writer = &testw.interface;
     try test_writer.writeAll(test_text[0..test_reader.seek]);
@@ -192,6 +200,27 @@ fn findOpenDayAndYear(year: ?u8, day: ?u8, reader: *std.Io.Reader) error{ Alread
         }
     }
     return error.AlreadyExists;
+}
+
+fn fetch_input(allocator: std.mem.Allocator, io: std.Io, buf: []u8, dir: std.Io.Dir, year: u8, day: u8) ![]const u8 {
+    var headers: [1]std.http.Header = undefined;
+    const cookie = try dir.readFileAlloc(io, "../cookie.txt", allocator, .unlimited);
+    headers[0] = .{ .name = "Cookie", .value = cookie };
+    const url = try std.fmt.bufPrint(buf, "https://adventofcode.com/20{:0>2}/day/{}/input", .{ year, day });
+
+    var client: std.http.Client = .{ .allocator = allocator, .io = io };
+    var req = try client.request(.GET, try .parse(url), .{ .extra_headers = &headers });
+    defer req.deinit();
+
+    _ = try req.sendBodiless();
+    var resp = try req.receiveHead(buf);
+
+    var transfer_buf: [1024]u8 = undefined;
+    var decompress_buf: [65536]u8 = undefined;
+    var decompress: std.http.Decompress = undefined;
+    var resp_reader = resp.readerDecompressing(&transfer_buf, &decompress, &decompress_buf);
+    const input = try resp_reader.allocRemaining(allocator, .unlimited);
+    return input;
 }
 
 fn findOpenDay(year: u8, reader: *std.Io.Reader) error{ YearFull, Malformed }!u8 {

@@ -16,7 +16,10 @@ fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32
     try parser.skipMany(5);
     const marble_count = (try parser.takeInt(u32) + 1);
 
-    return .{ try highScore(tools.gpa, player_count, marble_count), null };
+    return .{
+        try highScore(tools.gpa, player_count, marble_count),
+        try highScore(tools.gpa, player_count, marble_count * 100),
+    };
 }
 
 pub const solve = solver.intSolver(u32, solveInt);

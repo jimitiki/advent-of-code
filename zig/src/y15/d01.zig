@@ -22,8 +22,8 @@ fn solveInt(input: solver.Input, tools: solver.Tools) error{InvalidInput}!struct
 pub const solve = solver.intSolver(i32, solveInt);
 
 test "solve" {
-    testing.expectIntSolution(i32, solveInt, .{ 3, null }, "(((");
-    testing.expectIntSolution(i32, solveInt, .{ 3, 1 }, "))(((((");
-    testing.expectIntSolution(i32, solveInt, .{ -1, 5 }, "()())");
-    testing.expectIntSolution(i32, solveInt, .{ -9, 5 }, "()())))))))))");
+    try testing.expectIntSolution(i32, solveInt, .{ 3, null }, "(((");
+    try testing.expectIntSolution(i32, solveInt, .{ 3, 1 }, "))(((((");
+    try testing.expectIntSolution(i32, solveInt, .{ -1, 5 }, "()())");
+    try testing.expectIntSolution(i32, solveInt, .{ -9, 5 }, "()())))))))))");
 }

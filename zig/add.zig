@@ -2,6 +2,32 @@ const std = @import("std");
 
 const last_year = 25;
 
+const base =
+    \\const std = @import("std");
+    \\
+    \\const solver = @import("../solver.zig");
+    \\const testing = @import("../testing.zig");
+    \\
+    \\fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
+    \\    _ = tools;
+    \\
+    \\    _ = try input.firstLine();
+    \\
+    \\    var parser = input.parser(.{});
+    \\    _ = try parser.takeInt(u32);
+    \\
+    \\    var lines = input.lines();
+    \\    while (lines.next()) |line| {
+    \\        _ = line;
+    \\    }
+    \\
+    \\    return .{ null, null };
+    \\}
+    \\
+    \\pub const solve = solver.intSolver(u32, solveInt);
+    \\
+;
+
 const YearIterator = struct {
     reader: *std.Io.Reader,
     index: usize = 0,
@@ -54,9 +80,10 @@ pub fn main(init: std.process.Init) !void {
     const gpa = init.arena.allocator();
     const args = try init.minimal.args.toSlice(gpa);
 
+    const base_type = std.meta.stringToEnum(BaseType, args[2]).?;
     const dir = try std.Io.Dir.openDirAbsolute(init.io, args[1], .{});
-    const year_arg: ?u8 = if (args.len < 3) null else try std.fmt.parseInt(u8, args[2], 10);
-    const day_arg: ?u8 = if (args.len < 4) null else try std.fmt.parseInt(u8, args[3], 10);
+    const year_arg: ?u8 = if (args.len < 4) null else try std.fmt.parseInt(u8, args[3], 10);
+    const day_arg: ?u8 = if (args.len < 5) null else try std.fmt.parseInt(u8, args[4], 10);
     if (year_arg) |year| {
         if (year < 15) {
             std.debug.print("{} is before the first year", .{@as(u16, year) + 2000});
@@ -97,7 +124,7 @@ pub fn main(init: std.process.Init) !void {
     if (input_dir.createFile(init.io, input_file_name, .{ .exclusive = true })) |f| {
         std.debug.print("Retrieving input... ", .{});
         defer f.close(init.io);
-        const input = if (fetch_input(gpa, init.io, &buf, dir, year, day)) |input| input else |err| {
+        const input = if (fetchInput(gpa, init.io, &buf, dir, year, day)) |input| input else |err| {
             std.debug.print("FAILED\n", .{});
             return err;
         };
@@ -113,12 +140,12 @@ pub fn main(init: std.process.Init) !void {
     const src_dir_path = try std.fmt.bufPrint(&buf, "src/y{}/", .{year});
     const src_dir = try dir.createDirPathOpen(init.io, src_dir_path, .{});
     const src_file_name = try std.fmt.bufPrint(&buf, "d{:0>2}.zig", .{day});
-    if (std.Io.Dir.copyFile(dir, "template.zig", src_dir, src_file_name, init.io, .{ .replace = false, .make_path = true })) |_| {} else |err| {
+    src_dir.writeFile(init.io, .{ .data = base, .sub_path = src_file_name, .flags = .{ .exclusive = true } }) catch |err| {
         switch (err) {
             error.PathAlreadyExists => {},
             else => |e| return e,
         }
-    }
+    };
 
     const test_text = try dir.readFileAlloc(init.io, "src/testing.zig", gpa, .unlimited);
     var test_reader = std.Io.Reader.fixed(test_text);
@@ -202,7 +229,7 @@ fn findOpenDayAndYear(year: ?u8, day: ?u8, reader: *std.Io.Reader) error{ Alread
     return error.AlreadyExists;
 }
 
-fn fetch_input(allocator: std.mem.Allocator, io: std.Io, buf: []u8, dir: std.Io.Dir, year: u8, day: u8) ![]const u8 {
+fn fetchInput(allocator: std.mem.Allocator, io: std.Io, buf: []u8, dir: std.Io.Dir, year: u8, day: u8) ![]const u8 {
     var headers: [1]std.http.Header = undefined;
     const cookie = try dir.readFileAlloc(io, "../cookie.txt", allocator, .unlimited);
     headers[0] = .{ .name = "Cookie", .value = cookie };

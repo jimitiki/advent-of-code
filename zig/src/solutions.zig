@@ -1,4 +1,6 @@
-const Solver = @import("solver.zig").Solver;
+const std = @import("std");
+
+const Solver = @import("lib").solver.Solver;
 
 const solutions: []const []const Solver = &.{
     // 2015
@@ -134,4 +136,8 @@ pub fn get(year: u8, day: u8) !Solver {
         return error.UnknownSolution;
     }
     return solutions[yr_idx][day_idx];
+}
+
+test "tests" {
+    std.testing.refAllDecls(@This());
 }

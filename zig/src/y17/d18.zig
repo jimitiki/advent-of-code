@@ -1,9 +1,10 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 const duet = @import("duet.zig");
 
-const Parser = @import("../Parser.zig");
+const Parser = lib.Parser;
 
 // TODO: Use actual threading with a message queue
 // TODO: Fix the behavior in part 1. It works for the real input, but the interpreter does not

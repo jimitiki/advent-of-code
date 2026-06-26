@@ -1,7 +1,8 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const Parser = @import("../Parser.zig");
+const solver = lib.solver;
+const Parser = lib.Parser;
 
 const NameSet = std.StringArrayHashMapUnmanaged(void);
 const HappinessTable = std.StringHashMapUnmanaged(i16);

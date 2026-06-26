@@ -1,8 +1,10 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const Md5 = std.crypto.hash.Md5;
 
-const solver = @import("../solver.zig");
-const hashIndex = @import("../hash.zig").hashIndex;
+const solver = lib.solver;
+const hashIndex = lib.hash.hashIndex;
 
 // TODO: Re-implement MD5?
 // TODO: Apparently the input seed "cxsaadws" solves in under 500 hashes. Use it for unit tests

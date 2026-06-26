@@ -1,8 +1,10 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const Allocator = std.mem.Allocator;
 
-const solver = @import("../solver.zig");
-const Parser = @import("../Parser.zig");
+const solver = lib.solver;
+const Parser = lib.Parser;
 
 const SourceType = enum { value, bot };
 const DestinationType = enum { output, bot };

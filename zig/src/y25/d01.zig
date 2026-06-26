@@ -1,7 +1,9 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const assert = std.debug.assert;
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     _ = tools;

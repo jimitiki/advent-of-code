@@ -1,7 +1,8 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const hash = @import("../hash.zig");
+const solver = lib.solver;
+const hash = lib.hash;
 
 const Candidate = struct { index: usize, char: u8 };
 const Queue = std.Deque(Candidate);

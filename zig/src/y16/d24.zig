@@ -1,7 +1,9 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const BitSet = std.DynamicBitSetUnmanaged;
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 const Position = struct { x: usize, y: usize };
 fn TileMap(comptime V: type) type {

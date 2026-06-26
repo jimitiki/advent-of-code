@@ -1,8 +1,10 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const Order = std.math.Order;
 const Circuit = std.array_hash_map.Auto(Pos, void);
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 const Pos = struct { u32, u32, u32 };
 

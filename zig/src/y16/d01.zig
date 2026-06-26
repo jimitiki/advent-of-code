@@ -1,6 +1,7 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 // TODO: Implement part 2 by keeping a list of line segments and doing intersection checks. Compare
 //     memory usage (should be much less) and speed (probably a bit slower).

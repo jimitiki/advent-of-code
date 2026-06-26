@@ -1,7 +1,9 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const Md5 = std.crypto.hash.Md5;
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     _ = tools;

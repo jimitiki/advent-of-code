@@ -1,8 +1,9 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
-const Parser = @import("../Parser.zig");
+const Parser = lib.Parser;
 
 const Register = enum { a, b, f, i, p };
 const Opcode = enum { add, jgz, mod, mul, rcv, set, snd };

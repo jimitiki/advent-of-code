@@ -1,7 +1,8 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const Parser = @import("../Parser.zig");
+const solver = lib.solver;
+const Parser = lib.Parser;
 
 // TODO: Stop relying on a global mutable variable
 // TODO: Improve handling of hard mode so that the initial HP doesn't have to be set to 49 for

@@ -4,9 +4,10 @@ const last_year = 25;
 
 const int_base =
     \\const std = @import("std");
+    \\const lib = @import("lib");
     \\
-    \\const solver = @import("../solver.zig");
-    \\const testing = @import("../testing.zig");
+    \\const solver = lib.solver;
+    \\const testing = lib.testing;
     \\
     \\fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u32, ?u32 } {
     \\    _ = tools;
@@ -30,9 +31,10 @@ const int_base =
 
 const str_base =
     \\const std = @import("std");
+    \\const lib = @import("lib");
     \\
-    \\const solver = @import("../solver.zig");
-    \\const testing = @import("../testing.zig");
+    \\const solver = lib.solver;
+    \\const testing = lib.testing;
     \\
     \\pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     \\    _ = tools;
@@ -178,30 +180,6 @@ pub fn main(init: std.process.Init) !void {
             else => |e| return e,
         }
     };
-
-    const test_text = try dir.readFileAlloc(init.io, "src/testing.zig", gpa, .unlimited);
-    var test_reader = std.Io.Reader.fixed(test_text);
-    while (try test_reader.takeDelimiter('\n')) |line| {
-        if (line.len > 4 and std.mem.eql(u8, "test ", line[0..5])) break;
-    }
-    while (true) : (_ = try test_reader.discardDelimiterInclusive('\n')) {
-        const line = try test_reader.peekDelimiterExclusive('\n');
-        if (line.len == 1 and line[0] == '}') break;
-        if (line.len < 24) continue;
-        const y = std.fmt.parseUnsigned(u8, line[18..20], 10) catch continue;
-        if (year < y) break;
-        const d = std.fmt.parseUnsigned(u8, line[22..24], 10) catch continue;
-        if (year == y and day < d) break;
-    }
-    const test_file = try dir.openFile(init.io, "src/testing.zig", .{ .mode = .write_only });
-    defer test_file.close(init.io);
-
-    var testw = test_file.writer(init.io, &buf);
-    var test_writer = &testw.interface;
-    try test_writer.writeAll(test_text[0..test_reader.seek]);
-    try test_writer.print("    _ = @import(\"y{}/d{:0>2}.zig\");\n", .{ year, day });
-    try test_writer.writeAll(test_text[test_reader.seek..test_text.len]);
-    try test_writer.flush();
 
     const solutions_file = try dir.createFile(init.io, "src/solutions.zig", .{ .truncate = true });
     defer solutions_file.close(init.io);

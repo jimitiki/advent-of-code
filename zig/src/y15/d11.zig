@@ -1,5 +1,7 @@
 const std = @import("std");
-const solver = @import("../solver.zig");
+const lib = @import("lib");
+
+const solver = lib.solver;
 
 pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     var parser = input.parser(.{});

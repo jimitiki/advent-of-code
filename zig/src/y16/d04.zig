@@ -1,7 +1,8 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const Counter = @import("../counter.zig").Counter(u8);
+const solver = lib.solver;
+const Counter = lib.Counter(u8);
 
 const Room = struct {
     name: []const u8,
@@ -128,7 +129,7 @@ test "decrypt" {
 }
 
 test "solve" {
-    const testing = @import("../testing.zig");
+    const testing = lib.testing;
     const input = "aaaaa-bbb-z-y-x-123[abxyz]\na-b-c-d-e-f-g-h-987[abcde]\nnot-a-real-room-404[oarel]\ntotally-real-room-200[decoy]";
     try testing.expectIntSolution(u32, solveInt, .{ 1514, null }, input);
 }

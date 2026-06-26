@@ -1,6 +1,8 @@
 const std = @import("std");
-const solver = @import("../solver.zig");
-const Parser = @import("../Parser.zig");
+const lib = @import("lib");
+
+const solver = lib.solver;
+const Parser = lib.Parser;
 
 // TODO: Create a visualization
 

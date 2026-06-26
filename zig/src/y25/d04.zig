@@ -1,8 +1,10 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const ArrayList = std.ArrayList;
 const BitSet = std.DynamicBitSetUnmanaged;
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 // TODO: Create a visualization
 

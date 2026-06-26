@@ -1,6 +1,7 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 const keypad_p1 = [_][3]u8{
     [_]u8{ '1', '2', '3' },

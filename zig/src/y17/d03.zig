@@ -1,6 +1,7 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 const Position = struct { i16, i16 };
 const Grid = std.AutoHashMapUnmanaged(Position, u32);

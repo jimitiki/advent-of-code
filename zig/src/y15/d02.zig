@@ -1,5 +1,7 @@
 const std = @import("std");
-const solver = @import("../solver.zig");
+const lib = @import("lib");
+
+const solver = lib.solver;
 
 const Box = struct { u32, u32, u32 };
 

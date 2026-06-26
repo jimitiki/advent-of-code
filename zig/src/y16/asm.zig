@@ -1,7 +1,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
-const Parser = @import("../Parser.zig");
+const Parser = @import("lib").Parser;
 
 const Opcode = enum { cpy, dec, inc, jnz, out, tgl };
 pub const Register = enum(u2) { a = 0, b = 1, c = 2, d = 3 };

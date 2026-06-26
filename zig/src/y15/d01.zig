@@ -1,6 +1,8 @@
 const std = @import("std");
-const solver = @import("../solver.zig");
-const testing = @import("../testing.zig");
+const lib = @import("lib");
+
+const solver = lib.solver;
+const testing = lib.testing;
 
 fn solveInt(input: solver.Input, tools: solver.Tools) error{InvalidInput}!struct { ?i32, ?i32 } {
     _ = tools;

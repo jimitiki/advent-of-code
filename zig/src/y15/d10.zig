@@ -1,5 +1,7 @@
 const std = @import("std");
-const solver = @import("../solver.zig");
+const lib = @import("lib");
+
+const solver = lib.solver;
 
 // TODO: Use "elements": https://en.wikipedia.org/wiki/Look-and-say_sequence#Cosmological_decay
 

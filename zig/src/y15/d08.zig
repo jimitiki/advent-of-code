@@ -1,5 +1,7 @@
 const std = @import("std");
-const solver = @import("../solver.zig");
+const lib = @import("lib");
+
+const solver = lib.solver;
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     _ = tools;

@@ -1,7 +1,8 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const testing = @import("../testing.zig");
+const solver = lib.solver;
+const testing = lib.testing;
 
 const Pos = struct { i16, i16 };
 const State = enum { weakened, infected, flagged };

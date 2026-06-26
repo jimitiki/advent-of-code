@@ -1,7 +1,8 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const testing = @import("../testing.zig");
+const solver = lib.solver;
+const testing = lib.testing;
 
 // TODO: Implement part 1 without shifting memory at every step.
 

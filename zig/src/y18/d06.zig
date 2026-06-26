@@ -1,17 +1,16 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const testing = @import("../testing.zig");
+const solver = lib.solver;
+const testing = lib.testing;
 
-const counter = @import("../counter.zig");
-const Parser = @import("../Parser.zig");
+const Counter = lib.Counter(usize);
+const Parser = lib.Parser;
 
 const Pos = struct {
     x: u32,
     y: u32,
 };
-
-const Counter = counter.Counter(usize);
 
 // Currently, this is just a brute force solution. A proper flood fill or sweep line algorithm
 // would probably be faster.

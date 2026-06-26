@@ -1,9 +1,11 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const Io = std.Io;
 const assert = std.debug.assert;
 const AutoArrayHashMap = std.array_hash_map.Auto;
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     var answer1: u64 = 0;

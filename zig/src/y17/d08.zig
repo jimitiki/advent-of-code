@@ -1,8 +1,9 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const testing = @import("../testing.zig");
-const Parser = @import("../Parser.zig");
+const solver = lib.solver;
+const testing = lib.testing;
+const Parser = lib.Parser;
 
 const Op = enum {
     inc,

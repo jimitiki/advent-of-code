@@ -1,8 +1,10 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const NameTable = std.StringHashMapUnmanaged(usize);
 const NodeSet = std.AutoHashMapUnmanaged(usize, void);
-const Parser = @import("../Parser.zig");
-const solver = @import("../solver.zig");
+const Parser = lib.Parser;
+const solver = lib.solver;
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     const gpa = tools.gpa;

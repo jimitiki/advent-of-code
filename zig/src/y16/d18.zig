@@ -1,7 +1,9 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const BitSet = std.DynamicBitSetUnmanaged;
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?usize, ?usize } {
     var parser = input.parser(.{ .skip_punctuation = false });

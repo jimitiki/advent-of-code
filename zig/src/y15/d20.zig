@@ -1,6 +1,7 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 // TODO: Implement a faster sum of divisors algorithm
 

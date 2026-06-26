@@ -1,8 +1,9 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const Counter = @import("../counter.zig").Counter(usize);
-const Parser = @import("../Parser.zig");
+const solver = lib.solver;
+const Counter = lib.Counter(usize);
+const Parser = lib.Parser;
 
 // TODO: Create a visualization
 

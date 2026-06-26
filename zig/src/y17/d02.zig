@@ -1,7 +1,8 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const Parser = @import("../Parser.zig");
+const solver = lib.solver;
+const Parser = lib.Parser;
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u16, ?u16 } {
     var row: std.ArrayList(u16) = .empty;

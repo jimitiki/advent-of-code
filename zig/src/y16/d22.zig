@@ -1,7 +1,8 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const Parser = @import("../Parser.zig");
+const solver = lib.solver;
+const Parser = lib.Parser;
 
 // TODO: Speed this up, possibly by using A*
 // TODO: Create a visualization of the path

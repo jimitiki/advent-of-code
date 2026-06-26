@@ -1,10 +1,10 @@
 const std = @import("std");
-
-const solver = @import("solver.zig");
+const lib = @import("lib");
 const solutions = @import("solutions.zig");
 
-const CountingAllocator = @import("CountingAllocator.zig");
-const Parser = @import("Parser.zig");
+const solver = lib.solver;
+const CountingAllocator = lib.CountingAllocator;
+const Parser = lib.Parser;
 
 pub fn main(init: std.process.Init) !void {
     var stdout_buf: [256]u8 = undefined;
@@ -66,4 +66,8 @@ fn printResult(
         .{ elapsed.toSeconds(), @abs(elapsed.toMicroseconds()) % 1000000 },
     );
     try writer.flush();
+}
+
+test "tests" {
+    std.testing.refAllDecls(@This());
 }

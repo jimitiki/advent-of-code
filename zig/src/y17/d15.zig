@@ -1,8 +1,9 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const Parser = @import("../Parser.zig");
-const testing = @import("../testing.zig");
+const solver = lib.solver;
+const Parser = lib.Parser;
+const testing = lib.testing;
 
 fn solveInt(input: solver.Input, tools: solver.Tools) solver.Error!struct { ?u64, ?u64 } {
     _ = tools;

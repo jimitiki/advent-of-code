@@ -1,9 +1,10 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const testing = @import("../testing.zig");
+const solver = lib.solver;
+const testing = lib.testing;
 
-const Counter = @import("../counter.zig").Counter;
+const Counter = lib.Counter;
 
 pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
     const ids = try input.sliceLines(tools.gpa);

@@ -1,7 +1,9 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const WeightList = std.ArrayList(u64);
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 const Result = struct { usize, u64 };
 

@@ -1,7 +1,8 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const testing = @import("../testing.zig");
+const solver = lib.solver;
+const testing = lib.testing;
 const KnotHasher = @import("KnotHasher.zig");
 
 const BitSet = std.bit_set.ArrayBitSet(u8, 128);

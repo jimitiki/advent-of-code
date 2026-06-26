@@ -1,7 +1,8 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const Counter = @import("../counter.zig").Counter(u8);
+const solver = lib.solver;
+const Counter = lib.Counter(u8);
 
 pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!struct { ?[]const u8, ?[]const u8 } {
     const gpa = tools.gpa;
@@ -36,7 +37,7 @@ pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[
 }
 
 test "solve" {
-    const testing = @import("../testing.zig");
+    const testing = lib.testing;
     const text =
         \\eedadn
         \\drvtee

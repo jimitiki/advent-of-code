@@ -1,9 +1,10 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
-const testing = @import("../testing.zig");
+const solver = lib.solver;
+const testing = lib.testing;
 
-const Parser = @import("../Parser.zig");
+const Parser = lib.Parser;
 
 const Dependency = struct { step: u8, prereq: u8 };
 const DepList = std.ArrayList(Dependency);

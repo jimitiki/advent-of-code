@@ -1,6 +1,7 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 const BitSet = std.bit_set.IntegerBitSet(16);
 const Buttons = std.ArrayList(BitSet);

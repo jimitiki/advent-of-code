@@ -1,8 +1,10 @@
 const std = @import("std");
+const lib = @import("lib");
+
 const Md5 = std.crypto.hash.Md5;
 
-const solver = @import("../solver.zig");
-const hashIndex = @import("../hash.zig").hashIndex;
+const solver = lib.solver;
+const hashIndex = lib.hash.hashIndex;
 
 pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!struct { ?[]const u8, ?[]const u8 } {
     const stdout = tools.stdout;

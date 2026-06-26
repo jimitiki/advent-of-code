@@ -1,6 +1,7 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 const Dir = enum { n, ne, nw, s, se, sw };
 const Pos = struct { x: i32, y: i32, z: i32 };

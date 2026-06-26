@@ -1,6 +1,7 @@
 const std = @import("std");
+const lib = @import("lib");
 
-const solver = @import("../solver.zig");
+const solver = lib.solver;
 
 const DevMap = std.AutoHashMapUnmanaged(u32, std.ArrayList(u32));
 const PathCache = std.AutoArrayHashMapUnmanaged(u32, struct { usize, u2 });

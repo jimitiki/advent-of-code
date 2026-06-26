@@ -2,7 +2,7 @@ const std = @import("std");
 
 const last_year = 25;
 
-const base =
+const int_base =
     \\const std = @import("std");
     \\
     \\const solver = @import("../solver.zig");
@@ -27,6 +27,34 @@ const base =
     \\pub const solve = solver.intSolver(u32, solveInt);
     \\
 ;
+
+const str_base =
+    \\const std = @import("std");
+    \\
+    \\const solver = @import("../solver.zig");
+    \\const testing = @import("../testing.zig");
+    \\
+    \\pub fn solve(input: solver.Input, tools: solver.Tools, p1buf: *[32]u8, p2buf: *[32]u8) solver.Error!solver.Result {
+    \\    _ = tools;
+    \\    _ = p1buf;
+    \\    _ = p2buf;
+    \\
+    \\    _ = try input.firstLine();
+    \\
+    \\    var parser = input.parser(.{});
+    \\    _ = try parser.takeInt(u32);
+    \\
+    \\    var lines = input.lines();
+    \\    while (lines.next()) |line| {
+    \\        _ = line;
+    \\    }
+    \\
+    \\    return .{ null, null };
+    \\}
+    \\
+;
+
+const BaseType = enum { i, s };
 
 const YearIterator = struct {
     reader: *std.Io.Reader,
@@ -140,6 +168,10 @@ pub fn main(init: std.process.Init) !void {
     const src_dir_path = try std.fmt.bufPrint(&buf, "src/y{}/", .{year});
     const src_dir = try dir.createDirPathOpen(init.io, src_dir_path, .{});
     const src_file_name = try std.fmt.bufPrint(&buf, "d{:0>2}.zig", .{day});
+    const base = switch (base_type) {
+        .i => int_base,
+        .s => str_base,
+    };
     src_dir.writeFile(init.io, .{ .data = base, .sub_path = src_file_name, .flags = .{ .exclusive = true } }) catch |err| {
         switch (err) {
             error.PathAlreadyExists => {},

@@ -19,7 +19,8 @@ pub fn expectSolution(
         buf[64..96],
         buf[96..],
     );
-    try std.testing.expectEqualDeep(expected, actual);
+    try expectEqualStringsOptional(expected[0], actual[0]);
+    try expectEqualStringsOptional(expected[1], actual[1]);
 }
 
 pub fn expectIntSolution(
@@ -38,4 +39,14 @@ pub fn expectIntSolution(
         },
     );
     try std.testing.expectEqual(expected, actual);
+}
+
+fn expectEqualStringsOptional(expected: ?[]const u8, actual: ?[]const u8) !void {
+    if (expected) |e| {
+        if (actual) |a| {
+            try std.testing.expectEqualStrings(e, a);
+            return;
+        } else {}
+    } else {}
+    try std.testing.expectEqualDeep(expected, actual);
 }

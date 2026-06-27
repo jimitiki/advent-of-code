@@ -1,3 +1,4 @@
 (executable
  (public_name add)
- (name main))
+ (name main)
+ (libraries ezcurl))

@@ -21,10 +21,43 @@ let write path src =
   Out_channel.flush src_file;
   close_out src_file
 
-let create_solver year day =
-  let dir_path = sprintf "bin/solvers/y%02d" year in
-  if not (Sys.file_exists dir_path) then Sys.mkdir dir_path 0o755;
+let read_cookie () =
+  match In_channel.with_open_text "../cookie.txt" In_channel.input_line with
+  | None -> exit "Failed to read cookie"
+  | Some cookie -> cookie
 
+let mkdir parent year =
+  let path = sprintf "%s/y%02d" parent year in
+  if not (Sys.file_exists path) then Sys.mkdir path 0o755;
+  path
+
+let fetch_input year day =
+  let url = sprintf "https://adventofcode.com/20%02d/day/%d/input" year day in
+  let cookie = read_cookie () in
+  let headers = [ ("Cookie", cookie) ] in
+  match Ezcurl.get ~url ~headers () with
+  | Error (code, msg) ->
+      let code = Curl.int_of_curlCode code in
+      let msg = sprintf "Failed to fetch input (%d - %s)" code msg in
+      exit msg
+  | Ok resp -> (
+      match resp.Ezcurl.code with
+      | 200 -> resp.Ezcurl.body
+      | c -> exit (sprintf "Unexpected response code: %d" c))
+
+let ensure_input year day =
+  let dir_path = mkdir "../inputs" year in
+  let file_path = sprintf "%s/d%02d.txt" dir_path day in
+  if Sys.file_exists file_path then ()
+  else
+    let input = fetch_input year day in
+    let file = open_out file_path in
+    Out_channel.output_string file input;
+    close_out file
+
+let create_solver year day =
+  ensure_input year day;
+  let dir_path = mkdir "bin/solvers" year in
   let src = sprintf template year day in
   let src_path = sprintf "%s/d%02d.ml" dir_path day in
   write src_path src

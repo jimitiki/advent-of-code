@@ -17,6 +17,6 @@
  (name advent)
  (synopsis "Advent of Code in OCaml")
  (description "Programmatic solutions to the Advent of Code problems written in OCaml")
- (depends ocaml))
+ (depends ocaml ezcurl))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html

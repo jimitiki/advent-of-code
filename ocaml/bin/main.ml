@@ -20,8 +20,9 @@ let () =
   match Solvers.Registry.get (year, day) with
   | None -> printf "No solution found for year %d day %d\n" (year + 2000) day
   | Some (module S : Solver) -> (
+      printf "\n[%d.%d]:\n" (year + 2000) day;
       match S.solve (Input.read year day) with
-      | exception Bad_input s -> printf "Error: %s\n" s
+      | exception Bad_input s -> printf "  Error: %s\n" s
       | p1, p2 ->
-          printf "\nPart 1: %s\nPart 2: %s\n" (Ans.to_string p1)
+          printf "  Part 1: %s\n  Part 2: %s\n" (Ans.to_string p1)
             (Ans.to_string p2))
